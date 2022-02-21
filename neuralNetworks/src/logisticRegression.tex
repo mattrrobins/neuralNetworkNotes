@@ -17,7 +17,7 @@ so $\P(y|x)$ represents the corrected probability.    Now since we want
 $$a\approx 1\quad\text{when } y=1,$$
 and
 $$a\approx 0\quad\text{when } y=0,$$
-and $0\leq a\leq 1$, any error using differences won't be refined enough to analyze when tuning the model.  Moreover, since introducing the sigmoid function, our usual mean-squared-error function won't be convex.  This leads to to apply the $\log$ function, which when restricted to $(0,1)$ is a bijective mapping of $(0,1)\to(-\infty,0)$.  This leads us to define our log-loss function
+and $0\leq a\leq 1$, any error using differences won't be refined enough to analyze when tuning the model.  Moreover, since introducing the sigmoid function, our usual mean-squared-error function won't be convex.  This leads us to apply the $\log$ function, which when restricted to $(0,1)$ is a bijective mapping of $(0,1)\to(-\infty,0)$.  This leads us to define our log-loss function
 \begin{align*}
 	\L(a,y)&=-\log(\P(y|x))\\
 	&=-\log\left(a^y(1-a)^{1-y}\right)\\
@@ -70,5 +70,5 @@ $$\partial_b\J(w,b)=\frac{1}{n}\sum_{j=1}^n(a_j-y_j).$$
 
 
 \subsubsection{Vectorization in Python}
-\lstset{basicstyle=\footnotesize}
-\lstinputlisting[language=Python]{src/py/logReg/logRegCostFctn.py}
+Here we include the general code to train a model using logistic regression without regularization and without tuning on a cross-validation set.
+\lstinputlisting[lastline=195]{src/py/logReg/logRegBasicModel.py}
