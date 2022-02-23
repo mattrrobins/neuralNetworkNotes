@@ -1,0 +1,132 @@
+%$$\lay{z}{1}{^i_j}$$
+%$$\tensor{z}{^{[1]}^i_j}$$
+%$$\tensor{\lay{z}{1}}{^i_j}$$
+
+
+\section{Neural Networks: A Single Hidden Layer}
+Suppose now we wish to consider the binary classification problem given the training set $(x,y)$ with $x\in\R^{m\times n}$ and $y\in\{0,1\}^n$.  Usually with logistic regression we have the following network:
+$$[x^1,...,x^m]\layerfctn{\varphi}[z]\layerfctn{g}[a]\layerfctn{=}\hat{y},$$
+where
+$$z=\varphi(x)=w^Tx+b,$$
+is our affine-linear transformation, and 
+$$a=g(z)=\sigma(z)$$
+is our sigmoid function.  Logistic regression can be too simplistic of a model for many situations.  To modify this model to handle more complex situations, we introduce a new ``hidden layer'' of nodes with activation functions.  That is, we consider a network of the following form:
+\begin{align*}
+	\begin{bmatrix}
+		x^1\\
+		\vdots\\
+		x^{s_0}
+	\end{bmatrix}&\layerfctn{\lay{\varphi}{1}}\begin{bmatrix}
+		\lay{z}{1}{^1}\\
+		\vdots\\
+		\lay{z}{1}{^{s_1}}
+	\end{bmatrix}\layerfctn{\lay{g}{1}}
+	\begin{bmatrix}
+		\lay{a}{1}{^1}\\
+		\vdots\\
+		\lay{a}{1}{^{s_1}}
+	\end{bmatrix}\layerfctn{\lay{\varphi}{2}}
+	\begin{bmatrix}
+		\lay{z}{2}
+	\end{bmatrix}\layerfctn{\lay{g}{2}}
+	\begin{bmatrix}
+		\lay{a}{2}
+	\end{bmatrix}\layerfctn{=}\hat{y},
+\end{align*}
+where
+$$\lay{\varphi}{1}:\R^{s_0}\to\R^{s_1},\qquad \lay{\varphi}{1}(x)=\lay{W}{1}x+\lay{b}{1},$$
+$$\lay{\varphi}{2}:\R^{s_1}\to\R,\qquad \lay{\varphi}{2}(x)=\lay{W}{2}x+\lay{b}{2},$$
+and $\lay{W}{1}\in\R^{s_1\times s_0}, \lay{W}{2}\in\R^{1\times s_1}, \lay{b}{1}\in\R^{s_1}, \lay{b}{2}\in\R$, and $\lay{g}{\ell}$ is a \textit{broadcasted} activator function (e.g., the sigmoid function $\sigma(z)$, or $\tanh(z)$, or $\relu(z)$).  Such a network is called a $2$-layer neural network wehere $x$ is the input layer (called layer-$0$), $\lay{a}{1}$ is a hidden layer (called layer-$1$), and $\lay{a}{2}$ is the output layer (called layer-$2$).
+
+Let us lay out all of these functions explicitly (in the Smooth Category) as to facilitate our later computations for our cost function and our gradients.
+To this end:
+\begin{align*}
+	&\lay{\varphi}{1}:\R^{s_0}\to\R^{s_1},\qquad &d\lay{\varphi}{1}:T\R^{s_0}\to T\R^{s_1},\\
+	&\lay{z}{1}=\lay{\varphi}{1}(x)=\lay{W}{1}x+\lay{b}{1},&d\lay{\varphi}{1}_x(v)=\lay{W}{1}v;
+\end{align*}
+
+\begin{align*}
+	&\lay{g}{1}:\R^{s_1}\to\R^{s_1},\qquad &d\lay{g}{1}:T\R^{s_1}\to T\R^{s_1},\\
+	&\lay{a}{1}=\lay{g}{1}(\lay{z}{1}),\qquad &d\lay{g}{1}_{\lay{z}{1}}(v)=\begin{bmatrix}
+		\lay{g}{1}{'}(\lay{z}{1}{^1})&0&\cdots&0\\
+		0&\lay{g}{1}{'}(\lay{z}{1}{^2})&\cdots&0\\
+		\vdots&\ddots&\ddots&\vdots\\
+		0&0&\cdots&\lay{g}{1}{'}(\lay{z}{1}{^{s_1}})
+	\end{bmatrix}\begin{bmatrix}
+		v^1\\
+		v^2\\
+		\vdots\\
+		v^{s_1}
+	\end{bmatrix};
+\end{align*}
+
+\begin{align*}
+&\lay{\varphi}{2}:\R^{s_1}\to\R,\qquad	&d\lay{\varphi}{2}:T\R^{s_1}\to T\R,\\
+&\lay{z}{2}=\lay{\varphi}{2}(\lay{a}{1})=\lay{W}{2}\lay{a}{1}+\lay{b}{2},\qquad &d\lay{\varphi}{2}_{\lay{a}{2}}(v)=\lay{W}{2}v;
+\end{align*}
+
+\begin{align*}
+	&\lay{g}{2}:\R\to\R,\qquad &d\lay{g}{2}:T\R\to T\R,\\
+	&\lay{a}{2}=\lay{g}{2}(\lay{z}{2}),\qquad &d\lay{g}{2}_{\lay{z}{2}}(v)=\lay{g}{2}{'}(\lay{z}{2})\cdot v.
+\end{align*}
+That is, given an input $x\in\R^{s_1}$, we get a predicted value $\hat{y}$ of the form
+$$\hat{y}=\lay{g}{2}\circ\lay{\varphi}{2}\circ\lay{g}{1}\circ\lay{\varphi}{1}(x).$$
+This compositional function is known as \textit{forward propagation}.
+
+Since we wish to optimize our model with respect to our parameter $\lay{W}{\ell}$ and $\lay{b}{\ell}$,  we consider a generic loss function $\L:\R\times\R\to\R$, $\L(\hat{y},y)$, and by acknowledging the potential abuse of notation, we assume $y$ is fixed, and consider the aforementioned as a function of a single-variable
+$$\L_y:\R\to\R, \qquad \L_y(\hat{y})=\L(\hat{y},y).$$
+We now define the compositional function
+$$F:\R^{s_0}\to\R,\qquad F(x)=\L_y\circ\lay{g}{2}\circ\lay{\varphi}{2}\circ\lay{g}{1}\circ\lay{\varphi}{1}(x).$$
+As we mentioned before, we wish to optimize with respect to our parameters, but our above composition doesn't make this dependence explicit for computations.  To this end, we first consider the generic affine-linear transformation
+$$\varphi:\R^m\to\R^k,\qquad\varphi(x)=Wx+b,$$
+with $W\in\R^{k\times m}, b\in\R^k$, and instead consider the related
+$$\phi:\R^{k\times m}\times\R^k\to\R^k,\qquad \phi(W, b)=Wx+b,$$
+for some fixed $x\in\R^m$.  Then we see that
+$$d\phi:T\R^{k\times m}\times T\R^k\to T\R^k,$$
+\begin{align*}
+	d\phi_{(W,b)}(V,v)&=\rest{\frac{d}{dt}}_{t=0}\phi(W+tV, b+tv)\\
+	&=\rest{\frac{d}{dt}}_{t=0}(W+tV)x+(b+tv)\\
+	&=Vx+v.
+\end{align*}
+Taking this further, we now consider the map
+$$\Phi:\R^{k\times m}\times\R^k\times\R^m\to\R^k,\qquad \Phi(W, b, x)=Wx+b,$$
+and then computing our differential for 
+$$d\Phi:T\R^{k\times m}\times T\R^k\times T\R^m\to T\R^k,$$
+yields
+\begin{align*}
+	d\Phi_{(W,b,x)}(V,v,p)&=\rest{\frac{d}{dt}}_{t=0}\Phi(W+tV, b+tv, x+tp)\\
+	&=\rest{\frac{d}{dt}}_{t=0}\left((W+tV)(x+tp)+(b+tv)\right)\\
+	&=\rest{\frac{d}{dt}}_{t=0}\left(Wx+tVx+tWv+t^2Vp+b+tv\right)\\
+	&=Vx+v+Wp\\
+	&=d\phi_{(W,b)}(V,v)+d\varphi_x(p)
+\end{align*}
+This function $\Phi$ is what we want in our compositional-function, and so we redefine $F$ as
+\small
+\begin{align*}
+	F(\lay{W}{2},\lay{b}{2},\lay{W}{1},\lay{b}{1},x)&=\L_y\circ\lay{g}{2}\circ\lay{\Phi}{2}\circ(\lay{W}{2},\lay{b}{2},\lay{g}{1}\circ\lay{\Phi}{1}\circ(\lay{W}{1},\lay{b}{1},x))
+\end{align*}
+\normalsize
+Taking the exterior derivative, and noting the composition turns into matrix multiplication on the tangent space, we get
+\small
+\begin{align*}
+	d&F_{(\lay{W}{2},\lay{b}{2},\lay{W}{1},\lay{b}{1},x)}(U,u,V,v,p)\\
+	&=d(\L_y)_{\lay{a}{2}}\cdot d\lay{g}{2}_{\lay{z}{2}}\cdot d\lay{\Phi}{2}_{(\lay{W}{2},\lay{b}{2},\lay{a}{1})}\cdot (U, u, d\lay{g}{1}_{\lay{z}{1}}\cdot d\lay{\Phi}{1}_{(\lay{W}{1},\lay{b}{1},x)}(V,v,p))\\
+	&=d(\L_y)_{\lay{a}{2}}\cdot d\lay{g}{2}_{\lay{z}{2}}\cdot(d\lay{\phi}{2}_{(\lay{W}{2},\lay{b}{2})}(U,u)+d\lay{\varphi}{2}_{\lay{a}{1}}\cdot d\lay{g}{1}_{\lay{z}{1}}\cdot(d\lay{\phi}{1}_{(\lay{W}{1},\lay{b}{1})}(V,v)+d\lay{\varphi}{1}_x(p)))\\
+	&=d(\L_y)_{\lay{a}{2}}\cdot d\lay{g}{2}_{\lay{z}{2}}\cdot d\lay{\phi}{2}_{(\lay{W}{2},\lay{b}{2},\{\lay{a}{1}\})}(U,u)\\
+	&\qquad +d(\L_y)_{\lay{a}{2}}\cdot d\lay{g}{2}_{\lay{z}{2}}\cdot d\lay{\varphi}{2}_{\lay{a}{1},\{\lay{W}{2},\lay{b}{2}\}}\cdot d\lay{g}{1}_{\lay{z}{1}}\cdot d\lay{\phi}{1}_{(\lay{W}{1},\lay{b}{1}),\{x\}}(V,v)\\
+	&\qquad+d(\L_y)_{\lay{a}{2}}\cdot d\lay{g}{2}_{\lay{z}{2}}\cdot d\lay{\varphi}{2}_{\lay{a}{1},\{\lay{W}{2},\lay{b}{2}\}}\cdot d\lay{g}{1}_{\lay{z}{1}}\cdot d\lay{\varphi}{1}_{x,\{\lay{W}{1},\lay{b}{1}\}}(p)\\
+	&=:\lay{dF}{2}+\lay{dF}{1}+\lay{dF}{0},
+\end{align*}
+\normalsize
+where $\lay{dF}{2}$ represents the differential with respect to the parameters going from layer-$1$ to layer-$2$, $\lay{dF}{1}$ represents the differential with respect to the parameters going from layer-$0$ to layer-$1$, and $\lay{dF}{0}$ represents the differential with respect to $x$.
+
+Recalling that the gradient is the transpose of the exterior derivative in Euclidean space, we then conclude that
+\begin{align*}
+	\nabla F&=(dF)^T\\
+	&=\left(\lay{dF}{2}+\lay{dF}{1}+\lay{dF}{0}\right)^T\\
+	&=\nabla\lay{F}{2}+\nabla\lay{F}{1}+\nabla\lay{F}{0},
+\end{align*}
+and respectively,
+\begin{align*}
+	\nabla\lay{F}{2}&=\left(d(\L_y)_{\lay{a}{2}}\cdot d\lay{g}{2}_{\lay{z}{2}}\cdot d\lay{\phi}{2}_{(\lay{W}{2},\lay{b}{2},\{\lay{a}{1}\})}\right)^T
+\end{align*}
