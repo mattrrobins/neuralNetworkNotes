@@ -4,19 +4,19 @@
 
 
 \section{Neural Networks: A Single Hidden Layer}
-Suppose now we wish to consider the binary classification problem given the training set $(x,y)$ with $x\in\R^{m\times n}$ and $y\in\{0,1\}^n$.  Usually with logistic regression we have the following network:
-$$[x^1,...,x^m]\layerfctn{\varphi}[z]\layerfctn{g}[a]\layerfctn{=}\hat{y},$$
+Suppose we wish to consider the binary classification problem given the training set $(x,y)$ with $x\in\R^{s_0\times n}$ and $y\in\{0,1\}^n$.  Usually with logistic regression we have the following type of structure:
+$$[x^1,...,x^{s_0}]\layerfctn{\varphi}[z]\layerfctn{g}[a]\layerfctn{=}\hat{y},$$
 where
 $$z=\varphi(x)=w^Tx+b,$$
 is our affine-linear transformation, and 
 $$a=g(z)=\sigma(z)$$
-is our sigmoid function.  Logistic regression can be too simplistic of a model for many situations.  To modify this model to handle more complex situations, we introduce a new ``hidden layer'' of nodes with activation functions.  That is, we consider a network of the following form:
+is our sigmoid function.  Such a structure will be called a \textit{network}, and the $[a]$ is known as the \textit{activation node}.  Logistic regression can be too simplistic of a model for many situations.  To modify this model to handle more complex situations, we introduce a new ``hidden layer'' of nodes with their own (possibly different) activation functions.  That is, we consider a network of the following form:
 \begin{align*}
-	\begin{bmatrix}
+	\underbrace{\begin{bmatrix}
 		x^1\\
 		\vdots\\
 		x^{s_0}
-	\end{bmatrix}&\layerfctn{\lay{\varphi}{1}}\begin{bmatrix}
+	\end{bmatrix}}_{\text{Layer } 0}&\layerfctn{\lay{\varphi}{1}}\underbrace{\begin{bmatrix}
 		\lay{z}{1}{^1}\\
 		\vdots\\
 		\lay{z}{1}{^{s_1}}
@@ -25,18 +25,27 @@ is our sigmoid function.  Logistic regression can be too simplistic of a model f
 		\lay{a}{1}{^1}\\
 		\vdots\\
 		\lay{a}{1}{^{s_1}}
-	\end{bmatrix}\layerfctn{\lay{\varphi}{2}}
-	\begin{bmatrix}
+	\end{bmatrix}}_{\text{Layer } 1}\layerfctn{\lay{\varphi}{2}}
+	\underbrace{\begin{bmatrix}
 		\lay{z}{2}
 	\end{bmatrix}\layerfctn{\lay{g}{2}}
 	\begin{bmatrix}
 		\lay{a}{2}
-	\end{bmatrix}\layerfctn{=}\hat{y},
+	\end{bmatrix}}_{\text{Layer } 2}\layerfctn{=}\hat{y},
 \end{align*}
 where
 $$\lay{\varphi}{1}:\R^{s_0}\to\R^{s_1},\qquad \lay{\varphi}{1}(x)=\lay{W}{1}x+\lay{b}{1},$$
 $$\lay{\varphi}{2}:\R^{s_1}\to\R,\qquad \lay{\varphi}{2}(x)=\lay{W}{2}x+\lay{b}{2},$$
-and $\lay{W}{1}\in\R^{s_1\times s_0}, \lay{W}{2}\in\R^{1\times s_1}, \lay{b}{1}\in\R^{s_1}, \lay{b}{2}\in\R$, and $\lay{g}{\ell}$ is a \textit{broadcasted} activator function (e.g., the sigmoid function $\sigma(z)$, or $\tanh(z)$, or $\relu(z)$).  Such a network is called a $2$-layer neural network wehere $x$ is the input layer (called layer-$0$), $\lay{a}{1}$ is a hidden layer (called layer-$1$), and $\lay{a}{2}$ is the output layer (called layer-$2$).
+and $\lay{W}{1}\in\R^{s_1\times s_0}, \lay{W}{2}\in\R^{1\times s_1}, \lay{b}{1}\in\R^{s_1}, \lay{b}{2}\in\R$, and $\lay{g}{\ell}$ is a \textit{broadcasted} activator function (e.g., the sigmoid function $\sigma(z)$, or $\tanh(z)$, or $\relu(z)$).  Such a network is called a $2$-layer neural network where $x$ is the input layer (called layer-$0$), $\lay{a}{1}$ is a hidden layer (called layer-$1$), and $\lay{a}{2}$ is the output layer (called layer-$2$).
+
+\begin{defn}
+	Suppose $g:\R\to\R$ is any function.  Then we say $\cl{g}:\R^{m\times n}\to\R^{m\times n}$ is the \textbf{broadcast} of $g$ if
+	\begin{align*}
+		\cl{g}(A)&=\cl{g}(A^i_je_i^j)\\
+		&=g(A^i_j)e_i^j,
+	\end{align*}
+	where $A\in\R^{m\times n}$ and $\{e_i^j:1\leq i\leq m, 1\leq j\leq n\}$ is the standard basis for $\R^{m\times n}$.
+\end{defn}
 
 Let us lay out all of these functions explicitly (in the Smooth Category) as to facilitate our later computations for our cost function and our gradients.
 To this end:
@@ -77,9 +86,11 @@ Since we wish to optimize our model with respect to our parameter $\lay{W}{\ell}
 $$\L_y:\R\to\R, \qquad \L_y(\hat{y})=\L(\hat{y},y).$$
 We now define the compositional function
 $$F:\R^{s_0}\to\R,\qquad F(x)=\L_y\circ\lay{g}{2}\circ\lay{\varphi}{2}\circ\lay{g}{1}\circ\lay{\varphi}{1}(x).$$
-As we mentioned before, we wish to optimize with respect to our parameters, but our above composition doesn't make this dependence explicit for computations.  To this end, we first consider the generic affine-linear transformation
+
+\begin{comment}
+As we mentioned before, we wish to optimize with respect to our parameters, but our above composition doesn't make this dependence explicit for computations.  To this end, we first previously considered the generic affine-linear transformation
 $$\varphi:\R^m\to\R^k,\qquad\varphi(x)=Wx+b,$$
-with $W\in\R^{k\times m}, b\in\R^k$, and instead consider the related
+with $W\in\R^{k\times m}, b\in\R^k$.  We now change our point-of-view and consider the related
 $$\phi:\R^{k\times m}\times\R^k\to\R^k,\qquad \phi(W, b)=Wx+b,$$
 for some fixed $x\in\R^m$.  Then we see that
 $$d\phi:T\R^{k\times m}\times T\R^k\to T\R^k,$$
@@ -88,6 +99,58 @@ $$d\phi:T\R^{k\times m}\times T\R^k\to T\R^k,$$
 	&=\rest{\frac{d}{dt}}_{t=0}(W+tV)x+(b+tv)\\
 	&=Vx+v.
 \end{align*}
+This leads to the further decomposition of the form
+$$\phi(W,b)=\psi(W)+\id_{\R^k}(b),$$
+where $\id_{\R^k}:\R^k\to\R^k$ is the identity function, and $\psi:\R^{k\times m}\to\R^k$ is given by
+$$\psi(W)=Wx.$$
+Then by the above computation, we have that
+$$d\psi_W(V)=Vx.$$
+Moreover, suppose
+$$\{E_1^1,E_1^2,...,E_1^m,E_2^1,E_2^2,...,E_2^m,...,E_k^1,E_k^2,...,E_k^m\}$$
+is an ordering of the standard basis $\{E_\alpha^\beta\}$ for $\R^{k\times m}$ with
+$$[E_\alpha^\beta]^i_j=\delta^i_\alpha\delta_j^\beta,$$ and
+$$V=V^i_jE_i^j,$$
+then $d\psi_W\in\R^{k\times mk}$ with matrix-representation
+$$d\psi_W=\begin{bmatrix}
+	x^T&0&0&\cdots &0\\
+	0&x^T&0&\cdots &0\\
+	0&0&x^T&\cdots &0\\
+	\vdots &\vdots &\ddots &\ddots &\vdots\\
+	0&0&0&\cdots &x^T
+\end{bmatrix},$$
+where each $0$ represents $0\in\R^{1\times m}$, and
+\begin{align*}
+	d\psi_W(V)&=\begin{bmatrix}
+	x^T&0&0&\cdots &0\\
+	0&x^T&0&\cdots &0\\
+	0&0&x^T&\cdots &0\\
+	\vdots &\vdots &\ddots &\ddots &\vdots\\
+	0&0&0&\cdots &x^T
+\end{bmatrix}\begin{bmatrix}
+	V_1^1\\
+	V_2^1\\
+	\vdots\\
+	V_m^1\\
+	\vdots\\
+	V_1^k\\
+	V_2^k\\
+	\vdots\\
+	V_m^k
+\end{bmatrix}\\
+&=\begin{bmatrix}
+	x^T(V^1)^T\\
+	x^T(V^2)^T\\
+	\vdots\\
+	x^T(V^k)^T
+\end{bmatrix}.
+\end{align*}
+Finally, since for any smooth $f:\R^m\to\R^n$, we have that
+\end{comment}
+
+
+
+
+
 Taking this further, we now consider the map
 $$\Phi:\R^{k\times m}\times\R^k\times\R^m\to\R^k,\qquad \Phi(W, b, x)=Wx+b,$$
 and then computing our differential for 
