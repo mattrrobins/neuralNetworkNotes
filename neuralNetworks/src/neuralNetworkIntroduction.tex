@@ -44,7 +44,7 @@ and $\lay{W}{1}\in\R^{s_1\times s_0}, \lay{W}{2}\in\R^{1\times s_1}, \lay{b}{1}\
 		\cl{g}(A)&=\cl{g}(A^i_je_i^j)\\
 		&=g(A^i_j)e_i^j,
 	\end{align*}
-	where $A\in\R^{m\times n}$ and $\{e_i^j:1\leq i\leq m, 1\leq j\leq n\}$ is the standard basis for $\R^{m\times n}$.
+	where $A\in\R^{m\times n}$ and $\{e_i^j:1\leq i\leq m, 1\leq j\leq n\}$ is the standard basis for $\R^{m\times n}$.  In practice, we will write $g=\cl{g}$ for a broadcasted function, and let the context determine the meaning of $g$.
 \end{defn}
 
 Let us lay out all of these functions explicitly (in the Smooth Category) as to facilitate our later computations for our cost function and our gradients.
@@ -55,39 +55,35 @@ To this end:
 \end{align*}
 
 \begin{align*}
-	&\lay{g}{1}:\R^{s_1}\to\R^{s_1},\qquad &d\lay{g}{1}:T\R^{s_1}\to T\R^{s_1},\\
-	&\lay{a}{1}=\lay{g}{1}(\lay{z}{1}),\qquad &d\lay{g}{1}_{\lay{z}{1}}(v)=\begin{bmatrix}
-		\lay{g}{1}{'}(\lay{z}{1}{^1})&0&\cdots&0\\
-		0&\lay{g}{1}{'}(\lay{z}{1}{^2})&\cdots&0\\
-		\vdots&\ddots&\ddots&\vdots\\
-		0&0&\cdots&\lay{g}{1}{'}(\lay{z}{1}{^{s_1}})
-	\end{bmatrix}\begin{bmatrix}
-		v^1\\
-		v^2\\
-		\vdots\\
-		v^{s_1}
-	\end{bmatrix};
+	&\lay{g}{1}:\R^{s_1}\to\R^{s_1},\qquad &
+	d\lay{g}{1}:T\R^{s_1}\to T\R^{s_1},\\
+	&\lay{a}{1}=\lay{g}{1}(\lay{z}{1}),\qquad 
+	&\frac{\partial\lay{a}{1}{^\mu}}{\partial \lay{z}{1}{^\nu}}=\delta^\mu_\nu\lay{g}{1}{'}(\lay{z}{1}{^\mu});
 \end{align*}
 
 \begin{align*}
-&\lay{\varphi}{2}:\R^{s_1}\to\R,\qquad	&d\lay{\varphi}{2}:T\R^{s_1}\to T\R,\\
+&\lay{\varphi}{2}:\R^{s_1}\to\R^{s_2},\qquad	
+&d\lay{\varphi}{2}:T\R^{s_1}\to T\R^{s_2},\\
 &\lay{z}{2}=\lay{\varphi}{2}(\lay{a}{1})=\lay{W}{2}\lay{a}{1}+\lay{b}{2},\qquad &d\lay{\varphi}{2}_{\lay{a}{2}}(v)=\lay{W}{2}v;
 \end{align*}
 
 \begin{align*}
-	&\lay{g}{2}:\R\to\R,\qquad &d\lay{g}{2}:T\R\to T\R,\\
-	&\lay{a}{2}=\lay{g}{2}(\lay{z}{2}),\qquad &d\lay{g}{2}_{\lay{z}{2}}(v)=\lay{g}{2}{'}(\lay{z}{2})\cdot v.
+	&\lay{g}{2}:\R^{s_2}\to\R^{s_2},\qquad 
+	&d\lay{g}{2}:T\R^{s_2}\to T\R^{s_2},\\
+	&\lay{a}{2}=\lay{g}{2}(\lay{z}{2}),\qquad 
+	&\frac{\partial\lay{a}{2}{^\mu}}{\partial \lay{z}{2}{^\nu}}=\delta^\mu_\nu\lay{g}{2}{'}(\lay{z}{2}{^\mu}).
 \end{align*}
-That is, given an input $x\in\R^{s_1}$, we get a predicted value $\hat{y}$ of the form
+That is, given an input $x\in\R^{s_0}$, we get a predicted value $\hat{y}\in\R^{s_2}$ of the form
 $$\hat{y}=\lay{g}{2}\circ\lay{\varphi}{2}\circ\lay{g}{1}\circ\lay{\varphi}{1}(x).$$
 This compositional function is known as \textit{forward propagation}.
 
+\begin{comment}
 Since we wish to optimize our model with respect to our parameter $\lay{W}{\ell}$ and $\lay{b}{\ell}$,  we consider a generic loss function $\L:\R\times\R\to\R$, $\L(\hat{y},y)$, and by acknowledging the potential abuse of notation, we assume $y$ is fixed, and consider the aforementioned as a function of a single-variable
 $$\L_y:\R\to\R, \qquad \L_y(\hat{y})=\L(\hat{y},y).$$
 We now define the compositional function
 $$F:\R^{s_0}\to\R,\qquad F(x)=\L_y\circ\lay{g}{2}\circ\lay{\varphi}{2}\circ\lay{g}{1}\circ\lay{\varphi}{1}(x).$$
 
-\begin{comment}
+
 As we mentioned before, we wish to optimize with respect to our parameters, but our above composition doesn't make this dependence explicit for computations.  To this end, we first previously considered the generic affine-linear transformation
 $$\varphi:\R^m\to\R^k,\qquad\varphi(x)=Wx+b,$$
 with $W\in\R^{k\times m}, b\in\R^k$.  We now change our point-of-view and consider the related
@@ -145,7 +141,7 @@ where each $0$ represents $0\in\R^{1\times m}$, and
 \end{bmatrix}.
 \end{align*}
 Finally, since for any smooth $f:\R^m\to\R^n$, we have that
-\end{comment}
+
 
 
 
@@ -193,3 +189,152 @@ and respectively,
 \begin{align*}
 	\nabla\lay{F}{2}&=\left(d(\L_y)_{\lay{a}{2}}\cdot d\lay{g}{2}_{\lay{z}{2}}\cdot d\lay{\phi}{2}_{(\lay{W}{2},\lay{b}{2},\{\lay{a}{1}\})}\right)^T
 \end{align*}
+
+
+\end{comment}
+
+\subsection{Backpropagation}
+
+Since we wish to optimize our model with respect to our parameter $\lay{W}{\ell}$ and $\lay{b}{\ell}$,  we consider a generic loss function $\L:\R^{s_2}\times\R^{s_2}\to\R$, $\L(\hat{y},y)$, and by acknowledging the potential abuse of notation, we assume $y$ is fixed, and consider the aforementioned as a function of a single-variable
+$$\L_y:\R^{s_2}\to\R, \qquad \L_y(\hat{y})=\L(\hat{y},y).$$
+We also define the function
+$$\Phi(A,u,\xi)=A\xi+u,$$
+and note that we're suppressing a dependence on the layer $\ell$ which only affects our domain and range of $\Phi$ (and not the actual calculations involving the derivatives).  Moreover, in coordinates we see that
+\begin{align*}
+	\frac{\partial\Phi^i}{\partial A^\mu_\nu}&=\frac{\partial}{\partial A^\mu_\nu}(A^i_j\xi^j+u^i)\\
+	&=(\delta^i_\mu\delta_j^\nu \xi^j)\\
+	&=\delta^i_\mu \xi^\nu;
+\end{align*}
+\begin{align*}
+	\frac{\partial\Phi^i}{\partial u^\mu}&=\frac{\partial}{\partial u^\mu}(A^i_j\xi^j+u^i)\\
+	&=\delta^i_\mu;
+\end{align*}
+and
+\begin{align*}
+	\frac{\partial\Phi^i}{\xi^\mu}&=\frac{\partial}{\partial \xi^\mu}(A^i_j\xi^j+u^i)\\
+	&=A^i_j\delta^j_\mu\\
+	&=A^i_\mu.
+\end{align*}
+
+
+
+
+
+We now define the compositional function
+$$F:\R^{s_2\times s_1}\times \R^{s_2}\times \R^{s_1\times s_0}\times \R^{s_1}\times \R^{s_0}\to\R$$
+given by
+$$F(C,c,B,b,x)=\L_y\circ\lay{g}{2}\circ\Phi\circ(\id\times\id\times (\lay{g}{1}\circ\Phi))(C,c,B,b,x).$$
+We first introduce an error term $\lay{\delta}{2}\in\R^{s_2}$ defined by
+\begin{align*}
+	\lay{\delta}{2}:&=\nabla (\L_y\circ\lay{g}{2})(\lay{z}{2})\\
+	&=(d\L_y\circ\lay{g}{2})_{\lay{z}{2}})^T.
+\end{align*}
+Now we calculate the gradient $\frac{\partial F}{\partial C}$ in coordinates by
+\begin{align*}
+	\frac{\partial F}{\partial C^\mu_\nu}&=\frac{\partial}{\partial C^\mu_\nu}\left[\L_y\circ\lay{g}{2}\circ\Phi(C,c,\lay{a}{1})\right]\\
+	&=\sum_{j=1}^{s_2}\lay{\delta}{2}{^j}\frac{\partial}{\partial C^\mu_\nu}(C^j_i\lay{a}{1}{^i}+c^j)\\
+	&=\sum_{j=1}^{s_2}\lay{\delta}{2}{^j}\delta^j_\mu \lay{a}{1}{^\nu}\\
+	&=\lay{\delta}{2}{_\mu}\lay{a}{1}{^\nu}\\
+	&=[\lay{a}{1}\lay{\delta}{2}{^T}]_\mu^\nu
+\end{align*}
+and hence that
+\begin{align*}
+	\frac{\partial F}{\partial C}&=\left[
+		\frac{\partial F}{\partial C^\mu_\nu}
+	\right]^T\\
+	&=\left[\lay{\delta}{2}_\mu \lay{a}{1}{^\nu}\right]^T\\
+	&=\lay{\delta}{2}\lay{a}{1}{^T}.
+\end{align*}
+Moreover, we also calculate
+\begin{align*}
+	\frac{\partial F}{\partial c^\mu}&=\sum_{j=1}^{s_2}\lay{\delta}{2}{^j}\delta^j_\mu,
+\end{align*}
+and hence that
+$$\frac{\partial F}{\partial c}=\lay{\delta}{2}.$$
+
+Next we introduce another error term $\lay{\delta}{1}\in\R^{s_1}$ defined by
+\begin{align*}
+	\lay{\delta}{1}=[d\lay{g}{1}_{\lay{z}{1}}]^TC^T\lay{\delta}{2}
+\end{align*}
+with coordinates
+\begin{align*}
+	(\lay{\delta}{1}{^\mu})^T&=\sum_{i=1}^{s_2}\sum_{j=1}^{s_1}\lay{\delta}{2}{^i}C^i_j\lay{g}{1}{'}(\lay{z}{1}{^j})\delta^j_\mu\\
+	&=\sum_{i=1}^{s_2}\lay{\delta}{2}{^i}C^i_\mu\lay{g}{1}{'}(\lay{z}{1}{^\mu})
+\end{align*}
+
+and now calculate the gradient $\frac{\partial F}{\partial B}$ in coordinates by
+\begin{align*}
+	\frac{\partial F}{\partial B^\mu_\nu}&=\frac{\partial}{B^\mu_\nu}\left[\L_y\circ\lay{g}{2}\circ\Phi(C,c,\lay{g}{1}(Bx+b))\right]\\
+	&=\sum_{j=1}^{s_2}\lay{\delta}{2}{^j}\sum_{\rho=1}^{s_1}\frac{\partial\Phi^j}{\partial \xi^\rho}\sum_{\lambda=1}^{s_1}\frac{\partial \lay{a}{1}{^\rho}}{\partial \lay{z}{1}{^\lambda}}\frac{\partial \Phi^\lambda}{\partial B^\mu_\nu}\\
+	&=\sum_{j=1}^{s_2}\lay{\delta}{2}{^j}\sum_{\rho=1}^{s_1}\frac{\partial\Phi^j}{\partial \xi^\rho}\sum_{\lambda=1}^{s_1}
+	\delta^\rho_\lambda \lay{g}{1}{'}(\lay{z}{1}{^\rho})
+	\delta^{\lambda}_\mu x^\nu\\
+	&=\sum_{j=1}^{s_2}\lay{\delta}{2}{^j}\sum_{\rho=1}^{s_1}\frac{\partial\Phi^j}{\partial \xi^\rho}\delta^\rho_\mu\lay{g}{1}{'}(\lay{z}{1}{^\rho})x^\nu\\
+	&=\sum_{j=1}^{s_2}\lay{\delta}{2}{^j}\sum_{\rho=1}^{s_1}C^j_\rho\delta^\rho_\mu\lay{g}{1}{'}(\lay{z}{1}{^\rho})x^\nu\\
+	&=\sum_{j=1}^{s_2}\lay{\delta}{2}{^j}C^j_\mu\lay{g}{1}{'}(\lay{z}{1}{^\mu})x^\nu\\
+	&=\lay{\delta}{1}{_\mu}x^\nu\\
+	&=\left[x\lay{\delta}{1}{^T}\right]^\nu_\mu,
+\end{align*}
+and hence that
+\begin{align*}
+	\frac{\partial F}{\partial B}&=\left[\frac{\partial F}{\partial B^\mu_\nu}\right]^T\\
+	&=\lay{\delta}{2}x^T.
+\end{align*}
+Moreover, from the above calculation, we immediately see that
+\begin{align*}
+	\frac{\partial F}{\partial b^\mu}&=\lay{\delta}{1}.
+\end{align*}
+
+In summary, we've computed the following gradients
+\begin{align*}
+	\frac{\partial F}{\partial\lay{W}{2}}&=\lay{\delta}{2}\lay{a}{1}{^T}\\
+	\frac{\partial F}{\partial\lay{b}{2}}&=\lay{\delta}{2}\\
+	\frac{\partial F}{\partial\lay{W}{1}}&=\lay{\delta}{1}x^T\\
+	\frac{\partial F}{\partial\lay{b}{1}}&=\lay{\delta}{1},
+\end{align*}
+where
+\begin{align*}
+	\lay{\delta}{2}&=[d(\L_y\circ\lay{g}{2})_{\lay{z}{2}}]^T\\
+	\lay{\delta}{1}&=[d\lay{g}{1}_{\lay{z}{1}}]^TC^T\lay{\delta}{2}.
+\end{align*}
+
+Finally, we recall that our cost function $\J$ is the average sum of our loss function $\L$ over our training set, we get that
+\begin{align*}
+	\J(\lay{W}{2},\lay{b}{2},\lay{W}{1},\lay{b}{1})&=\frac{1}{n}\sum_{j=1}^nF(\lay{W}{2},\lay{b}{2},\lay{W}{1},\lay{b}{1},x_j),
+\end{align*}
+and hence that
+\begin{align*}
+	\frac{\partial\J}{\partial\lay{W}{2}}&=\frac{1}{n}\sum_{j=1}^n\lay{\delta}{2}{_j}\lay{a}{1}{_j}^T=\frac{1}{n}\lay{\delta}{2}\lay{a}{1}{^T}\\
+	\frac{\partial\J}{\partial\lay{b}{2}}&=\frac{1}{n}\sum_{j=1}^n\lay{\delta}{2}{_j}\\
+	\frac{\partial\J}{\partial\lay{W}{1}}&=\frac{1}{n}\sum_{j=1}^n\lay{\delta}{1}{_j}x_j^T=\frac{1}{n}\lay{\delta}{1}x^T\\
+	\frac{\partial\J}{\partial\lay{b}{1}}&=\frac{1}{n}\sum_{j=1}^n\lay{\delta}{1}{_j}
+\end{align*}
+
+
+
+
+\subsection{Vectorization in Python}
+We return the network given by
+\begin{align*}
+	\underbrace{\begin{bmatrix}
+		x^1\\
+		\vdots\\
+		x^{s_0}
+	\end{bmatrix}}_{\text{Layer } 0}&\layerfctn{\lay{\varphi}{1}}\underbrace{\begin{bmatrix}
+		\lay{z}{1}{^1}\\
+		\vdots\\
+		\lay{z}{1}{^{s_1}}
+	\end{bmatrix}\layerfctn{\lay{g}{1}}
+	\begin{bmatrix}
+		\lay{a}{1}{^1}\\
+		\vdots\\
+		\lay{a}{1}{^{s_1}}
+	\end{bmatrix}}_{\text{Layer } 1}\layerfctn{\lay{\varphi}{2}}
+	\underbrace{\begin{bmatrix}
+		\lay{z}{2}
+	\end{bmatrix}\layerfctn{\lay{g}{2}}
+	\begin{bmatrix}
+		\lay{a}{2}
+	\end{bmatrix}}_{\text{Layer } 2}\layerfctn{=}\hat{y},
+\end{align*}
+and show how such a model would be trained using python below.
