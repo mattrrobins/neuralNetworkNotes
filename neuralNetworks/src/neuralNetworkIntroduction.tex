@@ -311,6 +311,18 @@ and hence that
 \end{align*}
 
 
+\subsection{Activation Functions}
+There are mainly only a handful of activating functions we consider for our non-linearity conditions.  We have the sigmoid function $\sigma(z)$ given by
+$$\sigma:\R\to(0,1),\qquad \sigma(z)=\frac{1}{1+e^{-z}}.$$
+We have the hyperbolic tangent function $\tanh(z)$ given by
+$$\tanh:\R\to(-1,1),\qquad\tanh(z)=\frac{e^z-e^{-z}}{e^z+e^{-z}}.$$
+We have the rectified linear unit function $\relu(z)$ given by
+$$\relu:\R\to[0,\infty),\qquad\relu(z)=\max\{0,z\}.$$
+We finally have the leaky-ReLU function $\lrelu(z)$ given by
+$$\lrelu:\R\to\R,\qquad \lrelu(z)=\max\{\beta z, z\},$$
+for some $\beta>0$ (typically chosen very small).
+
+
 
 
 \subsection{Vectorization in Python}
