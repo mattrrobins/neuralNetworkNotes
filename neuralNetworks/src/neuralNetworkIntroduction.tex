@@ -10,7 +10,7 @@ where
 $$z=\varphi(x)=w^Tx+b,$$
 is our affine-linear transformation, and 
 $$a=g(z)=\sigma(z)$$
-is our sigmoid function.  Such a structure will be called a \textit{network}, and the $[a]$ is known as the \textit{activation node}.  Logistic regression can be too simplistic of a model for many situations.  To modify this model to handle more complex situations, we introduce a new ``hidden layer'' of nodes with their own (possibly different) activation functions.  That is, we consider a network of the following form:
+is our sigmoid function.  Such a structure will be called a \textit{network}, and the $[a]$ is known as the \textit{activation node}.  Logistic regression can be too simplistic of a model for many situations, e.g., if the dataset isn't linearly separable (i.e., there doesn't exist some well-defined decision boundary), then logistic regression won't give a high-accuracy model.  To modify this model to handle more complex situations, we introduce a new ``hidden layer'' of nodes with their own (possibly different) activation functions.  That is, we consider a network of the following form:
 \begin{align*}
 	\underbrace{\begin{bmatrix}
 		x^1\\
@@ -412,13 +412,13 @@ Suppose $g:\R^m\to\R^m$ is the broadcasting of $\relu$ from $\R$ to $\R^m$.   Th
 $$g(z)=\relu(z^i;\beta),$$
 and $dg_z:T_z\R^m\to T_{g(z)}\R^m$ given by
 \begin{align*}
-	dg_z(V)&=[\relu'(z^i;\beta)]\odot[v^i]\\
+	dg_z(v)&=[\relu'(z^i;\beta)]\odot[v^i]\\
 	&=\delta^i_j(\beta\chi_{(-\infty,0)}(z^i)+\chi_{[0,\infty)}(z^i))v^j.
 \end{align*}
 
 
 \subsubsection{The Softmax Function}
-We finally have the softmax function $\softmax(v)$ given by
+We finally have the softmax function $\softmax(z)$ given by
 $$\softmax:\R^m\to\R^m,\qquad \softmax(z)=\frac{1}{\sum_{j=1}^me^{z^j}}\begin{pmatrix}
 	e^{z^1}\\
 	e^{z^2}\\
@@ -450,7 +450,7 @@ or rather in coordinates
 	[d(\softmax)_z]^i_j&=S^i(\delta^i_j+\delta_{\rho j}S^\rho),
 \end{align*}
 where
-$$S^\mu=\softmax(z)^\mu.$$
+$$S^\mu=x^\mu\circ\softmax(z).$$
 
 
 
@@ -517,4 +517,4 @@ Similarly, we compute
 
 \subsubsection{Vectorization in Python}
 
-\lstinputlisting[lastline=200]{src/py/neuralNetIntro/singleHiddenLayerNeuralNetwork.py}
+\lstinputlisting[lastline=361]{src/py/neuralNetIntro/singleHiddenLayerNeuralNetwork.py}
