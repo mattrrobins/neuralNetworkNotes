@@ -4,7 +4,7 @@
 
 
 \section{Neural Networks: A Single Hidden Layer}
-Suppose we wish to consider the binary classification problem given the training set $(x,y)$ with $x\in\R^{s_0\times n}$ and $y\in\{0,1\}^n$.  Usually with logistic regression we have the following type of structure:
+Suppose we wish to consider the binary classification problem given the training set $(x,y)$ with $x\in\R^{s_0\times n}$ and $y\in\{0,1\}^{1\times n}$.  Usually with logistic regression we have the following type of structure:
 $$[x^1,...,x^{s_0}]\layerfctn{\varphi}[z]\layerfctn{g}[a]\layerfctn{=}\hat{y},$$
 where
 $$z=\varphi(x)=w^Tx+b,$$
@@ -39,13 +39,36 @@ $$\lay{\varphi}{2}:\R^{s_1}\to\R,\qquad \lay{\varphi}{2}(x)=\lay{W}{2}x+\lay{b}{
 and $\lay{W}{1}\in\R^{s_1\times s_0}, \lay{W}{2}\in\R^{1\times s_1}, \lay{b}{1}\in\R^{s_1}, \lay{b}{2}\in\R$, and $\lay{g}{\ell}$ is a \textit{broadcasted} activator function (e.g., the sigmoid function $\sigma(z)$, or $\tanh(z)$, or $\relu(z)$).  Such a network is called a $2$-layer neural network where $x$ is the input layer (called layer-$0$), $\lay{a}{1}$ is a hidden layer (called layer-$1$), and $\lay{a}{2}$ is the output layer (called layer-$2$).
 
 \begin{defn}
-	Suppose $g:\R\to\R$ is any function.  Then we say $\cl{g}:\R^{m\times n}\to\R^{m\times n}$ is the \textbf{broadcast} of $g$ if
+	Suppose $g:\R\to\R$ is any function.  Then we say $G:\R^{m}\to\R^{m}$ is the \textbf{broadcast} of $g$ from $\R$ to $\R^m$ if
 	\begin{align*}
-		\cl{g}(A)&=\cl{g}(A^i_je_i^j)\\
-		&=g(A^i_j)e_i^j,
+		G(v)&=G(v^ie_i)\\
+		&=g(v^i)e_i,
 	\end{align*}
-	where $A\in\R^{m\times n}$ and $\{e_i^j:1\leq i\leq m, 1\leq j\leq n\}$ is the standard basis for $\R^{m\times n}$.  In practice, we will write $g=\cl{g}$ for a broadcasted function, and let the context determine the meaning of $g$.
+	where $v\in\R^{m}$ and $\{e_i:1\leq i\leq m\}$ is the standard basis for $\R^{m}$.  In practice, we will write $g=G$ for a broadcasted function, and let the context determine the meaning of $g$.
 \end{defn}
+
+\begin{lem}\label{lem: broadcastingDifferential}
+	Suppose $g:\R\to\R$ is any smooth function and $G:\R^m\to\R^m$ is the broadcasting of $g$ from $\R$ to $\R^m$.  Then the differential $dG_z:T_z\R^m\to T_{G(z)}\R^m$ is given by
+	$$dG_z(v)=[g'(z^i)]\odot [v^i],$$
+	where $\odot$ is the Hadamard product (also know as component-wise multiplication), and has matrix-representation in $\R^{m\times m}$ given by
+	$$[dG_z]^i_j =\delta^i_j g'(z^i).$$
+\end{lem}
+
+\begin{proof}
+	We calculate
+	\begin{align*}
+		dG_z(v)&=\rest{\frac{d}{dt}}_{t=0}G(z+tv)\\
+		&=\rest{\frac{d}{dt}}_{t=0}(g(z^i+tv^i))\\
+		&=(g'(z^i)v^i)\\
+		&=[g'(z^i)]\odot[v^i],
+	\end{align*}
+	and letting $e_1,...e_m$ denote the usual basis for $T_z\R^m$ (identified with $\R^m$), we see that
+	\begin{align*}
+		dG_z(e_j)&=[g'(z^i)]\odot e_j\\
+		&=g'(z^j)e_j,
+	\end{align*}
+	from which conclude that $dG_z$ is diagonal with $(j,j)$-th entry $g'(z^j)$ as desired.
+\end{proof}
 
 Let us lay out all of these functions explicitly (in the Smooth Category) as to facilitate our later computations for our cost function and our gradients.
 To this end:
@@ -228,7 +251,7 @@ We first introduce an error term $\lay{\delta}{2}\in\R^{s_2}$ defined by
 \begin{align*}
 	\lay{\delta}{2}:&=\nabla (\L_y\circ\lay{g}{2})(\lay{z}{2})\\
 	&=(d\L_y\circ\lay{g}{2})_{\lay{z}{2}})^T.
-\end{align*}
+\end{align*}\HOX{$\lay{\delta}{2}=d_{\lay{z}{2}}F$}
 Now we calculate the gradient $\frac{\partial F}{\partial C}$ in coordinates by
 \begin{align*}
 	\frac{\partial F}{\partial C^\mu_\nu}&=\frac{\partial}{\partial C^\mu_\nu}\left[\L_y\circ\lay{g}{2}\circ\Phi(C,c,\lay{a}{1})\right]\\
@@ -256,6 +279,7 @@ Next we introduce another error term $\lay{\delta}{1}\in\R^{s_1}$ defined by
 \begin{align*}
 	\lay{\delta}{1}=[d\lay{g}{1}_{\lay{z}{1}}]^TC^T\lay{\delta}{2}
 \end{align*}
+\HOX{$\lay{\delta}{1}=d_{\lay{z}{1}}F$}
 with coordinates
 \begin{align*}
 	(\lay{\delta}{1}{^\mu})^T&=\sum_{i=1}^{s_2}\sum_{j=1}^{s_1}\lay{\delta}{2}{^i}C^i_j\lay{g}{1}{'}(\lay{z}{1}{^j})\delta^j_\mu\\
@@ -312,20 +336,127 @@ and hence that
 
 
 \subsection{Activation Functions}
-There are mainly only a handful of activating functions we consider for our non-linearity conditions.  We have the sigmoid function $\sigma(z)$ given by
+There are mainly only a handful of activating functions we consider for our non-linearity conditions.  
+
+\subsubsection{The Sigmoid Function}
+We have the sigmoid function $\sigma(z)$ given by
 $$\sigma:\R\to(0,1),\qquad \sigma(z)=\frac{1}{1+e^{-z}}.$$
+We note that since
+\begin{align*}
+	1-\sigma(z)&=1-\frac{1}{1+e^{-z}}\\
+	&=\frac{e^{-z}}{1+e^{-z}}
+\end{align*}
+\begin{align*}
+	\sigma'(z)&=\frac{e^{-z}}{(1+e^{-z})^2}\\
+	&=\frac{1}{1+e^{-z}}\cdot\frac{e^{-z}}{1+e^{-z}}\\
+	&=\sigma(z)(1-\sigma(z))
+\end{align*}
+
+Moreover, suppose that $g:\R^m\to\R^m$ is the broadcasting of $\sigma$ from $\R$ to $\R^m$, then for $z=(z^1,...,z^m)\in\R^m$, we have that
+$$g(z)=(\sigma(z^i)),$$
+and $dg_z:T_z\R^m\to T_{g(z)}\R^m$ given by
+\begin{align*}
+	dg_z(v)&=\rest{\frac{d}{dt}}_{t=0}g(z+tv)\\
+	&=\rest{\frac{d}{dt}}_{t=0}(\sigma(z^i+tv^i))\\
+	&=(\sigma'(z^i)v^i)\\
+	&=(\sigma(z^i)(1-\sigma(z^i))v^i)\\
+	&=g(z)\odot(1-g(z))\odot v,
+\end{align*}
+where $\odot$ represents the Hadamard product (or component-wise multiplication); or rather, as as a matrix in $\R^{m\times m}$,
+$$[dg_z]^\mu_\nu=\delta^\mu_\nu\sigma(z^\mu)(1-\sigma(z^\mu)).$$
+
+
+\subsubsection{The Hyperbolic Tangent Function}
 We have the hyperbolic tangent function $\tanh(z)$ given by
 $$\tanh:\R\to(-1,1),\qquad\tanh(z)=\frac{e^z-e^{-z}}{e^z+e^{-z}}.$$
-We have the rectified linear unit function $\relu(z)$ given by
-$$\relu:\R\to[0,\infty),\qquad\relu(z)=\max\{0,z\}.$$
-We finally have the leaky-ReLU function $\lrelu(z)$ given by
-$$\lrelu:\R\to\R,\qquad \lrelu(z)=\max\{\beta z, z\},$$
+We then calculate
+\begin{align*}
+	\tanh'(z)&=\frac{(e^z+e^{-z})(e^z+e^{-z})-(e^z-e^{-z})(e^z-e^{-z})}{(e^z+e^{-z})^2}\\
+	&=\frac{(e^z+e^{-z})^2}{(e^z+e^{-z})^2}-\frac{e^z-e^{-z})^2}{(e^z+e^{-z})^2}\\
+	&=1-\tanh^2(z).
+\end{align*}
+
+Suppose $g:\R^m\to\R^m$ is the broadcasting of $\tanh$ from $\R$ to $\R^m$, then for $z=(z^1,...,z^m)\in\R^m$, we have that
+$$g(z)=(\tanh(z^i)),$$
+and $dg_z:T_z\R^m\to T_{g(z)}\R^m$ given by
+\begin{align*}
+	dg_z(v)&=[\tanh'(z^i)]\odot[v^i]\\
+	&=[1-\tanh^2(z^i)]\odot[v^i]\\
+	&=\delta^i_j(1-\tanh^2(z^i))v^j.
+\end{align*}
+
+
+\subsubsection{The Rectified Linear Function}
+We have the leaky-ReLU function $\relu(z;\beta)$ given by
+$$\relu:\R\to\R,\qquad \relu(z;\beta)=\max\{\beta z, z\},$$
 for some $\beta>0$ (typically chosen very small).
 
+We have the rectified linear unit function $\relu(z)$ given by setting $\beta=0$ in the leaky-ReLu function, i.e.,
+$$\relu:\R\to[0,\infty),\qquad\relu(z)=\relu(z;\beta=0)=\max\{0,z\}.$$
+We then calculate
+\begin{align*}
+	\relu'(z;\beta)&=\begin{cases}
+		\beta&z<0\\
+		1&z\geq0
+	\end{cases}\\
+	&=\beta\chi_{(-\infty,0)}(z)+\chi_{[0,\infty)}(z),
+\end{align*}
+where
+$$\chi_A(z)=\begin{cases}
+	1&z\in A\\
+	0&z\notin A
+\end{cases},$$
+is the indicator function.
+
+Suppose $g:\R^m\to\R^m$ is the broadcasting of $\relu$ from $\R$ to $\R^m$.   Then for $z=(z^1,...,z^m)\in\R^m$, we have that
+$$g(z)=\relu(z^i;\beta),$$
+and $dg_z:T_z\R^m\to T_{g(z)}\R^m$ given by
+\begin{align*}
+	dg_z(V)&=[\relu'(z^i;\beta)]\odot[v^i]\\
+	&=\delta^i_j(\beta\chi_{(-\infty,0)}(z^i)+\chi_{[0,\infty)}(z^i))v^j.
+\end{align*}
+
+
+\subsubsection{The Softmax Function}
+We finally have the softmax function $\softmax(v)$ given by
+$$\softmax:\R^m\to\R^m,\qquad \softmax(z)=\frac{1}{\sum_{j=1}^me^{z^j}}\begin{pmatrix}
+	e^{z^1}\\
+	e^{z^2}\\
+	\vdots\\
+	e^{z^m}
+\end{pmatrix},$$
+which we typically use on our outer-layer to obtain a probability distribution over our predicted labels.  We then calculate for $z=(z^1,...,z^m)\in\R^m$ that $d(\softmax)_z:T_z\R^m\to T_{\softmax(z)}\R^m$
+\begin{align*}
+	d(\softmax)_z(v)&=\rest{\frac{d}{dt}}_{t=0}\softmax(z+tv)\\
+	&=\rest{\frac{d}{dt}}_{t=0}\frac{1}{\sum_{j=1}^me^{z^j+tv^j}}\begin{pmatrix}
+		e^{z^1+tv^1}\\
+		e^{z^2+tv^2}\\
+		\vdots\\
+		e^{z^m+tv^m}
+	\end{pmatrix}\\
+	&=\frac{-1}{\left(\sum_{j=1}^me^{z^j}\right)^2}\left(\sum_{j=1}^me^{z^j}v^j\right)\begin{pmatrix}
+		e^{z^1}\\
+		\vdots\\
+		e^{z^m}
+	\end{pmatrix}+\frac{1}{\sum_{j=1}^me^{z^j}}\begin{pmatrix}
+		e^{z^1}v^1\\
+		\vdots\\
+		e^{z^m}v^m
+	\end{pmatrix}\\
+	&=-\ip{\softmax(z),v}\softmax(z)+\softmax(z)\odot v,
+\end{align*}
+or rather in coordinates
+\begin{align*}
+	[d(\softmax)_z]^i_j&=S^i(\delta^i_j+\delta_{\rho j}S^\rho),
+\end{align*}
+where
+$$S^\mu=\softmax(z)^\mu.$$
 
 
 
-\subsection{Vectorization in Python}
+
+
+\subsection{Binary Classification - An Example}
 We return the network given by
 \begin{align*}
 	\underbrace{\begin{bmatrix}
@@ -349,4 +480,41 @@ We return the network given by
 		\lay{a}{2}
 	\end{bmatrix}}_{\text{Layer } 2}\layerfctn{=}\hat{y},
 \end{align*}
-and show how such a model would be trained using python below.
+and show how such a model would be trained using python below.  We assume layer-$2$ has the sigmoid function (since it's binary classification) as an activator and our hidden layer has the $\relu$ function as activators.
+
+We note that $s_2=1$ since we're dealing with a single activator in this layer, and
+$$\lay{a}{2}=\lay{g}{2}(\lay{z}{2})=\sigma(\lay{z}{2}),$$
+with
+$$d(\lay{g}{2})_{\lay{z}{2}}=\sigma'(\lay{z}{2})=\sigma(\lay{z}{2})(1-\sigma(\lay{z}{2}))=\lay{a}{2}(1-\lay{a}{2}).$$
+In layer-$1$, we have that
+$$\lay{a}{1}=\lay{g}{1}(\lay{z}{1})=\relu(\lay{z}{1}),$$
+with
+$$d(\lay{g}{1})_{\lay{z}{1}}=\left[\delta^\mu_\nu\chi_{[0,\infty)}(\lay{z}{1}{^\mu})\right]^\mu_\nu.$$
+Finally, we choose our loss function $\L(\hat{y},y)$ to be the log-loss function (since we're using the sigmoid activator on the outer-layer), i.e.,
+$$\L(\hat{y},y)=-y\log(\hat{y})-(1-y)\log(1-\hat{y}),$$
+or rather
+$$\L(x,y)=-y\log(\lay{a}{2})-(1-y)\log(1-\lay{a}{2}).$$
+We then have the cost function $\J$ given by
+\begin{align*}
+	\J(\lay{W}{2},\lay{b}{2},\lay{W}{1},\lay{b}{1})&=\frac{-1}{n}\sum_{j=1}^n\left(y_j\log(\lay{a}{2}{_j})+(1-y_j)\log(1-\lay{a}{2}{_j})\right)\\
+	&=\frac{-1}{n}\left(\ip{y,\log(\lay{a}{2})}+\ip{1-y,\log(1-\lay{a}{2})}\right)
+\end{align*}
+
+Moreover, when using backpropagation, we see that
+\begin{align*}
+	\lay{\delta}{2}{^T_j}&=d(\L_{y_j})_{\lay{a}{2}}\cdot d(\lay{g}{2})_{\lay{z}{2}{_j}}\\
+	&=\left(-\frac{y_j}{\lay{a}{2}{_j}}+\frac{1-y_j}{1-\lay{a}{2}{_j}}\right)\cdot(\lay{a}{2}{_j}(1-\lay{a}{2}{_j})\\
+	&=\lay{a}{2}{_j}-y_j,
+\end{align*}
+or rather
+$$\lay{\delta}{2}=\lay{a}{2}-y.$$
+Similarly, we compute
+\begin{align*}
+	\lay{\delta}{1}{_j^T}&=\lay{\delta}{2}{_j^T}\lay{W}{2}[d\lay{g}{1}_{\lay{z}{1}{_j}}]\\
+	&=\lay{\delta}{2}{_j^T}\lay{W}{2}[\delta^\mu_\nu\cdot\chi_{[0,\infty)}(\lay{z}{1}{^\mu_j})]
+\end{align*}
+
+
+\subsubsection{Vectorization in Python}
+
+\lstinputlisting[lastline=200]{src/py/neuralNetIntro/singleHiddenLayerNeuralNetwork.py}
