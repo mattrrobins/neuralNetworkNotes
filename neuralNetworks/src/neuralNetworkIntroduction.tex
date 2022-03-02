@@ -10,7 +10,7 @@ where
 $$z=\varphi(x)=w^Tx+b,$$
 is our affine-linear transformation, and 
 $$a=g(z)=\sigma(z)$$
-is our sigmoid function.  Such a structure will be called a \textit{network}, and the $[a]$ is known as the \textit{activation node}.  Logistic regression can be too simplistic of a model for many situations, e.g., if the dataset isn't linearly separable (i.e., there doesn't exist some well-defined decision boundary), then logistic regression won't give a high-accuracy model.  To modify this model to handle more complex situations, we introduce a new ``hidden layer'' of nodes with their own (possibly different) activation functions.  That is, we consider a network of the following form:
+is our sigmoid function.  Such a structure will be called a \textit{network}, and the $[a]$ is known as the \textit{activation node}.  Logistic regression can be too simplistic of a model for many situations, e.g., if the dataset isn't linearly separable (i.e., there doesn't exist some well-defined decision boundary built from a linear-surface), then logistic regression won't give a high-accuracy model.  To modify this model to handle more complex situations, we introduce a new ``hidden layer'' of nodes with their own (possibly different) activation functions.  That is, we consider a network of the following form:
 \begin{align*}
 	\underbrace{\begin{bmatrix}
 		x^1\\
@@ -70,7 +70,7 @@ and $\lay{W}{1}\in\R^{s_1\times s_0}, \lay{W}{2}\in\R^{1\times s_1}, \lay{b}{1}\
 	from which conclude that $dG_z$ is diagonal with $(j,j)$-th entry $g'(z^j)$ as desired.
 \end{proof}
 
-Let us lay out all of these functions explicitly (in the Smooth Category) as to facilitate our later computations for our cost function and our gradients.
+Returning to our network, let us lay out all of these functions explicitly (in the Smooth Category) as to facilitate our later computations for our cost function and our gradients.
 To this end:
 \begin{align*}
 	&\lay{\varphi}{1}:\R^{s_0}\to\R^{s_1},\qquad &d\lay{\varphi}{1}:T\R^{s_0}\to T\R^{s_1},\\
@@ -216,7 +216,7 @@ and respectively,
 
 \end{comment}
 
-\subsection{Backpropagation}
+\subsection{Backpropagation}\label{sec:backPropDerivation}
 
 Since we wish to optimize our model with respect to our parameter $\lay{W}{\ell}$ and $\lay{b}{\ell}$,  we consider a generic loss function $\L:\R^{s_2}\times\R^{s_2}\to\R$, $\L(\hat{y},y)$, and by acknowledging the potential abuse of notation, we assume $y$ is fixed, and consider the aforementioned as a function of a single-variable
 $$\L_y:\R^{s_2}\to\R, \qquad \L_y(\hat{y})=\L(\hat{y},y).$$
@@ -386,7 +386,7 @@ and $dg_z:T_z\R^m\to T_{g(z)}\R^m$ given by
 \end{align*}
 
 
-\subsubsection{The Rectified Linear Function}
+\subsubsection{The Rectified Linear Unit Function}
 We have the leaky-ReLU function $\relu(z;\beta)$ given by
 $$\relu:\R\to\R,\qquad \relu(z;\beta)=\max\{\beta z, z\},$$
 for some $\beta>0$ (typically chosen very small).
@@ -514,6 +514,15 @@ Similarly, we compute
 	&=\lay{\delta}{2}{_j^T}\lay{W}{2}[\delta^\mu_\nu\cdot\chi_{[0,\infty)}(\lay{z}{1}{^\mu_j})]
 \end{align*}
 
+
+\subsubsection{Random Initialization}
+In the section that follows, we see that to begin gradient descent for a shallow neural network, we initialize our parameters $\lay{b}{\ell}$ to be $0$, but choose an arbitrarily small, but nonzero initialization for $\lay{W}{\ell}$.  Let's see why we choose $\lay{W}{\ell}$ to be nonzero.  Indeed, suppose we initialize with $\lay{b}{\ell}=0$ and $\lay{W}{\ell}=0$.  Then we see that
+$$\lay{\delta}{1}{^T}=\lay{\delta}{2}\lay{W}{2}d\lay{g}{1}_{\lay{z}{1}}=0,$$
+and so
+$$\frac{\partial\J}{\partial\lay{W}{1}}=\frac{1}{n}\lay{\delta}{1}x^T=0.$$
+Then we conclude that our parameter $\lay{W}{1}$ remains at $0$ during every iteration which is enough reason to not initialize $\lay{W}{2}$ at $0$.  Similarly, since 
+$$\lay{a}{1}=\tanh(\lay{W}{1}x+\lay{b}{1})=\tanh(0)=0,$$
+we reach a similar conclusion about $\lay{W}{1}$ and $\lay{W}{2}$, respectively.  
 
 \subsubsection{Vectorization in Python}
 
