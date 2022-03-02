@@ -8,7 +8,7 @@ Suppose we wish to consider the binary classification problem given the training
 $$[x^1,...,x^{s_0}]\layerfctn{\varphi}[z]\layerfctn{g}[a]\layerfctn{=}\hat{y},$$
 where
 $$z=\varphi(x)=w^Tx+b,$$
-is our affine-linear transformation, and 
+is our affine-linear transformation, and
 $$a=g(z)=\sigma(z)$$
 is our sigmoid function.  Such a structure will be called a \textit{network}, and the $[a]$ is known as the \textit{activation node}.  Logistic regression can be too simplistic of a model for many situations, e.g., if the dataset isn't linearly separable (i.e., there doesn't exist some well-defined decision boundary built from a linear-surface), then logistic regression won't give a high-accuracy model.  To modify this model to handle more complex situations, we introduce a new ``hidden layer'' of nodes with their own (possibly different) activation functions.  That is, we consider a network of the following form:
 \begin{align*}
@@ -80,20 +80,20 @@ To this end:
 \begin{align*}
 	&\lay{g}{1}:\R^{s_1}\to\R^{s_1},\qquad &
 	d\lay{g}{1}:T\R^{s_1}\to T\R^{s_1},\\
-	&\lay{a}{1}=\lay{g}{1}(\lay{z}{1}),\qquad 
+	&\lay{a}{1}=\lay{g}{1}(\lay{z}{1}),\qquad
 	&\frac{\partial\lay{a}{1}{^\mu}}{\partial \lay{z}{1}{^\nu}}=\delta^\mu_\nu\lay{g}{1}{'}(\lay{z}{1}{^\mu});
 \end{align*}
 
 \begin{align*}
-&\lay{\varphi}{2}:\R^{s_1}\to\R^{s_2},\qquad	
+&\lay{\varphi}{2}:\R^{s_1}\to\R^{s_2},\qquad
 &d\lay{\varphi}{2}:T\R^{s_1}\to T\R^{s_2},\\
 &\lay{z}{2}=\lay{\varphi}{2}(\lay{a}{1})=\lay{W}{2}\lay{a}{1}+\lay{b}{2},\qquad &d\lay{\varphi}{2}_{\lay{a}{2}}(v)=\lay{W}{2}v;
 \end{align*}
 
 \begin{align*}
-	&\lay{g}{2}:\R^{s_2}\to\R^{s_2},\qquad 
+	&\lay{g}{2}:\R^{s_2}\to\R^{s_2},\qquad
 	&d\lay{g}{2}:T\R^{s_2}\to T\R^{s_2},\\
-	&\lay{a}{2}=\lay{g}{2}(\lay{z}{2}),\qquad 
+	&\lay{a}{2}=\lay{g}{2}(\lay{z}{2}),\qquad
 	&\frac{\partial\lay{a}{2}{^\mu}}{\partial \lay{z}{2}{^\nu}}=\delta^\mu_\nu\lay{g}{2}{'}(\lay{z}{2}{^\mu}).
 \end{align*}
 That is, given an input $x\in\R^{s_0}$, we get a predicted value $\hat{y}\in\R^{s_2}$ of the form
@@ -172,7 +172,7 @@ Finally, since for any smooth $f:\R^m\to\R^n$, we have that
 
 Taking this further, we now consider the map
 $$\Phi:\R^{k\times m}\times\R^k\times\R^m\to\R^k,\qquad \Phi(W, b, x)=Wx+b,$$
-and then computing our differential for 
+and then computing our differential for
 $$d\Phi:T\R^{k\times m}\times T\R^k\times T\R^m\to T\R^k,$$
 yields
 \begin{align*}
@@ -336,7 +336,7 @@ and hence that
 
 
 \subsection{Activation Functions}
-There are mainly only a handful of activating functions we consider for our non-linearity conditions.  
+There are mainly only a handful of activating functions we consider for our non-linearity conditions.
 
 \subsubsection{The Sigmoid Function}
 We have the sigmoid function $\sigma(z)$ given by
@@ -520,10 +520,10 @@ In the section that follows, we see that to begin gradient descent for a shallow
 $$\lay{\delta}{1}{^T}=\lay{\delta}{2}\lay{W}{2}d\lay{g}{1}_{\lay{z}{1}}=0,$$
 and so
 $$\frac{\partial\J}{\partial\lay{W}{1}}=\frac{1}{n}\lay{\delta}{1}x^T=0.$$
-Then we conclude that our parameter $\lay{W}{1}$ remains at $0$ during every iteration which is enough reason to not initialize $\lay{W}{2}$ at $0$.  Similarly, since 
+Then we conclude that our parameter $\lay{W}{1}$ remains at $0$ during every iteration which is enough reason to not initialize $\lay{W}{2}$ at $0$.  Similarly, since
 $$\lay{a}{1}=\tanh(\lay{W}{1}x+\lay{b}{1})=\tanh(0)=0,$$
-we reach a similar conclusion about $\lay{W}{1}$ and $\lay{W}{2}$, respectively.  
+we reach a similar conclusion about $\lay{W}{1}$ and $\lay{W}{2}$, respectively.
 
 \subsubsection{Vectorization in Python}
 
-\lstinputlisting[lastline=361]{src/py/neuralNetIntro/singleHiddenLayerNeuralNetwork.py}
+\lstinputlisting[lastline=361]{src/py/singleHiddenLayerNeuralNetwork.py}

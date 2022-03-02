@@ -431,7 +431,7 @@ def relu(z, beta=0.0):
     # Compute differential ReLU'(z)
     dr = np.zeros(z.size)
     dr[z < 0] = beta
-    dr[~(r < 0)] = 1
+    dr[~(z < 0)] = 1
     return r, dr
 
 def cost_function(params,

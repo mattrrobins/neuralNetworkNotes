@@ -65,6 +65,34 @@ As with a shallow network, our functional composition to obtain $\lay{a}{L}$ is 
 \subsection{Backpropagation}
 As the general derivation for backpropagation can be easily (if not tediously) generalized from \cref{sec:backPropDerivation} using induction, we give the general outline for computational purposes.
 
+Let $\L:\R^{s_L}\times\R^{s_L}\to\R$ be a generic loss function, and suppose our cost function is given by the usual
+$$\J(W,b)=\frac{1}{n}\sum_{j=1}^n\L(\hat{y}_j,y_j).$$
+Then from previous computations, we have the following gradients for any $\ell\in\{1,2,...,L\}$, that
+\begin{align*}
+	\frac{\partial\J}{\partial\lay{W}{\ell}}&=\frac{1}{n}\lay{\delta}{\ell}\lay{a}{\ell-1}{^T}\\
+	\frac{\partial\J}{\partial\lay{b}{\ell}}&=\frac{1}{n}\sum_{j=1}^n\lay{\delta}{\ell}{_j}
+\end{align*}
+where we impose the notation of
+$$\lay{a}{0}:=x.$$
+So we need only give a full characterization of $\lay{\delta}{\ell}.$. To this end, we define recursively starting at layer-$L$ by
+\begin{align*}
+	\lay{\delta}{L}{^T}&:=d(\L_y)_{\lay{a}{L}}\cdot d\lay{g}{L}_{\lay{z}{L}},\\
+	\lay{\delta}{L-1}{^T}&:=\lay{\delta}{L}{^T}\cdot\lay{W}{L}\cdot d\lay{g}{L-1}_{\lay{z}{L-1}},\\
+	&\vdots\\
+	\lay{\delta}{\ell}{^T}&:=\lay{\delta}{\ell+1}{^T}\lay{W}{\ell+1}d\lay{g}{\ell}_{\lay{z}{\ell}},\\
+	&\vdots\\
+	\lay{\delta}{1}{^T}&:=\lay{\delta}{2}{^T}\lay{W}{2}d\lay{g}{1}_{\lay{z}{1}},
+\end{align*}
+as desired.
+
+
+
+\subsubsection{Vectorization in Python}
+We implement a neural network with an arbitrary number of layers and nodes, with the $\relu$ function as the activator on all hidden nodes and the sigmoid function on the output layer for binary classification with the log-loss function.
+
+\lstinputlisting[lastline=300]{src/py/deepNeuralNetwork.py}
+
+
 
 
 
