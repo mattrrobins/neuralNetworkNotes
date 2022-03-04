@@ -52,6 +52,8 @@
 
 
 
+
+
 \newtheorem{thm}{Theorem}[section]
 \newtheorem{prop}[thm]{Proposition}
 \newtheorem{cor}[thm]{Corollary}
@@ -65,6 +67,9 @@
 \renewenvironment{proof}{{\noindent\bfseries Proof:}}{\qed}
 
 
+
+
+
 \input{/Users/matt/Dropbox/texInput/Shortcuts.tex}
 
 \title{Neural Networks}
@@ -74,10 +79,14 @@
 \begin{document}
 	\maketitle
 	\tableofcontents
-
-	\include{src/logisticRegression}
-	\include{src/neuralNetworkIntroduction}
-	\include{src/deepNeuralNetwork}
+	
+	\part{Neural Networks and Deep Learning}
+		\include{src/logisticRegression}
+		\include{src/neuralNetworkIntroduction}
+		\include{src/deepNeuralNetwork}
+		
+	\part{Improving Deep Neural Networks: Hyperparameter Tuning, Regularization, and Optimization}
+		\include{src/trainDevTestSets}
 
 
 

@@ -283,6 +283,8 @@ def model(x, y, hidden_layer_sizes, activators, num_iters=10000, print_cost=Fals
             w[l].shape = (layers[l], layers[l-1])
         params['b'][l] : array_like
             b[l].shape = (layers[l], 1)
+    cost : float
+        The final cost value for the optimized parameters returned
     """
     ## Set dimensions and Initialize parameters
     n, layers = dim_retrieval(x, y, hidden_layer_sizes)
@@ -297,6 +299,8 @@ def model(x, y, hidden_layer_sizes, activators, num_iters=10000, print_cost=Fals
 
         if print_cost and i % 1000 == 0:
             print(f'Cost after iteration {i}: {cost}')
+
+    return params, cost
 
 
 
