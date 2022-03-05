@@ -44,7 +44,8 @@
 \lstset{language=Python, numbers=left, numberstyle=\tiny, stepnumber=1, numbersep=5pt, tabsize=4, basicstyle=\footnotesize\ttfamily}
 \usepackage{inconsolata}
 
-
+\let\oldpart\part
+\renewcommand\part{\newpage\oldpart}
 
 
 
@@ -87,6 +88,7 @@
 		
 	\part{Improving Deep Neural Networks: Hyperparameter Tuning, Regularization, and Optimization}
 		\include{src/trainDevTestSets}
+		\include{src/regularizationIntro}
 
 
 

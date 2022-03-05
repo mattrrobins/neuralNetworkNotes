@@ -1,0 +1,84 @@
+
+
+\section{Regularization}
+
+Suppose we're training an $L$-layer neural network with dataset $\{(x_j,y_j)\}\subset\R^{s_0}\times\R^{s_L}$ with $N$ examples.  Assuming a generic loss function $\L:\R^{s_L}\times\R^{s_L}\to\R$, then we have our cost function $\J$ defined on our one-parameter families of parameter $W$ and $b$ given by
+$$\J(W,b)=\frac{1}{N}\sum_{j=1}^N\L(\hat{y}_j,y_j).$$
+If our model suffers from overfitting the training set, it's reasonable to impose constraints on the parameters $W$ and/or $b$.  That is, define the function
+$$R(W)=\frac{\lambda}{2N}\sum_{\ell=1}^L\norm{\lay{W}{\ell}}_F^2,$$
+for some $\lambda>0$, where $\norm{\cdot}_F$ represents the Frobenius norm on matrices, and we define the \textit{regularized cost function} $\J^R$ given by
+\begin{align*}
+	\J^R(W,b)&=\J(W,b)+R(W)\\
+	&=\frac{1}{N}\sum_{j=1}^N\L(\hat{y}_j,y_j)+\frac{\lambda}{2N}\sum_{\ell=1}^L\norm{\lay{W}{\ell}}_F^2.
+\end{align*}
+Adding such an $R(W)$ to our cost function is known as \textit{$L^2$-regularization}.  We note that by linearity we have the following equalities amongst gradients:
+\begin{align*}
+	\frac{\partial\J^R}{\partial\lay{b}{\ell}}&=\frac{\partial\J}{\partial\lay{b}{\ell}}
+\end{align*}
+and
+\begin{align*}
+	\frac{\partial\J^R}{\partial\lay{W}{\ell}}&=\frac{\partial\J}{\partial\lay{W}{\ell}}+\frac{\lambda}{N}\lay{W}{\ell}.
+\end{align*}
+
+The idea behind regularization is that since we're now minimizing
+$$\min_{W,b}\J^R(W,b)=\min_{W,b}\left\{\J(W,b)+R(W)\right\},$$
+and so for suitably chosen $\lambda>0$, it forces $\norm{\lay{W}{\ell}}_F$ to be small, along with minimizing the cost $\J$.  This balancing-act of minimizing the two functions simultaneously helps with overfitting the data.
+
+A typical usage of regularization would be similar to the following outline:
+\begin{enumerate}[i.]
+	\item Partition our dataset $\D=\frak{X}\cup\mathcal{D}\cup\mathcal{T}$.
+	\item Give a set $\Lambda$ of potential regularization parameters.
+	\item For each $\lambda\in\Lambda$, we first train on $\frak{X}$, that is, we obtain
+		\begin{align*}
+			(W,b)&=\arg\min_{W,b}\J^R(W,b)\\
+			&=\arg\min_{W,b}\left\{\frac{1}{n_X}\sum_{(x,y)\in\frak{X}}\L(\hat{y},y)+\frac{\lambda}{2n_X}\sum_{\ell=1}^L\norm{\lay{W}{\ell}}_F^2\right\}
+		\end{align*}
+		which dependent on $\lambda$.
+	\item Then using the aforementioned $(W,b)=(W,b)(\lambda)$, we evaluate $\mathcal{E}_\lambda(\frak{X})$ and $\mathcal{E}_\lambda(\mathcal{D})$.
+	\item After finding $\mathcal{E}_\lambda(\frak{X})$ and $\mathcal{E}_\lambda(\mathcal{D})$ for each $\lambda\in\Lambda$, we choose our desired $\lambda$ and hence our desired parameters $W$ and $b$.
+	\item We evaluate our model on $\mathcal{T}$ to determine the overall accuracy.
+\end{enumerate}
+
+
+
+\subsection{Dropout Regularization}
+For illustrative purposes, suppose we have a $3$-layer neural network of the following form:
+\begin{align*}
+	&\underbrace{\begin{bmatrix}
+		x^1\\
+		\vdots\\
+		x^{s_0}
+		\end{bmatrix}}_{\text{Layer } 0}
+	\layerfctn{\lay{\varphi}{1}}\underbrace{\begin{bmatrix}
+		\lay{z}{1}{^1}\\
+		\vdots\\
+		\lay{z}{1}{^{s_1}}
+	\end{bmatrix}\layerfctn{\lay{g}{1}}
+	\begin{bmatrix}
+		\lay{a}{1}{^1}\\
+		\vdots\\
+		\lay{a}{1}{^{s_1}}
+	\end{bmatrix}}_{\text{Layer } 1}\layerfctn{\lay{\varphi}{2}}
+	\underbrace{\begin{bmatrix}
+		\lay{z}{2}{^1}\\
+		\vdots\\
+		\lay{z}{2}{^{s_2}}
+	\end{bmatrix}\layerfctn{\lay{g}{2}}
+	\begin{bmatrix}
+		\lay{a}{2}{^1}\\
+		\vdots\\
+		\lay{a}{2}{^{s_2}}
+	\end{bmatrix}}_{\text{Layer } 2}\layerfctn{\lay{\varphi}{3}}\text{output},
+\end{align*}
+Let $Q_0, Q_1, Q_2$ denote the collection of all nodes in Layers $0,1,2$, respectively.  Let $p_0, p_1, p_2\in[0,1]$, and define a probability distribution $\P_\ell$ on $Q_\ell$ by
+$$\P_\ell(q=1)=p_\ell,\qquad \P_\ell(q=0)=1-p_\ell,$$
+where $q=1$ represents the node existing in layer-$\ell$, and $q=0$ represents the dropping of the node from layer-$\ell$.
+
+
+
+
+
+
+
+%\lstinputlisting[firstline=1,lastline=80]{src/py/dropoutReg.py}
+
