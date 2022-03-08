@@ -276,6 +276,7 @@ def model(x, y, hidden_layer_sizes, activators, num_iters=10000, print_cost=Fals
         Number of iterations with which our model performs gradient descent
     print_cost : Boolean
         If True, print the cost every 1000 iterations
+
     Returns
     -------
     params : Dict[Dict]

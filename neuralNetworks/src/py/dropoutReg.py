@@ -26,7 +26,7 @@ def dropout_matrices(layers, num_examples, keep_prob):
     D = {}
     for l in range(L - 1):
         D[l] = np.random.rand((layers[l], num_examples))
-        D[l] = (D[l] < keep_prob[l])
+        D[l] = (D[l] < keep_prob[l]).astype(int)
         assert(D[l].shape == (layers[l], num_examples))
     return D
 
