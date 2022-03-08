@@ -2,7 +2,7 @@
 
 \section{Regularization}
 
-Suppose we're training an $L$-layer neural network with dataset $\{(x_j,y_j)\}\subset\R^{s_0}\times\R^{s_L}$ with $N$ examples.  Assuming a generic loss function $\L:\R^{s_L}\times\R^{s_L}\to\R$, then we have our cost function $\J$ defined on our one-parameter families of parameter $W$ and $b$ given by
+Suppose we're training an $L$-layer neural network with dataset $\{(x_j,y_j)\}\subset\R^{s_0}\times\R^{s_L}$ with $N$ examples.  Assuming a generic loss function $\L:\R^{s_L}\times\R^{s_L}\to\R$, then we have our cost function $\J$ defined on our one-parameter families of parameters $W$ and $b$ given by
 $$\J(W,b)=\frac{1}{N}\sum_{j=1}^N\L(\hat{y}_j,y_j).$$
 If our model suffers from overfitting the training set, it's reasonable to impose constraints on the parameters $W$ and/or $b$.  That is, define the function
 $$R(W)=\frac{\lambda}{2N}\sum_{\ell=1}^L\norm{\lay{W}{\ell}}_F^2,$$
@@ -20,7 +20,7 @@ and
 	\frac{\partial\J^R}{\partial\lay{W}{\ell}}&=\frac{\partial\J}{\partial\lay{W}{\ell}}+\frac{\lambda}{N}\lay{W}{\ell}.
 \end{align*}
 
-The idea behind regularization is that since we're now minimizing
+The idea behind regularization is that we're now minimizing
 $$\min_{W,b}\J^R(W,b)=\min_{W,b}\left\{\J(W,b)+R(W)\right\},$$
 and so for suitably chosen $\lambda>0$, it forces $\norm{\lay{W}{\ell}}_F$ to be small, along with minimizing the cost $\J$.  This balancing-act of minimizing the two functions simultaneously helps with overfitting the data.
 
@@ -41,7 +41,7 @@ A typical usage of regularization would be similar to the following outline:
 
 
 
-\subsection{Dropout Regularization}
+\subsection{(Inverted) Dropout Regularization}
 For illustrative purposes, suppose we have a $3$-layer neural network of the following form:
 \begin{align*}
 	&\underbrace{\begin{bmatrix}
@@ -72,13 +72,41 @@ For illustrative purposes, suppose we have a $3$-layer neural network of the fol
 \end{align*}
 Let $Q_0, Q_1, Q_2$ denote the collection of all nodes in Layers $0,1,2$, respectively.  Let $p_0, p_1, p_2\in[0,1]$, and define a probability distribution $\P_\ell$ on $Q_\ell$ by
 $$\P_\ell(q=1)=p_\ell,\qquad \P_\ell(q=0)=1-p_\ell,$$
-where $q=1$ represents the node existing in layer-$\ell$, and $q=0$ represents the dropping of the node from layer-$\ell$.
+where $q=1$ represents the node existing in layer-$\ell$, and $q=0$ represents the dropping of the node from layer-$\ell$.  That is we're effectively reducing the number of nodes throughout the network, thus simplifying the network and reducing the amount of influence of any single feature or node on the entire model.  That is, we would implement a methodology similar to the following:
+\begin{enumerate}[i.]
+	\item For each layer $\ell$ and each training example $x_j$ define the ``dropout vector'' $\lay{D}{\ell}{_j}$ by
+	\begin{align*}
+		\lay{D}{\ell}{_j}&=\begin{bmatrix}
+			d^1_j\\
+			\vdots\\
+			d^{s_\ell}_j
+		\end{bmatrix},
+	\end{align*}
+	where
+	$$d^i_j=\begin{cases}
+		1&\text{if }\P(q^i)\leq p_\ell\\
+		0&\text{if }\P(q^i)>p_\ell
+	\end{cases}.$$
+	\item During forward propagation, we redefine
+	$$\lay{a}{\ell}\mapsto \frac{\lay{a}{\ell}\odot \lay{D}{\ell}}{p_\ell}.$$
+	\item During backward propagation, we define
+	$$\lay{\delta}{\ell}\mapsto \frac{\lay{\delta}{\ell}\odot\lay{D}{\ell}}{p_\ell}.$$
+	\item Then perform gradient descent, etc with these new values.
+\end{enumerate}
+
+\subsubsection{Python Implementation}
+We see here the use of inverted dropout regularization in a general neural network.
+
+\lstinputlisting[firstline=1,lastline=260]{src/py/dropoutReg.py}
 
 
 
+\subsection{Data Augmentation}
+\TOX{This section requires work.}
 
+There are few other regularization techniques.  One of the simplest techniques is data augmentation, i.e., transforming data you currently have into related but different example to gather a larger dataset (e.g., flipping or distorting images to obtain other relevant images).
 
-
-
-%\lstinputlisting[firstline=1,lastline=80]{src/py/dropoutReg.py}
+\subsection{Early Stopping}
+\TOX{This section requires work.}
+Another technique is stop the training early (fewer iterations) before the model develops higher variance.
 

@@ -1,0 +1,35 @@
+
+
+\section{Gradients and Numerical Remarks}
+\TOX{This section requires work}
+
+We first remark, that by our use of gradient descent, there are few outlier cases which may occur.  Namely our gradients may explode or vanish.  One way to attempt to fix such a situation to impose a normalization on our weights depending on our activation functions.
+\begin{itemize}
+	\item If $\lay{g}{\ell}=\relu$, then we wish to impose the requirement that
+		$$\E[(\lay{W}{\ell}{^2})]=\frac{1}{s_{\ell-1}}.$$
+\end{itemize}
+
+
+\subsection{Numerical Gradient Checking}
+
+Suppose $f:\R^n\to\R$ is a smooth function.  Then, we recall the definition of the partial derivative
+\begin{align*}
+	\frac{\partial f}{\partial x^j}&=\lim_{h\to0}\frac{f(x+he_j)-f(x)}{h}\\
+	&=\lim_{\epsilon\to0^+}\frac{f(x+\epsilon e_j)-f(x-\epsilon e_j)}{2\epsilon},
+\end{align*}
+and so for sufficiently small $\epsilon>0$, we have the approximation
+$$\frac{\partial f}{\partial x^j}\approx \frac{f(x+\epsilon e_j)-f(x-\epsilon e_j)}{2\epsilon}.$$
+Define the approximation function $F:\R^n\times (0,1)\to\R^n$ by
+$$F(x,\epsilon)=\frac{1}{2\epsilon}\begin{bmatrix}
+	f(x+\epsilon e_1)-f(x-\epsilon e_1)\\
+	\vdots\\
+	f(x+\epsilon e_n)-f(x-\epsilon e_n)
+\end{bmatrix}.$$
+Then we may check that our gradient computation $\nabla f(x)$ is correct by checking that
+$$\frac{\norm{F(x,\epsilon)-\nabla f(x)}_2}{\norm{F(x,\epsilon)}_2+\norm{\nabla f(x)}_2}\approx 0.$$
+
+\subsubsection{Python Implementation}
+
+\lstinputlisting[firstline=55,lastline=97]{src/py/miscSnippets.py}
+
+
