@@ -1,0 +1,54 @@
+
+
+
+\section{Gradient Descent}
+
+So far in our implementation of gradient descent, we use the entire training set for every iteration of gradient descent.  This method is called \textit{batch gradient descent}.  We modify this method, by partitioning the training set into smaller ``mini-batches'' and using each mini-batch recursively throughout the iterative process.  
+
+That is, suppose we have training set $\frak{X}$ with $|\frak{X}|=n$, where $n$ is very large (e.g., $n=5000000$).  We fix a batch size $b$ (e.g., $b=5000$), and partition $\frak{X}$ into $1000$ mini-batches
+$$\left\{\frak{X}^t:1\leq t\leq \left\lceil\frac{n}{b}\right\rceil\right\},\qquad\frak{X}=\bigcup_{t=1}^{\left\lceil\frac{n}{b}\right\rceil}\frak{X}^t,$$
+where $\left\lceil\frac{n}{b}\right\rceil$ denote the ceiling function.  We then perform gradient descent in the following manner:
+\begin{enumerate}[1.]
+	\item For $i\in[0, I)_\Z$ (where $I$ denote the number of iterations to perform gradient descent):
+		\begin{enumerate}[a.]
+			\item For $t\in\left[0,\left\lceil\frac{n}{b}\right\rceil\right)_\Z$:
+			\begin{enumerate}[i.]
+				\item Perform forward propagation on $\frak{X}^t$:
+				\begin{align*}
+					\lay{a}{0}&=\frak{X}^t\\
+					\lay{z}{\ell}&=\lay{W}{\ell}\lay{a}{\ell-1}+\lay{b}{\ell}\\
+					\lay{a}{\ell}&=\lay{g}{\ell}(\lay{z}{\ell})
+				\end{align*}
+				\item Evaluate the cost $\J^t$ on $\frak{X}^t$:
+				$$\J^t(W,b)=\frac{1}{|\frak{X}^t|}\sum_{(x,y)\in\frak{X}^t}\L(\hat{y},y)+\frac{\lambda}{2||\frak{X}^t|}\sum_{\ell=1}^L\norm{\lay{W}{\ell}}_F^2.$$
+				\item Perform backward propagation on $\frak{X}^t$:
+				\begin{align*}
+					\frac{\partial\J^t}{\partial\lay{W}{\ell}}&=\frac{1}{|\frak{X}^t|}\lay{\delta}{\ell}\lay{a}{\ell - 1}{^T}+\frac{\lambda}{|\frak{X}^t|}\lay{W}{\ell}\\
+					\frac{\partial\J^t}{\partial\lay{b}{\ell}}&=\frac{1}{|\frak{X}^t|}\sum_{\rho\sim\frak{X}^t}\lay{\delta}{\ell}{_\rho}
+				\end{align*}
+				\item Perform gradient descent:
+				\begin{align*}
+					\lay{W}{\ell}&:=\lay{W}{\ell}-\alpha \frac{\partial\J^t}{\partial\lay{W}{\ell}}\\
+					\lay{b}{\ell}&:=\lay{b}{\ell}-\alpha \frac{\partial\J^t}{\partial\lay{b}{\ell}}
+				\end{align*}
+			\end{enumerate}
+		\end{enumerate}
+\end{enumerate}
+
+We make several remarks about mini-batch gradient descent:
+\begin{itemize}
+	\item Batch gradient descent doesn't always decrease (e.g., our learning rate is too large).  Mini-batch may oscillate rapidly, but the general direction should move towards a minimum.
+	\item If $b=n$, then we fully recover batch gradient descent.  This is typically too computationally expensive since we use the full training set for each iteration.
+	\item If $b=1$, then we recover stochastic gradient descent, i.e., we train our model on a different example during each iteration.  We lose all the speed related to vectorization, since we're dealing with single examples during each iteration.
+	\item Choose $1<b<n$ is typically always the best solution, since it deals with both of the aforementioned problems.
+	\item Due to the nature of a computer's internal structure, it's typically better to choose a batch size $b$ for the form
+		$$b=2^p,$$
+		for some $p\in\{6,7,8,9,10\}$ (usually $p<10$).
+	\item Choose a batch size $b$ that ensures your computer's CPU/GPU can hold a dataset of that size.
+\end{itemize}
+
+
+\subsubsection{Python Implementation}
+
+
+
