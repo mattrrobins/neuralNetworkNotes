@@ -40,6 +40,9 @@ A typical usage of regularization would be similar to the following outline:
 \end{enumerate}
 
 
+\subsubsection{Python Implementation}
+\lstinputlisting[lastline=197]{src/py/l2RegNetwork.py}
+
 
 \subsection{(Inverted) Dropout Regularization}
 For illustrative purposes, suppose we have a $3$-layer neural network of the following form:
@@ -97,7 +100,7 @@ where $q=1$ represents the node existing in layer-$\ell$, and $q=0$ represents t
 \subsubsection{Python Implementation}
 We see here the use of inverted dropout regularization in a general neural network.
 
-\lstinputlisting[firstline=1,lastline=260]{src/py/dropoutReg.py}
+\lstinputlisting[firstline=1,lastline=208]{src/py/dropoutReg.py}
 
 
 

@@ -246,7 +246,7 @@ and
 We now define the compositional function
 $$F:\R^{s_2\times s_1}\times \R^{s_2}\times \R^{s_1\times s_0}\times \R^{s_1}\times \R^{s_0}\to\R$$
 given by
-$$F(C,c,B,b,x)=\L_y\circ\lay{g}{2}\circ\Phi\circ(\id\times\id\times (\lay{g}{1}\circ\Phi))(C,c,B,b,x).$$
+$$F(C,c,B,b,x)=\L_y\circ\lay{g}{2}\circ\Phi\circ(\id_{\R^{s_2\times s_1}}\times\id_{\R^{s_2}}\times (\lay{g}{1}\circ\Phi))(C,c,B,b,x).$$
 We first introduce an error term $\lay{\delta}{2}\in\R^{s_2}$ defined by
 \begin{align*}
 	\lay{\delta}{2}:&=\nabla (\L_y\circ\lay{g}{2})(\lay{z}{2})\\
@@ -526,4 +526,4 @@ we reach a similar conclusion about $\lay{W}{1}$ and $\lay{W}{2}$, respectively.
 
 \subsubsection{Vectorization in Python}
 
-\lstinputlisting[lastline=361]{src/py/singleHiddenLayerNeuralNetwork.py}
+\lstinputlisting[lastline=320]{src/py/singleHiddenLayerNeuralNetwork.py}

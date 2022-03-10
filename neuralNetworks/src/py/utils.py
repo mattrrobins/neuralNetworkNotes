@@ -1,4 +1,5 @@
 #! python3
+import copy
 
 import numpy as np
 from sklearn.utils import shuffle
@@ -59,6 +60,34 @@ def partition_data(x, y, train_ratio):
 
     return train, dev, test
 
+## Partition training data into batches
+def get_batches(x, y, b):
+    """
+    Parameters
+    ----------
+    x : array_like
+        x.shape = (m, n)
+    y : array_like
+        y.shape = (k, n)
+    b : int
+
+    Returns
+    -------
+    batches : List[Dict]
+        batches[i]['x'] : array_like
+            x.shape = (m, b) # except last batch
+            y.shape = (k, b) # except last batch
+
+    """
+    m, n = x.shape
+    B = int(np.ceil(n / b))
+    batches = []
+    for i in range(B):
+        x_temp = x[:,(b * i):(b * (i + 1))]
+        y_temp = y[:,(b * i):(b * (i + 1))]
+        batches.append({'x' : x_temp, 'y' : y_temp})
+    # Slicing automatically ends at the end of the list regardless of the stop
+    return batches
 
 ##### General Neural Network Model #####
 
@@ -72,7 +101,7 @@ def dim_retrieval(x, y, hidden_sizes):
     y : array_like
         y.shape = (layers[L], n)
     hidden_sizes : List[int]
-        The number nodes layer i = hidden_sizes[i-1]
+        hidden_sizes[i-1] = The number nodes layer i
     Returns
     -------
     n : int
@@ -151,7 +180,7 @@ def linear_activation_forward(a_prev, w, b, activator):
     b : array_like
         b.shape = (layers[l+1], 1)
     activator : str
-        activator = 'relu', 'sigmoid', or 'tanh'
+        activator in ACTIVATORS
 
     Returns
     -------
@@ -182,12 +211,12 @@ def linear_activation_backward(delta_next, z, w, activator):
     w : array_like
         w.shape = (layers[l+1], layers[l])
     activator : str
-        activator = 'relu', 'sigmoid', or 'tanh'
+        activator in ACTIVATORS
 
     Returns
     -------
     delta : array_like
-        delta.shape = (layers[l])
+        delta.shape = (layers[l], n)
     """
     assert activator in ACTIVATORS, f'{activator} is not a valid activator.'
 
@@ -201,13 +230,14 @@ def linear_activation_backward(delta_next, z, w, activator):
         _, dg = activators.tanh(z)
 
     da = w.T @ delta_next
-    assert(da.shape == (w.shape[0], n))
+    assert(da.shape == (w.shape[1], n))
     delta = da * dg
-    assert(delta.shape == (w.shape[0], n))
+    assert(delta.shape == (w.shape[1], n))
     return delta
 
 
-def forward_propagation(x, params, activators, D, keep_prob):
+## Forward and Backward Propagation with Dropout Regularization
+def forward_propagation_dropout(x, params, activators, D, keep_prob=1.0):
     """
     Parameters
     ----------
@@ -247,7 +277,7 @@ def forward_propagation(x, params, activators, D, keep_prob):
     a[0] = a[0] * D[0]
     a[0] /= keep_prob[0]
     # Loop through hidden layers
-    for l in range(1, L):
+    for l in range(1, L + 1):
         zl, al = linear_activation_forward(a[l - 1], w[l], b[l], activators[l - 1])
         al = al * D[l]
         al /= keep_prob[l]
@@ -259,7 +289,7 @@ def forward_propagation(x, params, activators, D, keep_prob):
     cache = {'z' : z, 'a' : a}
     return cache
 
-def backward_propagation(x, y, params, cache, activators, D, keep_prob):
+def backward_propagation_dropout(x, y, params, cache, activators, D, keep_prob):
     """
     Parameters
     ----------
@@ -304,9 +334,10 @@ def backward_propagation(x, y, params, cache, activators, D, keep_prob):
     delta = {}
     delta[L] = a[L] - y
     for l in reversed(range(1, L)):
-        delta = linear_activation_backward(delta[l + 1], z[l], w[l], activators[l])
-        delta = delta * D[l]
-        delta /= keep_prob[l]
+        deltal = linear_activation_backward(delta[l + 1], z[l], w[l + 1], activators[l])
+        deltal = deltal * D[l]
+        deltal /= keep_prob[l]
+        delta[l] = deltal
 
     ## Compute gradients
     dw = {}
@@ -315,23 +346,127 @@ def backward_propagation(x, y, params, cache, activators, D, keep_prob):
     for l in range(1, L + 1):
         db[l] = (1 / n) * np.sum(delta[l], axis=1, keepdims=True)
         assert(db[l].shape == (w[l].shape[0], 1))
-        dw[l] = (1 / n) * delta[l] * a[l - 1].T
+        dw[l] = (1 / n) * delta[l] @ a[l - 1].T
         assert(dw[l].shape == w[l].shape)
     grads = {'dw' : dw, 'db' : db}
     return grads
 
-## Compute the cost
-def compute_cost(cache, y):
+
+## Forward and Backward Propagation with L2-Regularization
+def forward_propagation(x, params, activators):
     """
     Parameters
     ----------
+    x : array_like
+        x.shape = (layers[0] n)
+    params : Dict[Dict]
+        params['w'][l] : array_like
+            wl.shape = (layers[l], layers[l-1])
+        params['b'][l] : array_like
+            bl.shape = (layers[l], 1)
+    activators : List[str]
+        activators[l] = activation function of layer l+1
+    Returns
+    -------
     cache : Dict[Dict]
         cache['z'][l] : array_like
             z[l].shape = (layers[l], n)
         cache['a'][l] : array_like
             a[l].shape = (layers[l], n)
+    """
+    # Retrieve parameters
+    w = params['w']
+    b = params['b']
+    L = len(w) # Number of layers excluding output layer
+    n = x.shape[1]
+    # Set empty caches
+    a = {}
+    z = {}
+    # Initialize a
+    a[0] = x
+    for l in range(1, L + 1):
+        z[l], a[l] = linear_activation_forward(a[l - 1], w[l], b[l], activators[l - 1])
+
+    cache = {'a' : a, 'z' : z}
+    return cache
+
+def backward_propagation(x, y, params, cache, activators, lambda_=0.0):
+    """
+    Parameters
+    ----------
+    x : array_like
+        x.shape = (layers[0], n)
     y : array_like
         y.shape = (layers[-1], n)
+    params : Dict[Dict[array_like]]
+        params['w'][l] : array_like
+            w[l].shape = (layers[l], layers[l-1])
+        params['b'][l] : array_like
+            b[l].shape = (layers[l], 1)
+    cache : Dict[Dict[array_like]]
+        cache['a'][l] : array_like
+            a[l].shape = (layers[l], n)
+        cache['z'][l] : array_like
+            z[l].shape = (layers[l], n)
+    activators : List[str]
+        activators[l] = activation function of layer l+1
+    lambda_ : float
+        Default: 0.0
+
+    Returns
+    -------
+    grads : Dict[Dict]
+        grads['dw'][l] : array_like
+            dw[l].shape = w[l].shape
+        grads['db'][l] : array_like
+            db[l].shape = b[l].shape
+    """
+    ## Retrieve parameters
+    a = cache['a']
+    z = cache['z']
+    w = params['w']
+    n = x.shape[1]
+    L = len(z)
+
+    ## Compute deltas
+    delta = {}
+    delta[L] = a[L] - y
+    for l in reversed(range(1, L)):
+        delta[l] = linear_activation_backward(delta[l + 1], z[l], w[l + 1], activators[l])
+
+    ## Compute gradients
+    dw = {}
+    db = {}
+    for l in range(1, L + 1):
+        db[l] = (1 / n) * np.sum(delta[l], axis=1, keepdims=True)
+        assert(db[l].shape == (w[l].shape[0], 1))
+        dw[l] = (1 / n) * (delta[l] @ a[l - 1].T + lambda_ * w[l])
+        assert(dw[l].shape == w[l].shape)
+    grads ={'dw' : dw, 'db' : db}
+    return grads
+
+
+## Compute the cost
+def compute_cost(y, params, cache, lambda_=0.0):
+    """
+    Parameters
+    ----------
+    y : array_like
+        y.shape = (layers[-1], n)
+    params : Dict[Dict[array_like]]
+        params['w'][l] : array_like
+            w[l].shape = (layers[l], layers[l-1])
+        params['b'][l] : array_like
+            b[l].shape = (layers[l], 1)
+    cache : Dict[Dict[array_like]]
+        cache['z'][l] : array_like
+            z[l].shape = (layers[l], n)
+        cache['a'][l] : array_like
+            a[l].shape = (layers[l], n)
+    lambda_ : float
+        Default: 0.0
+
+    Returns
     -------
     cost : float
         The cost evaluated at y and aL
@@ -339,12 +474,22 @@ def compute_cost(cache, y):
     ## Retrieve parameters
     n = y.shape[1]
     a = cache['a']
+    w = params['w']
     L = len(a)
     aL = a[L - 1]
 
-    cost = (-1 / n) * (np.sum(y * np.log(aL)) + np.sum((1 - y) * np.log(1 - aL)))
-    cost = float(np.squeeze(cost))
+    ## Regularization term
+    R = 0
+    for l in range(1, L):
+        R += np.sum(w[l] * w[l])
+    R *= (lambda_ / (2 * n))
 
+    ## Unregularized cost
+    J = (-1 / n) * (np.sum(y * np.log(aL)) + np.sum((1 - y) * np.log(1 - aL)))
+
+    ## Total Cost
+    cost = J + R
+    cost = float(np.squeeze(cost))
     return cost
 
 
@@ -392,12 +537,16 @@ def update_parameters(params, grads, learning_rate=0.01):
     params = {'w' : w, 'b' : b}
     return params
 
-def model_nn(x, y,
-          hidden_layer_sizes,
-          activators,
-          keep_prob=1.0,
-          num_iters=10000,
-          print_cost=False):
+
+
+
+
+
+
+
+
+#### Dropout NN Model ####
+def model_nn(x, y, hidden_layer_sizes, activators, keep_prob=1.0, num_iters=10000, print_cost=False):
     """
     Parameters
     ----------
@@ -466,7 +615,38 @@ def test_dropout_nn():
 
 
 
+######## Functions to use later
+def reshape_labels(num_labels, y):
+    """
+    Parameters
+    ----------
+    num_labels : int
+        The number of possible labels the output y may take
+    y : array_like
+        y.size = n
+        y[i] takes values in {1,2,...,num_labels}
+    Returns
+    Y : array_like
+        Y.shape = (num_lables, n)
+        Y[i][j] = 1 if y[j] = i, Y[i][j] = 0 otherwise
+    -------
+    """
 
+    if num_labels <= 2:
+        return y
+    else:
+        omega = []
+        for i in range(num_labels):
+            omega.append(np.eye(1, num_labels, i))  # the standard i-th basis vector in \mathbb{R}^{num_labels}
+
+        Y = np.concatenate([omega[i] for i in y], axis=0).T
+        for i in range(num_labels):
+            for j in range(n):
+                if y[j] == i:
+                    assert Y[i][j] == 1
+                else:
+                    assert Y[i][j] == 0
+        return Y
 
 #######
 if __name__ == '__main__':

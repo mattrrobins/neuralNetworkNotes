@@ -32,19 +32,46 @@ def get_batches(x, y, b):
 
 
 def model(x, y,
-        batch_size,
         hidden_layer_sizes,
-        learning_rate, activators,
-        num_iters=10000,
+        activators,
+        batch_size,
+        lambda_=0.0,
+        num_iters=1000,
         print_cost=False):
     """
     Parameters
     ----------
+    x : array_like
+        x.shape = (layers[0], n)
+    y : array_like
+        y.shape = (layers[-1], n)
+    hidden_layer_sizes : List[int]
+        The number nodes layer l = hidden_layer_sizes[l-1]
+    activators : List[str]
+        activators[l] = activation function of layer l+1
+    batch_size : int
+    lambda_ : float
+        The regularization parameter
+        Default: 0.0
+    num_iters : int
+        Number of iterations with which our model performs gradient descent
+        Default: 10000
+    print_cost : Boolean
+        If True, print the cost every 1000 iterations
+        Default: False
+
     Returns
     -------
+    params : Dict[Dict]
+        params['w'][l] : array_like
+            w[l].shape = (layers[l], layers[l-1])
+        params['b'][l] : array_like
+            b[l].shape = (layers[l], 1)
+    cost : float
+        The final cost value for the optimized parameters returned
     """
     n, layers = utils.dim_retrieval(x, y, hidden_layer_sizes)
-    params = utils.initialize_parameters(layers)
+    params = utils.initialize_parameters_random(layers)
     batches = get_batches(x, y, batch_size)
     B = len(batches)
 
@@ -54,21 +81,35 @@ def model(x, y,
         for batch in batches:
             x = batch['x']
             y = batch['y']
-            cache = utils.forward_propagation(params, x, activators)
-            cost = utils.compute_cost(cache, y)
-            grads = utils.backward_propagation(params, cache, activators, x, y)
+            cache = utils.forward_propagation(x, params, activators)
+            cost = utils.compute_cost(y, params, cache)
+            grads = utils.backward_propagation(x, y, params, cache, activators)
             params = utils.update_parameters(params, grads, 0.1)
+
+        if print_cost and i % 1000 == 0:
+            print(f'Cost after iteration {i}: {cost}')
+
+    return params, cost
+
+
+
+
+
+
+
+
+
+
 
 def main():
     x = np.random.rand(7,10000)
     y = np.random.rand(1,10000)
+    hidden_layer_sizes = [4, 3, 3]
+    activators = ['relu'] * 3 + ['sigmoid']
     batch_size = 2 ** 6
-    batches = get_batches(x, y, batch_size)
-    for batch in batches:
-        x = batch['x']
-        y = batch['y']
-        print(x.shape)
-        print(y.shape)
+
+    params, cost = model(x, y, hidden_layer_sizes, activators, batch_size, print_cost=True)
+
 
 if __name__ == '__main__':
     main()

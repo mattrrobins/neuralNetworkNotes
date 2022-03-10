@@ -2,88 +2,58 @@ import copy
 
 import numpy as np
 
-# Activator functions
-
-def sigmoid(z):
-    """
-    Parameters
-    ----------
-    z : array_like
-
-    Returns
-    -------
-    sigma : array_like
-        The value of the sigmoid function evaluated at z
-    ds : array_like
-        The differential of the sigmoid function evaluate at z
-    """
-    # Compute value of sigmoid
-    sigma = (1 / (1 + np.exp(-z)))
-    # Compute differential of sigmoid
-    ds = sigma * (1 - sigma)
-    return sigma, ds
+import activators
+from activators import ACTIVATORS
 
 # Preliminary functions for our model
-def layer_shapes(x, y, hidden_layer_size):
+def dim_retrieval(x, y, hidden_sizes):
     """
     Parameters
     ----------
     x : array_like
-        x.shape = (m_x, n)
+        x.shape = (layers[0], n)
     y : array_like
-        y.shape = (m_y, n)
-    hidden_layer_size : int
-        The number nodes in the hidden layer
+        y.shape = (layers[L], n)
+    hidden_sizes : List[int]
+        hidden_sizes[i-1] = The number nodes layer i
     Returns
     -------
     n : int
         The number of training examples
-    m_x : int
-        The number of input features
-    m_h : The number of nodes in the hidden layer
-    m_y : The number of nodes in the output layer
+    layers : List
+        layer[l] = # nodes in layer l
+
     """
-    m_x, n = x.shape
+    m, n = x.shape
     assert(y.shape[1] == n)
-    m_y = y.shape[0]
-    m_h = hidden_layer_size
-    return n, m_x, m_h, m_y
+    K = y.shape[0]
+    layers = [m]
+    layers.extend(hidden_sizes)
+    layers.append(K)
 
+    return n, layers
 
-
-def initialize_parameters(m_x, m_h, m_y):
+## Initialize parameters using the size of each layer
+def initialize_parameters_random(layers):
     """
     Parameters
     ----------
-    m_x : int
-        The number of input features
-    m_h : int
-        The number of nodes in the hidden layer
-    m_y : int
-        The number of nodes in the output layer
-
+    layers : List[int]
+        layers[l] = # nodes in layer l
     Returns
     -------
-    params : Dict
-        w1 : array_like
-            w1.shape = (m_h, m_x)
-        b1 : array_like
-            b1.shape = (m_h, 1)
-        w2 : array_like
-            w2.shape= (m_y, m_h)
-        b2 : array_like
-            b2.shape = (m_y, 1)
+    params : Dict[Dict]
+        w[l] : array_like
+            dwl.shape = (layers[l], layers[l-1])
+        b[l] : array_like
+            dbl.shape = (layers[l], 1)
     """
-    w1 = np.random.randn(m_h, m_x) * 0.01
-    b1 = np.zeros((m_h, 1))
-    w2 = np.random.randn(m_y, m_h) * 0.01
-    b2 = np.zeros((m_y, 1))
-
-    params = {'w1' : w1,
-              'b1' : b1,
-              'w2' : w2,
-              'b2' : b2}
-
+    w = {}
+    b = {}
+    for l in range(1, len(layers)):
+        w[l] = np.random.randn(layers[l], layers[l - 1]) * 0.01
+        b[l] = np.zeros((layers[l], 1))
+    params = {'w' : w, 'b' : b}
     return params
 
 def forward_propagation(x, params):
@@ -92,15 +62,11 @@ def forward_propagation(x, params):
     ----------
     x : array_like
         x.shape = (m_x, n)
-    params : Dict
-        params['w1'] : array_like
-            w1.shape = (m_h, m_x)
-        params['b1'] : array_like
-            b1.shape = (m_h, 1)
-        params['w2'] : array_like
-            w2.shape = (m_y, m_h)
-        params['b2'] : array_like
-            b2.shape = (m_y, 1)
+    params : Dict[Dict]
+        w[l] : array_like
+            w[l].shape = (layers[l], layers[l-1])
+        b[l] : array_like
+            b[l].shape = (layers[l], 1)
     Returns
     -------
     a2 : array_like
@@ -116,16 +82,18 @@ def forward_propagation(x, params):
     """
 
     # Retrieve parameters
-    w1 = params['w1']
-    b1 = params['b1']
-    w2 = params['w2']
-    b2 = params['b2']
+    w = params['w']
+    b = params['b']
+    w1 = w[1]
+    b1 = b[1]
+    w2 = w[2]
+    b2 = b[2]
 
     # Auxiliary computations
     z1 = w1 @ x + b1
-    a1 = np.tanh(z1)
+    a1, _1 = activators.tanh(z1)
     z2 = w2 @ a1 + b2
-    a2 = sigmoid(z2)
+    a2, _2 = activators.sigmoid(z2)
 
     assert(a1.shape == (w1.shape[0], x.shape[1]))
     assert(a2.shape == (w2.shape[0], a1.shape[1]))
@@ -160,15 +128,11 @@ def backward_propagation(params, cache, x, y):
     """
     Parameters
     ----------
-    params : Dict
-        params['w2'] : array_like
-            w2.shape = (m_y, m_h)
-        params['b2'] : array_like
-            b2.shape = (m_y, 1)
-        params['w1'] : array_like
-            w1.shape = (m_h, m_x)
-        params['b1'] : array_like
-            b1.shape = (m_h, 1)
+    params : Dict[Dict]
+        w[l] : array_like
+            dwl.shape = (layers[l], layers[l-1])
+        b[l] : array_like
+            dbl.shape = (layers[l], 1)
     cache : Dict
         cache['z1'] : array_like
             z1.shape = (m_h, n)
@@ -194,8 +158,9 @@ def backward_propagation(params, cache, x, y):
             db1.shape = (m_h, 1)
     """
     # Retrieve parameters
-    w1 = params['w1']
-    w2 = params['w2']
+    w = params['w']
+    w1 = w[1]
+    w2 = w[2]
 
     # Set dimensional constants
     m_x, n = x.shape
@@ -210,20 +175,19 @@ def backward_propagation(params, cache, x, y):
     assert(delta2.shape ==(m_y, n))
     d_tanh = 1 - (a1 * a1)
     assert(d_tanh.shape == (m_h, n))
-    delta1 = (w2.T @ delta1) * d_tanh
+    delta1 = (w2.T @ delta2) * d_tanh
     assert(delta1.shape == (m_h, n))
 
     # Gradient computations
-    dw2 = (1 / n) * delta2 @ a1.T
-    db2 = (1 / n) * np.sum(delta2, axis=1, keepdims=True)
-    dw1 = (1 / n) * delta1 @ x.T
-    db1 = (1 / n) * np.sum(delta1, axis=1, keepdims=True)
+    dw = {}
+    db = {}
+    dw[2] = (1 / n) * delta2 @ a1.T
+    db[2] = (1 / n) * np.sum(delta2, axis=1, keepdims=True)
+    dw[1] = (1 / n) * delta1 @ x.T
+    db[1] = (1 / n) * np.sum(delta1, axis=1, keepdims=True)
 
     # Combine and return dict
-    grads = {'dw2' : dw2,
-             'db2' : db2,
-             'dw1' : dw1,
-             'db1' : db1}
+    grads = {'dw' : dw, 'db' : db}
     return grads
 
 def update_parameters(params, grads, learning_rate=1.2):
@@ -263,33 +227,26 @@ def update_parameters(params, grads, learning_rate=1.2):
             b1.shape = (m_h, 1)
     """
     # Retrieve parameters
-    w2 = copy.deepcopy(params['w2'])
-    b2 = params['b2']
-    w1 = copy.deepcopy(params['w1'])
-    b1 = params['b1']
+    w = copy.deepcopy(params['w'])
+    b = params['b']
 
     # Retrieve gradients
-    dw2 = grads['dw2']
-    db2 = grads['db2']
-    dw1 = grads['dw1']
-    db1 = grads['db1']
+    dw = grads['dw']
+    db = grads['db']
 
     # Perform update
-    w2 = w2 - learning_rate * dw2
-    b2 = b2 - learning_rate * db2
-    w1 = w1 - learning_rate * dw1
-    b1 = b1 - learning_rate * db1
+    w[2] = w[2] - learning_rate * dw[2]
+    b[2] = b[2] - learning_rate * db[2]
+    w[1] = w[1] - learning_rate * dw[1]
+    b[1] = b[1] - learning_rate * db[1]
 
     # Combine and return dict
-    params = {'w2' : w2,
-              'b2' : b2,
-              'w1' : w1,
-              'b1' : b1}
+    params = {'w' : w, 'b' : b}
     return params
 
 
 # The main neural network training model
-def model(x, y, num_hidden_layer, num_iters=10000, print_cost=False):
+def model(x, y, hidden_sizes, num_iters=10000, print_cost=False):
     """
     Parameters
     ----------
@@ -297,7 +254,7 @@ def model(x, y, num_hidden_layer, num_iters=10000, print_cost=False):
         x.shape = (m_x, n)
     y : array_like
         y.shape = (m_y. n)
-    num_hidden_layer : int
+    hidden_sizes : int
         Number of nodes in the single hidden layer
     num_iters : int
         Number of iterations with which our model performs gradient descent
@@ -305,24 +262,24 @@ def model(x, y, num_hidden_layer, num_iters=10000, print_cost=False):
         If True, print the cost every 1000 iterations
     Returns
     -------
-    params : Dict
-        params['w2'] : array_like
-            w2.shape = (m_y, m_h)
-        params['b2'] : array_like
-            b2.shape = (m_y, 1)
-        params['w1'] : array_like
-            w1.shape = (m_h, m_x)
-        params['b1'] : array_like
-            b1.shape = (m_h, 1)
+    params : Dict[Dict[array_like]]
+        params['w'][2] : array_like
+            w[2].shape = (m_y, m_h)
+        params['b'][2] : array_like
+            b[2].shape = (m_y, 1)
+        params['w'][1] : array_like
+            w[1].shape = (m_h, m_x)
+        params['b'][1] : array_like
+            b[1].shape = (m_h, 1)
     """
     # Set dimensional constants
-    n, m_x, m_h, m_y = layer_shapes(x, y, num_hidden_layer)
+    n, layers = dim_retrieval(x, y, hidden_sizes)
     # initialize parameters
-    params = initialize_parameters(m_x, m_h, m_y)
+    params = initialize_parameters_random(layers)
 
     # main loop for gradient descent
     for i in range(num_iters):
-        a2, cache = forward_propagation(X, params)
+        a2, cache = forward_propagation(x, params)
         cost = compute_cost(a2, y)
         grads = backward_propagation(params, cache, x, y)
         params = update_parameters(params, grads)
@@ -365,174 +322,13 @@ def predict(params, x):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-###### Extras #######
-def reshape_labels(num_labels, y):
-    """
-    Parameters
-    ----------
-    num_labels : int
-        The number of possible labels the output y may take
-    y : array_like
-        y.size = n
-        y[i] takes values in {1,2,...,num_labels}
-    Returns
-    Y : array_like
-        Y.shape = (num_lables, n)
-        Y[i][j] = 1 if y[j] = i, Y[i][j] = 0 otherwise
-    -------
-    """
-
-    if num_labels <= 2:
-        return y
-    else:
-        omega = []
-        for i in range(num_labels):
-            omega.append(np.eye(1, num_labels, i))  # the standard i-th basis vector in \mathbb{R}^{num_labels}
-
-        Y = np.concatenate([omega[i] for i in y], axis=0).T
-        for i in range(num_labels):
-            for j in range(n):
-                if y[j] == i:
-                    assert Y[i][j] == 1
-                else:
-                    assert Y[i][j] == 0
-        return Y
-
-def relu(z, beta=0.0):
-    """
-    Parameters
-    ----------
-    z : array_like
-    beta : float
-
-    Returns
-    -------
-    r : array_like
-        The ReLU function when beta=0, the leaky-ReLU otherwise.
-    dr : array_like
-        The differential of the ReLU function
-    """
-    # Change scalar to array if needed
-    z = np.array(z)
-    # Compute value of ReLU(z)
-    r = np.maximum(z, beta * z)
-    # Compute differential ReLU'(z)
-    dr = np.zeros(z.size)
-    dr[z < 0] = beta
-    dr[~(z < 0)] = 1
-    return r, dr
-
-def cost_function(params,
-                  input_layer_size,
-                  hidden_layer_size,
-                  num_labels,
-                  x, y, lambda_=0.0):
-    """
-    Parameters
-    ----------
-    params : array_like
-        Our parameters flattened into a single rank 1 array
-    input_layer_size : int
-        The number of features for our input layer
-    hidden_layer_size : int
-        The number of nodes for our hidden layer
-    num_labels : int
-        The number of classifcation labels for our target output
-    x : array_like
-        x.shape = (input_layer_size, n) where n is the number of training examples
-    y : array_like
-        y.shape = (num_lables, n)
-    lambda_ : float
-        Default: 0.0 - Represents a model without regularization
-        The regularization parameter to be trained on a cross-validation set
-
-    Returns
-    -------
-    d : Dict
-        cost : float
-            The value of the cost function evaulated at w1, b1, w2, b2
-        dw1 : array_like
-            dw1.shape = (hidden_layer_size, input_layer_size)
-            The gradient of J with respect to w1
-        db1 : array_like
-            db1.shape = (hidden_layer_size, 1)
-            The gradient of J with respect to b1
-        dw2 : array_like
-            dw2.shape = (num_labels, hidden_layer_size)
-            The gradient of J with respect to w2
-        db2: array_like
-            db2.shape = (num_labels, 1)
-            The gradient of J with respect to b2
-    """
-    # Specialization for binary classification since the second activator
-    # a2[2] = 1 - a2[1], there is no loss by only using one.
-    if num_labels == 2:
-        num_lables = 1
-
-    # Set dimensions, parameters and labels
-    n = x.shape[1]
-
-    d = reshape_params(params, input_layer_size, hidden_layer_size, num_labels)
-    w1, w2, b1, b2 = d['w1'], d['w2'], d['b1'], d['b2']
-    assert w1.shape == (hidden_layer_size, input_layer_size)
-    assert w2.shape == (num_labels, hidden_layer_size)
-    assert b1.shape == (hidden_layer_size, 1)
-    assert b2.shape == (num_labels, 1)
-
-    y = reshape_labels(num_labels, y)
-    assert y.shape == (num_labels, n)
-
-    # Auxiliary computations for J
-    z1 = w1 @ x + b1
-    assert z1.shape == (hidden_layer_size, n)
-    a1, dg1 = relu(z1)
-    assert a1.shape == (hidden_layer_size, n)
-    z2 = w2 @ a1 + b2
-    assert z2.shape == (num_labels, n)
-    a2, _ = sigmoid(z2)
-    assert a2.shape == (num_labels, n)
-
-    # Compute J
-    J = (-1 / n) * (np.sum(y * np.log(a2)) + np.sum((1 - y) * np.log(1 - a2)) \
-        + (lambda_ / (2 * n)) * (np.sum(w1 * w1) + np.sum(w2 * w2))
-
-    # Auxiliary computations for grad J
-    delta2 = a2 - y
-    delta1 = (delta2 * (w2 @ dg1)).T
-
-    # Compute gradients
-    dw2 = (1 / n) * np.sum(delta2 * a1.T)
-    db2 = (1 / n) * np.sum(delta2)
-    dw1 = (1 / n) * np.sum(delta1 @ x.T)
-    db1 = (1 / n) * np.sum(delta1)
-
-    d = {'cost' : J,
-         'dw2' : dw2,
-         'db2' : db2,
-         'dw1' : dw1,
-         'db1' : db1}
-
-    return d
-
 def main():
-    x = np.random.random((4,3))
-    sigma, d_sig = sigmoid(x)
+    x = np.random.rand(10, 200)
+    y = np.random.rand(1, 200)
+    hidden_sizes = [7]
+    params = model(x, y, hidden_sizes)
+    print(params)
 
-    print(f'x={x}')
-    print(f'sigma={sigma}')
-    print(f'dsigma={d_sig}')
 
 
 if __name__ == '__main__':

@@ -130,7 +130,12 @@ def predict(w, b, x):
 
     return y_predict
 
-def model(x_train, y_train, x_test, y_test, alpha=0.001, num_iters=2000, accuracy=True):
+def model(x_train,
+          y_train,
+          x_test,
+          y_test,
+          learning_rate=0.001,
+          num_iters=2000, accuracy=False):
     """
     Parameters:
     -----------
@@ -139,7 +144,7 @@ def model(x_train, y_train, x_test, y_test, alpha=0.001, num_iters=2000, accurac
         y_train.shape = (1, n_train)
         x_test.shape = (m, n_test)
         y_test.shape = (1, n_test)
-    alpha : float
+    learning_rate : float
         The learning rate for gradient descent
     num_iters : int
         The number of times we wish to perform gradient descent
@@ -170,7 +175,7 @@ def model(x_train, y_train, x_test, y_test, alpha=0.001, num_iters=2000, accurac
     w = np.zeros((m, 1))
     b = 0.0
     # optimize parameters
-    costs, params, grads = grad_descent(x_train, y_train, w, b, alpha, num_iters)
+    costs, params, grads = grad_descent(x_train, y_train, w, b, learning_rate, num_iters)
     w = params['w']
     b = params['b']
     # record predictions
@@ -182,7 +187,7 @@ def model(x_train, y_train, x_test, y_test, alpha=0.001, num_iters=2000, accurac
          'y_test_preds' : y_test_preds,
          'w' : w,
          'b' : b,
-         'learning_rate' : alpha,
+         'learning_rate' : learning_rate,
          'num_iters' : num_iters}
 
     if accuracy:
