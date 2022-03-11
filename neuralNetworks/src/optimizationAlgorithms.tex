@@ -49,12 +49,6 @@ We make several remarks about mini-batch gradient descent:
 \end{itemize}
 
 
-\subsubsection{Python Implementation}
-\lstinputlisting[lastline=100]{src/py/gradDescent.py}
-
-
-
-
 \subsection{Weighted Averages}
 
 Suppose $x_t\in\R^m$ is some collection of data indexed by $t$ which we may consider a time-variable, that is, after each successive unit of time (say for example, each day), our collection adds a new data point.  That is, the collection
@@ -137,7 +131,7 @@ We first recall our gradient descent algorithm:
 \end{enumerate}
 Using this formulation of gradient descent, we insert EMA applied to the sequences of gradients depending on the iteration $t:=i+k$.  That is, we have the following algorithm:
 \begin{enumerate}
-	\item Initialize our parameters $\iter{W}{0}$ and $\iter{b}{0}$.  Initialize $\iter{V_W}{0}=\iter{V_b}{0}=0$.  Fix a momentum hyperparameter $\beta_1\in[0,1)$.
+	\item Initialize our parameters $\iter{W}{0}$ and $\iter{b}{0}$.  Initialize $\iter{V_W}{0}=\iter{V_b}{0}=0$.  Fix a momentum hyper-parameter $\beta_1\in[0,1)$.
 	\item For $0\leq i<\texttt{num\_iters}$:
 	\begin{enumerate}[a.]
 		\item Let $B=\left\lceil\frac{n}{b}\right\rceil$, and generate batches $\{\X^k\}$.
@@ -257,7 +251,7 @@ One could also implement a ``manual decay'', but this should only be used under 
 
 
 \subsubsection{Python Implementation}
-%\lstinputlisting[lastline=100]{src/py/gradDescent.py}
+\lstinputlisting[lastline=305]{src/py/gradDescent.py}
 
 
 

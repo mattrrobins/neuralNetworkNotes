@@ -13,6 +13,7 @@ def print_array_dict(D):
     Parameters
     ----------
     D : Dict[array_like]
+
     Returns
     -------
     None
@@ -52,8 +53,8 @@ def partition_data(x, y, train_ratio):
 
     ## Create partitions
     train = (x[:,:N_train], y[:,:N_train])
-    dev = (x[:,N_train:N_train+N_mid], y[:,N_train:N_train+N_mid])
-    test = (x[:,N_train+N_mid:], y[:,N_train+N_mid:])
+    dev = (x[:,N_train:N_train + N_mid], y[:,N_train:N_train + N_mid])
+    test = (x[:,N_train + N_mid:], y[:,N_train + N_mid:])
 
     assert(x.all() == np.concatenate([train[0], dev[0], test[0]], axis=1).all())
     assert(y.all() == np.concatenate([train[1], dev[1], test[1]], axis=1).all())
@@ -86,7 +87,8 @@ def get_batches(x, y, b):
         x_temp = x[:,(b * i):(b * (i + 1))]
         y_temp = y[:,(b * i):(b * (i + 1))]
         batches.append({'x' : x_temp, 'y' : y_temp})
-    # Slicing automatically ends at the end of the list regardless of the stop
+    # Slicing automatically ends at the end of
+    # the list if the stop is outside the index
     return batches
 
 ##### General Neural Network Model #####
@@ -118,32 +120,6 @@ def dim_retrieval(x, y, hidden_sizes):
     layers.append(K)
 
     return n, layers
-
-def dropout_matrices(layers, num_examples, keep_prob):
-    """
-    Parameters
-    ----------
-    layers : List[int]
-        layers[l] = number of nodes in layer l
-    num_examples : int
-        The number of training examples
-    keep_prob : List[float]
-        keep_prob[l] = The probabilty of keeping a node in layer l
-
-    Returns
-    -------
-    D : Dict[array_like]
-        D[l].shape = (layers[l], num_ex)
-        D[l] = a Boolean array
-    """
-    np.random.seed(1)
-    L = len(layers)
-    D = {}
-    for l in range(L - 1):
-        D[l] = np.random.rand(layers[l], num_examples)
-        D[l] = (D[l] < keep_prob[l]).astype(int)
-        assert(D[l].shape == (layers[l], num_examples))
-    return D
 
 ## Initialize parameters using the size of each layer
 def initialize_parameters_random(layers):
@@ -237,7 +213,34 @@ def linear_activation_backward(delta_next, z, w, activator):
 
 
 ## Forward and Backward Propagation with Dropout Regularization
-def forward_propagation_dropout(x, params, activators, D, keep_prob=1.0):
+# Generate dropout matrices
+def dropout_matrices(layers, num_examples, keep_prob):
+    """
+    Parameters
+    ----------
+    layers : List[int]
+        layers[l] = number of nodes in layer l
+    num_examples : int
+        The number of training examples
+    keep_prob : List[float]
+        keep_prob[l] = The probabilty of keeping a node in layer l
+
+    Returns
+    -------
+    D : Dict[array_like]
+        D[l].shape = (layers[l], num_ex)
+        D[l] = a Boolean array
+    """
+    np.random.seed(1)
+    L = len(layers)
+    D = {}
+    for l in range(L - 1):
+        D[l] = np.random.rand(layers[l], num_examples)
+        D[l] = (D[l] < keep_prob[l]).astype(int)
+        assert(D[l].shape == (layers[l], num_examples))
+    return D
+
+def forward_propagation_dropout(x, params, activators, D, keep_prob):
     """
     Parameters
     ----------
@@ -348,7 +351,7 @@ def backward_propagation_dropout(x, y, params, cache, activators, D, keep_prob):
         assert(db[l].shape == (w[l].shape[0], 1))
         dw[l] = (1 / n) * delta[l] @ a[l - 1].T
         assert(dw[l].shape == w[l].shape)
-    grads = {'dw' : dw, 'db' : db}
+    grads = {'w' : dw, 'b' : db}
     return grads
 
 
@@ -416,9 +419,9 @@ def backward_propagation(x, y, params, cache, activators, lambda_=0.0):
     Returns
     -------
     grads : Dict[Dict]
-        grads['dw'][l] : array_like
+        grads['w'][l] : array_like
             dw[l].shape = w[l].shape
-        grads['db'][l] : array_like
+        grads['b'][l] : array_like
             db[l].shape = b[l].shape
     """
     ## Retrieve parameters
@@ -442,11 +445,11 @@ def backward_propagation(x, y, params, cache, activators, lambda_=0.0):
         assert(db[l].shape == (w[l].shape[0], 1))
         dw[l] = (1 / n) * (delta[l] @ a[l - 1].T + lambda_ * w[l])
         assert(dw[l].shape == w[l].shape)
-    grads ={'dw' : dw, 'db' : db}
+    grads ={'w' : dw, 'b' : db}
     return grads
 
 
-## Compute the cost
+## Compute the (L2-regulated) cost
 def compute_cost(y, params, cache, lambda_=0.0):
     """
     Parameters
@@ -504,9 +507,9 @@ def update_parameters(params, grads, learning_rate=0.01):
         params['b'][l] : array_like
             b[l].shape = (layers[l], 1)
     grads : Dict[Dict]
-        grads['dw'][l] : array_like
+        grads['w'][l] : array_like
             dw[l].shape = w[l].shape
-        grads['db'][l] : array_like
+        grads['b'][l] : array_like
             db[l].shape = b[l].shape
     learning_rate : float
         Default: 0.01
@@ -526,8 +529,8 @@ def update_parameters(params, grads, learning_rate=0.01):
     L = len(w)
 
     ## Retrieve gradients
-    dw = grads['dw']
-    db = grads['db']
+    dw = grads['w']
+    db = grads['b']
 
     ## Perform update
     for l in range(1, L + 1):

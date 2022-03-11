@@ -12,7 +12,7 @@ $$n_T:=|\mathfrak{T}|\approx\frac{1}{5}N.$$
 If however, we have a very large dataset (i.e., $N>10^4$), then we assume a much smaller ratio of something similar to
 $$\frac{n_X}{N}\approx0.98,\qquad\frac{n_D}{N}\approx 0.01,\qquad\frac{n_T}{N}\approx 0.01.$$
 
-In general, we use our training set $\X$ to train our parameters $\lay{W}{\ell}$ and $\lay{b}{\ell}$, we use our development set $\mathcal{D}$ to tune our hyperparameters (i.e., learning rate, number of layers, number of nodes per layer, activation function, number of iterations to perform gradient descent, regularization parameters, etc), and we use our test set $\mathcal{T}$ to evaluate the accuracy of our model.  Since we're partitioning our dataset to better increase the accuracy of our model, we need to define an error function.  To this end, define $\mathcal{E}:2^\D\to[0,1]$ by
+In general, we use our training set $\X$ to train our parameters $\lay{W}{\ell}$ and $\lay{b}{\ell}$, we use our development set $\mathcal{D}$ to tune our hyper-parameters (i.e., learning rate, number of layers, number of nodes per layer, activation function, number of iterations to perform gradient descent, regularization parameters, etc), and we use our test set $\mathcal{T}$ to evaluate the accuracy of our model.  Since we're partitioning our dataset to better increase the accuracy of our model, we need to define an error function.  To this end, define $\mathcal{E}:2^\D\to[0,1]$ by
 \begin{align*}
 	\mathcal{E}(\mathcal{A})&=\frac{1}{|\mathcal{A}|}\sum_{(x,y)\in\mathcal{A}}\varepsilon(x,y),
 \end{align*}
