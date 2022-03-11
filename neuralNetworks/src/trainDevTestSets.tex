@@ -3,16 +3,16 @@
 \section{Training, Development and Test Sets}
 
 Let $\D=\{(x_j,y_j)\in\R^m\times\R^K:1\leq j\leq N\}$ denote a dataset.  Then we partition $\D$ into three distinct sets
-$$\D=\mathfrak{X}+\mathcal{D}+\mathcal{T},$$
-where $\frak{X}$ is called our \textit{training set}, $\mathcal{D}$ is called our \textit{development, or cross-validation set}, and $\mathcal{T}$ is called our \textit{test set}. We make this partition randomly, however, if $N=|\D|\leq 10^4$, we see a partition following the following ratios:
-$$n_X:=|\frak{X}|\approx \frac{3}{5}N,$$
+$$\D=\X+\mathcal{D}+\mathcal{T},$$
+where $\X$ is called our \textit{training set}, $\mathcal{D}$ is called our \textit{development, or cross-validation set}, and $\mathcal{T}$ is called our \textit{test set}. We make this partition randomly, however, if $N=|\D|\leq 10^4$, we see a partition following the following ratios:
+$$n_X:=|\X|\approx \frac{3}{5}N,$$
 $$n_D:=|\mathcal{D}|\approx\frac{1}{5}N,$$
 and
 $$n_T:=|\mathfrak{T}|\approx\frac{1}{5}N.$$
 If however, we have a very large dataset (i.e., $N>10^4$), then we assume a much smaller ratio of something similar to
 $$\frac{n_X}{N}\approx0.98,\qquad\frac{n_D}{N}\approx 0.01,\qquad\frac{n_T}{N}\approx 0.01.$$
 
-In general, we use our training set $\frak{X}$ to train our parameters $\lay{W}{\ell}$ and $\lay{b}{\ell}$, we use our development set $\mathcal{D}$ to tune our hyperparameters (i.e., learning rate, number of layers, number of nodes per layer, activation function, number of iterations to perform gradient descent, regularization parameters, etc), and we use our test set $\mathcal{T}$ to evaluate the accuracy of our model.  Since we're partitioning our dataset to better increase the accuracy of our model, we need to define an error function.  To this end, define $\mathcal{E}:2^\D\to[0,1]$ by
+In general, we use our training set $\X$ to train our parameters $\lay{W}{\ell}$ and $\lay{b}{\ell}$, we use our development set $\mathcal{D}$ to tune our hyperparameters (i.e., learning rate, number of layers, number of nodes per layer, activation function, number of iterations to perform gradient descent, regularization parameters, etc), and we use our test set $\mathcal{T}$ to evaluate the accuracy of our model.  Since we're partitioning our dataset to better increase the accuracy of our model, we need to define an error function.  To this end, define $\mathcal{E}:2^\D\to[0,1]$ by
 \begin{align*}
 	\mathcal{E}(\mathcal{A})&=\frac{1}{|\mathcal{A}|}\sum_{(x,y)\in\mathcal{A}}\varepsilon(x,y),
 \end{align*}
@@ -24,10 +24,10 @@ $$\varepsilon(x,y)=\begin{cases}
 
 From our partition and error function we can make several claims of the fitting of our model to our data.  Indeed, let $\epsilon>0$ be a small percentage (with exact value depending on specific examples), then:
 \begin{itemize}
-	\item If $\mathcal{E}(\frak{X})<\epsilon$ and $\mathcal{E}(\frak{X})<\mathcal{E}(\mathcal{D})<\sim10\epsilon$, then we say our model has \textit{high variance} since our model is overfitting the data.
-	\item If $\mathcal{E}(\frak{X})\approx\mathcal{E}(\mathcal{D})>\sim10\epsilon$, then we say our model has \textit{high bias} since our model is underfitting the data.
-	\item If $10\epsilon\sim<\mathcal{E}(\frak{X})\ll\mathcal{E}(\mathcal{D})$, then we say our model has both high bias (since it doesn't fit our training data well) and high variance (because the model fits the training data better than the development data).
-	\item If $\mathcal{E}(\frak{X}),\mathcal{E}(\mathcal{D})<\epsilon$, then we say the model has both low bias and low variance.
+	\item If $\mathcal{E}(\X)<\epsilon$ and $\mathcal{E}(\X)<\mathcal{E}(\mathcal{D})<\sim10\epsilon$, then we say our model has \textit{high variance} since our model is overfitting the data.
+	\item If $\mathcal{E}(\X)\approx\mathcal{E}(\mathcal{D})>\sim10\epsilon$, then we say our model has \textit{high bias} since our model is underfitting the data.
+	\item If $10\epsilon\sim<\mathcal{E}(\X)\ll\mathcal{E}(\mathcal{D})$, then we say our model has both high bias (since it doesn't fit our training data well) and high variance (because the model fits the training data better than the development data).
+	\item If $\mathcal{E}(\X),\mathcal{E}(\mathcal{D})<\epsilon$, then we say the model has both low bias and low variance.
 \end{itemize}
 
 \begin{remark}
@@ -41,7 +41,7 @@ From our partition and error function we can make several claims of the fitting 
 
 A methodology for using errors could be as follows
 \begin{enumerate}[1.]
-	\item Check $\mathcal{E}(\frak{X})$ for high bias.
+	\item Check $\mathcal{E}(\X)$ for high bias.
 		\begin{enumerate}[a.]
 			\item If ``Yes'', then we can try a bigger network, we can train longer, or we can change the neural network architecture. Then we return to (1.).
 			\item If ``No'', then we move to (2.).

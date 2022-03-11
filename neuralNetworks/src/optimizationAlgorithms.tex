@@ -1,30 +1,31 @@
-
+\newcommand{\iter}[2]{{#1}^{\{{#2}\}}}
 
 
 \section{Gradient Descent}
 
-So far in our implementation of gradient descent, we use the entire training set for every iteration of gradient descent.  This method is called \textit{batch gradient descent}.  We modify this method, by partitioning the training set into smaller ``mini-batches'' and using each mini-batch recursively throughout the iterative process.  
+So far in our implementation of gradient descent, we use the entire training set for every iteration of gradient descent.  This method is called \textit{batch gradient descent}.  Gradient descent has many downfalls.  Indeed, since we're typically working in a \textit{very} high dimensional space, the majority of the critical points for our cost function are actually saddle points (these can be thought of as plateaus of the loss-manifold).  These pitfalls (amongst others) are what we wish to overcome.  To this end, we first consider a modification of batch gradient descent by partitioning the training set into smaller ``mini-batches'' and using each mini-batch recursively throughout the iterative process.  
 
-That is, suppose we have training set $\frak{X}$ with $|\frak{X}|=n$, where $n$ is very large (e.g., $n=5000000$).  We fix a batch size $b$ (e.g., $b=5000$), and partition $\frak{X}$ into $1000$ mini-batches
-$$\left\{\frak{X}^t:1\leq t\leq \left\lceil\frac{n}{b}\right\rceil\right\},\qquad\frak{X}=\bigcup_{t=1}^{\left\lceil\frac{n}{b}\right\rceil}\frak{X}^t,$$
-where $\left\lceil\frac{n}{b}\right\rceil$ denote the ceiling function.  We then perform gradient descent in the following manner:
+That is, suppose we have training set $\X$ with $|\X|=n$, where $n$ is very large (e.g., $n=5000000$).  We fix a batch size $b$ (e.g., $b=5000$), and partition $\X$ into (e.g., $1000$ distinct) mini-batches
+$$\left\{\X^t:1\leq t\leq \left\lceil\frac{n}{b}\right\rceil\right\},\qquad\X=\bigcup_{t=1}^{\left\lceil\frac{n}{b}\right\rceil}\X^t,$$
+where $\left\lceil\frac{n}{b}\right\rceil$ denote the ceiling function.  If we shuffle $\X$ and partition during each epoch (i.e., each iteration) so our loss-manifold changes during each batch iteration within each epoch, we can then perform gradient descent in the following manner:
 \begin{enumerate}[1.]
-	\item For $i\in[0, I)_\Z$ (where $I$ denote the number of iterations to perform gradient descent):
+	\item For $0\leq i<\texttt{num\_iters}$:
 		\begin{enumerate}[a.]
-			\item For $t\in\left[0,\left\lceil\frac{n}{b}\right\rceil\right)_\Z$:
+			\item Let $B=\left\lceil\frac{n}{b}\right\rceil$, and generate batches $\{\X^t\}$.
+			\item For $1\leq t\leq B$:
 			\begin{enumerate}[i.]
-				\item Perform forward propagation on $\frak{X}^t$:
+				\item Perform forward propagation on $\X^t$:
 				\begin{align*}
-					\lay{a}{0}&=\frak{X}^t\\
+					\lay{a}{0}&=\X^t\\
 					\lay{z}{\ell}&=\lay{W}{\ell}\lay{a}{\ell-1}+\lay{b}{\ell}\\
 					\lay{a}{\ell}&=\lay{g}{\ell}(\lay{z}{\ell})
 				\end{align*}
-				\item Evaluate the cost $\J^t$ on $\frak{X}^t$:
-				$$\J^t(W,b)=\frac{1}{|\frak{X}^t|}\sum_{(x,y)\in\frak{X}^t}\L(\hat{y},y)+\frac{\lambda}{2||\frak{X}^t|}\sum_{\ell=1}^L\norm{\lay{W}{\ell}}_F^2.$$
-				\item Perform backward propagation on $\frak{X}^t$:
+				\item Evaluate the cost $\J^t$ on $\X^t$:
+				$$\J^t(W,b)=\frac{1}{|\X^t|}\sum_{(x,y)\in\X^t}\L(\hat{y},y)+\frac{\lambda}{2|\X^t|}\sum_{\ell=1}^L\norm{\lay{W}{\ell}}_F^2.$$
+				\item Perform backward propagation on $\X^t$:
 				\begin{align*}
-					\frac{\partial\J^t}{\partial\lay{W}{\ell}}&=\frac{1}{|\frak{X}^t|}\lay{\delta}{\ell}\lay{a}{\ell - 1}{^T}+\frac{\lambda}{|\frak{X}^t|}\lay{W}{\ell}\\
-					\frac{\partial\J^t}{\partial\lay{b}{\ell}}&=\frac{1}{|\frak{X}^t|}\sum_{\rho\sim\frak{X}^t}\lay{\delta}{\ell}{_\rho}
+					\frac{\partial\J^t}{\partial\lay{W}{\ell}}&=\frac{1}{|\X^t|}\lay{\delta}{\ell}\lay{a}{\ell - 1}{^T}+\frac{\lambda}{|\X^t|}\lay{W}{\ell}\\
+					\frac{\partial\J^t}{\partial\lay{b}{\ell}}&=\frac{1}{|\X^t|}\sum_{\rho\sim\X^t}\lay{\delta}{\ell}{_\rho}
 				\end{align*}
 				\item Perform gradient descent:
 				\begin{align*}
@@ -50,5 +51,216 @@ We make several remarks about mini-batch gradient descent:
 
 \subsubsection{Python Implementation}
 \lstinputlisting[lastline=100]{src/py/gradDescent.py}
+
+
+
+
+\subsection{Weighted Averages}
+
+Suppose $x_t\in\R^m$ is some collection of data indexed by $t$ which we may consider a time-variable, that is, after each successive unit of time (say for example, each day), our collection adds a new data point.  That is, the collection
+$$\{x_t\in\R^m:1\leq t\leq T\}$$
+has variable $T$.  
+
+Then if $X$ is the random vector associated to $x$, our usual mean $\mu$ is given by
+$$\mu(T):=\E[X]=\frac{1}{T}\sum_{t=1}^Tx_t.$$
+Since our collection of data is growing and evolving over time, it's reasonable in many applications to have the most recent data points affect a model more than older data points.  That is, we wish to impose a ``weight'' on more recent data points.
+
+One way (and likely the most trivial) to achieve such a weighing is to have only the most recent $k$ examples affect our model.  That is, for fixed $k\in\N$, and $t\geq k$, define the vector $\hat{x}_{t+1}\in\R^m$ by
+$$\hat{x}_{t+1}=\frac{1}{k}\sum_{j=t-mk+1}^tx_j.$$
+Then $\hat{x}_{t+1}$ represents the mean of the most recent $k$-examples.  This may be interpreted as the ``predicted-value'' for $x_{t+1}$.  This predictive model is known as a \textit{simple moving average, or SMA}.
+
+The simple moving average satisfies our weight requirement of focusing more on the most recent data, however, older data, though being less relevant, should still affect our model, but in a reduced form.  The simple model does not satisfy this more refined requirement.  Let's modify the simple model as follows:  Fix $\beta_1\in[0,1)$ and we initialize a $V_0=0\in\R^m$, and define recursively the vector $V_t\in\R^m$ given by
+$$V_t=\beta_1V_{t-1}+(1-\beta_1)x_t.$$
+We claim that $V_t$ can be interpreted as the next predicted value $\hat{x}_{t+1}$.  Indeed, expanding our recursive definition
+\begin{align*}
+	V_t&=\beta_1V_{t-1}+(1-\beta_1)x_t\\
+	&=\beta_1(\beta_1V_{t-2}+(1-\beta_1)x_{t-1})+(1-\beta_1)x_t\\
+	&=\beta_1^2V_{t-2}+(1-\beta_1)(\beta_1x_{t-1}+x_t)\\
+	&=\beta_1^2(\beta_1V_{t-3}+(1-\beta_1)x_{t-2})+(1-\beta_1)(\beta_1x_{t-1}+x_t)\\
+	&=\beta_1^3V_{t-3}+(1-\beta_1)(\beta_1^2x_{t-2}+\beta_1x_{t-1}+x_t)\\
+	&\vdots\\
+	&=\beta_t^tV_0+(1-\beta_1)\sum_{j=0}^{t-1}\beta_1^jx_{t-j}\\
+	&=(1-\beta_1)\sum_{j=0}^{t-1}\beta_1^jx_{t-j}.
+\end{align*}
+Moreover, if we define a probability distribution $\P$ as given by
+$$\P(X=x_j)=(1-\beta_1)\beta_1^j,$$
+then we immediately see that $V_t$ is the weighted-average over the last $t$-days, and hence may be interpreted as the predicted-value $\hat{x}_{t+1}$ as desired.  Finally, since
+$$1-\beta_1=\frac{1}{\frac{1}{1-\beta_1}},$$
+we may interpret $\frac{1}{1-\beta_1}$ as the size of the relevant sampling, i.e., $V_t$ is the average of $x$ over the previous $\frac{1}{1-\beta_1}$ days (assuming our time-units are measured in days).  This predictive model is known as an \textit{exponentially moving average, or EMA}.
+
+\begin{remark}
+	We note that since we initialize our EMA with $V_0=0$, that our predictive model is very bad for small $t$.  This usually is irrelevant for many models, but if we need to correct for bias, we may make the modification of
+	$$V_t=\frac{\beta_1 V_{t-1}+(1-\beta_1)x_t}{1-\beta_1^t}.$$
+	
+	Indeed, since $\beta_1\in[0,1)$, we note that
+\begin{align*}
+	\frac{1}{1-\beta_1}&=\sum_{j=0}^\infty\beta_1^j\\
+	&=\sum_{j=t}^\infty\beta_t^j+\sum_{j=0}^{t-1}\beta_1^j\\
+	&=\beta_1^t\sum_{j=0}^\infty\beta_1^j+\sum_{j=0}^{t-1}\beta_1^j\\
+	&=\frac{\beta_1^t}{1-\beta_1}+\sum_{j=0}^{t-1}\beta_1^j,
+\end{align*}
+and so
+$$\sum_{j=0}^{t-1}\beta_1^j=\frac{1-\beta_1^t}{1-\beta_1}.$$
+We then see that
+\begin{align*}
+	V_t&=\frac{\beta_1 V_{t-1}+(1-\beta_1)x_t}{1-\beta_1^t}\\
+	&=\frac{(1-\beta_1)\sum_{j=0}^{t-1}\beta_1^jx_{t-j}}{1-\beta_1^t}\\
+	&=\frac{\sum_{j=0}^{t-1}\beta_1^jx_{t-j}}{\sum_{j=0}^{t-1}\beta_1^j},
+\end{align*}
+which is the explicit definition of a weighted-average.
+\end{remark}
+
+
+
+\subsection{Gradient Descent with Momentum}
+Gradient descent has an issue with potentially plateauing during areas with a flat gradient, or bouncing around drastically before arriving at a minimum.  One reason for this is that each iterative step only depends on the previous value of the gradient (or rather, the most recently updated parameter).  The algorithm doesn't see larger trends, and so this leads to give our algorithm more history of the movements.  We do this by using EMA.
+
+We first recall our gradient descent algorithm:
+\begin{enumerate}
+	\item We initialize $\iter{W}{0}$ and $\iter{b}{0}$.
+	\item For $0\leq i<\texttt{num\_iters}$:
+		\begin{enumerate}[a.]
+			\item Let $B=\left\lceil\frac{n}{b}\right\rceil$, and generate batches $\{\X^k\}$.
+			\item For $1\leq k\leq B$:
+			\begin{enumerate}[i.]
+				\item Apply forward propagation on $\X^k$.
+				\item Compute the cost $\J$ on $\X^k$.
+				\item Apply backward propagation on $\X^k$ to obtain
+				$$\iter{\frac{\partial\J}{\partial W}}{t},\qquad \iter{\frac{\partial\J}{\partial b}}{t}.$$
+				\item We update parameters
+				\begin{align*}
+					\iter{W}{t}&=\iter{W}{t-1}-\alpha\iter{\frac{\partial\J}{\partial W}}{t}\\
+					\iter{b}{t}&=\iter{b}{t-1}-\alpha\iter{\frac{\partial\J}{\partial b}}{t}
+				\end{align*}
+			\end{enumerate}
+		\end{enumerate}
+\end{enumerate}
+Using this formulation of gradient descent, we insert EMA applied to the sequences of gradients depending on the iteration $t:=i+k$.  That is, we have the following algorithm:
+\begin{enumerate}
+	\item Initialize our parameters $\iter{W}{0}$ and $\iter{b}{0}$.  Initialize $\iter{V_W}{0}=\iter{V_b}{0}=0$.  Fix a momentum hyperparameter $\beta_1\in[0,1)$.
+	\item For $0\leq i<\texttt{num\_iters}$:
+	\begin{enumerate}[a.]
+		\item Let $B=\left\lceil\frac{n}{b}\right\rceil$, and generate batches $\{\X^k\}$.
+		\item For $1\leq k\leq B$:
+		\begin{enumerate}[i.]
+			\item Apply forward propagation on $\X^k$.
+			\item Compute the cost $\J$ on $\X^k$.
+			\item Apply backward propagation on $\X^k$ to obtain
+			$$\iter{\frac{\partial\J}{\partial W}}{t},\qquad \iter{\frac{\partial\J}{\partial b}}{t}.$$
+			\item Define
+			\begin{align*}
+				\iter{V_W}{t}&=\beta_1\iter{V_W}{t-1}+(1-\beta_1)\iter{\frac{\partial\J}{\partial W}}{t}\\
+				\iter{V_b}{t}&=\beta_1\iter{V_b}{t-1}+(1-\beta_1)\iter{\frac{\partial\J}{\partial b}}{t}
+			\end{align*}
+			\item We update parameters
+			\begin{align*}
+				\iter{W}{t}&=\iter{W}{t-1}-\alpha \iter{V_W}{t}\\
+				\iter{b}{t}&=\iter{b}{t-1}-\alpha\iter{V_b}{t}
+			\end{align*}
+		\end{enumerate}
+	\end{enumerate}
+\end{enumerate}
+
+
+
+
+\subsection{Root Mean Squared Propagation (RMSProp)}
+One of the main drawbacks to gradient descent with momentum is the uniformity of the modification regardless of the direction.  That is, suppose our desired minimum is in the $\vec{b}$ direction, but the gradient $\partial_b\J$ is small while the gradient $\partial_W\J$ is large.  As a result, our steps will oscillate wildly in the $\vec{w}$ direction, while moving very slowing in the $\vec{b}$ direction to our desired minimum.  This as a whole can be very computationally slow, and is undesired.
+
+The main idea for fixing these oscillatory issues is have a variable learning rate $\alpha$ which also depends on the direction.  That is, if $\partial_W\J$ is large, and not in our desired direction of motion, we would like our update for $W$ to be small, and vice-versa if $\partial_b\J$ is small.  Moreover, we wish to exaggerate the magnitudes of these vectors so we ensure our algorithm works efficiently.  That is, we relate some vector $S$ via
+$$S\sim\frac{\partial\J}{\partial W}^2,$$
+where we're taking that Hadamard-square (i.e., component-wise product with itself).  Then we perform step via
+$$W=W-\alpha\frac{1}{\sqrt{S}}\odot\frac{\partial\J}{\partial W},$$
+where where taking the Hadamard-root.  Note that this root is necessary for our update to make sense (consider the units involved in such an equation), but it does introduce the potential to divide by zero (which we'll fix by a small .  Moreover, we would like use the history of gradients as in EMA to further our refinement of the descent algorithm.  To this end, we have the following \textit{RMSProp algorithm}:
+\begin{enumerate}
+	\item Initialize our parameters $\iter{W}{0}$ and $\iter{b}{0}$.  Initialize $\iter{S_W}{0}=\iter{S_b}{0}=0$.  Fix a momentum $\beta_2\in[0,1)$ and let $\epsilon>0$ be sufficiently small ($\epsilon=10^{-8}$ is a good starting point).
+	\item For $0\leq i<\texttt{num\_iter}$:
+	\begin{enumerate}[a.]
+		\item Let $B=\left\lceil\frac{n}{b}\right\rceil$, and generate batches $\{\X^k\}$
+		\item For $1\leq k\leq B$:
+		\begin{enumerate}[i.]
+			\item Apply forward propagation on $\X^k$.
+			\item Compute the cost $\J$ on $\X^k$.
+			\item Apply backward propagation on $\X^k$ to obtain
+			$$\iter{\frac{\partial\J}{\partial W}}{t},\qquad \iter{\frac{\partial\J}{\partial b}}{t}.$$
+			\item Define
+			\begin{align*}
+				\iter{S_W}{t}&=\beta_2\iter{S_W}{t-1}+(1-\beta_2)\left(\iter{\frac{\partial\J}{\partial W}}{t}\right)^2\\
+				\iter{S_b}{t}&=\beta_2\iter{S_b}{t-1}+(1-\beta_2)\left(\iter{\frac{\partial\J}{\partial b}}{t}\right)^2
+			\end{align*}
+			\item Update parameters via
+			\begin{align*}
+				\iter{W}{t}&=\iter{W}{t-1}-\alpha\frac{\iter{\frac{\partial\J}{\partial W}}{t}}{\sqrt{\iter{S_W}{t}}+\epsilon}\\
+				\iter{b}{t}&=\iter{b}{t-1}-\alpha\frac{\iter{\frac{\partial\J}{\partial b}}{t}}{\sqrt{\iter{S_b}{t}}+\epsilon}
+			\end{align*}
+		\end{enumerate}
+	\end{enumerate}
+\end{enumerate}
+
+
+
+\subsection{Adaptive Moment Estimation: The Adam Algorithm}
+
+We first note that with the momentum algorithm utilizing the EMA as it does, that it is an algorithm of the first moment (i.e., the mean of the gradients).  Similarly, with RMSProp utilizing the square of the gradient as it does, we say it is an algorithm of the second moment (i.e., the uncentered variance of the gradients).  Our goal it utilize both gradient descent with momentum and RMSProp simultaneously to optimize our parameters.  This combination of algorithms is called the \textit{Adam algorithm} and is implemented as follows:
+\begin{enumerate}
+	\item Initialize our parameters $\iter{W}{0}$ and $\iter{b}{0}$.  Initialize $\iter{V_W}{0}=\iter{V_b}{0}=0$ and $\iter{S_W}{0}=\iter{S_b}{0}=0$.  Fix our constants of momenta $\beta_1,\beta_2\in[0,1)$ and let $\epsilon>0$ be sufficiently small.
+	\item For $0\leq i <\texttt{num\_iters}$:
+	\begin{enumerate}[a.]
+		\item Let $B=\left\lceil\frac{n}{b}\right\rceil$, and generate batches $\{\X^k\}$
+		\item For $1\leq k\leq B$:
+		\begin{enumerate}[i.]
+			\item Apply forward propagation on $\X^k$.
+			\item Compute the cost $\J$ on $\X^k$.
+			\item Apply backward propagation on $\X^k$ to obtain
+			$$\iter{\frac{\partial\J}{\partial W}}{t},\qquad \iter{\frac{\partial\J}{\partial b}}{t}.$$
+			\item Define
+			\begin{align*}
+				\iter{V_W}{t}&=\beta_1\iter{V_W}{t-1}+(1-\beta_1)\iter{\frac{\partial\J}{\partial W}}{t},\\
+				\iter{V_b}{t}&=\beta_1\iter{V_b}{t-1}+(1-\beta_1)\iter{\frac{\partial\J}{\partial b}}{t},
+			\end{align*}
+			and define
+			\begin{align*}
+				\iter{S_W}{t}&=\beta_2\iter{S_W}{t-1}+(1-\beta_2)\left(\iter{\frac{\partial\J}{\partial W}}{t}\right)^2,\\
+				\iter{S_b}{t}&=\beta_2\iter{S_b}{t-1}+(1-\beta_2)\left(\iter{\frac{\partial\J}{\partial b}}{t}\right)^2.
+			\end{align*}
+			\item Utilize bias correction via:
+			\begin{align*}
+				\iter{\hat{V}_W}{t}&=\frac{\iter{V_W}{t}}{1-\beta_1^t}\\
+				\iter{\hat{V}_b}{t}&=\frac{\iter{V_b}{t}}{1-\beta_1^t}\\
+				\iter{\hat{S}_W}{t}&=\frac{\iter{S_W}{t}}{1-\beta_2^t}\\
+				\iter{\hat{S}_b}{t}&=\frac{\iter{S_b}{t}}{1-\beta_2^t}
+			\end{align*}
+			\item Update the parameters:
+			\begin{align*}
+				\iter{W}{t}&=\iter{W}{t-1}-\alpha\frac{\iter{\hat{V}_W}{t}}{\sqrt{\iter{\hat{S}_W}{t}}+\epsilon}\\
+				\iter{b}{t}&=\iter{b}{t-1}-\alpha\frac{\iter{\hat{V}_b}{t}}{\sqrt{\iter{\hat{S}_b}{t}}+\epsilon}
+			\end{align*}
+		\end{enumerate}
+	\end{enumerate}
+\end{enumerate}
+
+We note that though we may still need to tune the hyper-parameter $\alpha$, the hyper-parameters $\beta_1,\beta_2$ and $\epsilon$ typically work quite well with default values of
+$$\beta_1=0.9,\qquad\beta_2=0.999,\qquad\epsilon=10^{-8}.$$
+
+
+
+\subsection{Learning Rate Decay}
+
+Finally, one further method we may utilize in our optimization problem, is the idea of slowly reducing our learning rate $\alpha$.  That is, if $i$ is our epoch iteration, and $\eta>0$ is a fixed decay rate, we can define new learning rates in many ways.  That is, for $\alpha=\alpha(i)$ we can define
+\begin{itemize}
+	\item $$\alpha(i)=\frac{1}{1+\eta i}\alpha_0,$$
+	\item $$\alpha(i)=\alpha_0\eta^i,$$
+	\item $$\alpha(i)=\frac{\eta}{\sqrt{i}}\alpha_0.$$
+\end{itemize}
+One could also implement a ``manual decay'', but this should only be used under ideal circumstances.
+
+
+
+\subsubsection{Python Implementation}
+%\lstinputlisting[lastline=100]{src/py/gradDescent.py}
+
+
+
+
 
 

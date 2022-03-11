@@ -41,7 +41,7 @@ def partition_data(x, y, train_ratio):
     test : Tuple[array_like]
     """
     ## Shuffle the data
-    x, y = shuffle(x.T, y.T) #
+    x, y = shuffle(x.T, y.T) # Only shuffles rows, so transpose is needed
     x = x.T
     y = y.T
 

@@ -26,16 +26,16 @@ and so for suitably chosen $\lambda>0$, it forces $\norm{\lay{W}{\ell}}_F$ to be
 
 A typical usage of regularization would be similar to the following outline:
 \begin{enumerate}[i.]
-	\item Partition our dataset $\D=\frak{X}\cup\mathcal{D}\cup\mathcal{T}$.
+	\item Partition our dataset $\D=\X\cup\mathcal{D}\cup\mathcal{T}$.
 	\item Give a set $\Lambda$ of potential regularization parameters.
-	\item For each $\lambda\in\Lambda$, we first train on $\frak{X}$, that is, we obtain
+	\item For each $\lambda\in\Lambda$, we first train on $\X$, that is, we obtain
 		\begin{align*}
 			(W,b)&=\arg\min_{W,b}\J^R(W,b)\\
-			&=\arg\min_{W,b}\left\{\frac{1}{n_X}\sum_{(x,y)\in\frak{X}}\L(\hat{y},y)+\frac{\lambda}{2n_X}\sum_{\ell=1}^L\norm{\lay{W}{\ell}}_F^2\right\}
+			&=\arg\min_{W,b}\left\{\frac{1}{n_X}\sum_{(x,y)\in\X}\L(\hat{y},y)+\frac{\lambda}{2n_X}\sum_{\ell=1}^L\norm{\lay{W}{\ell}}_F^2\right\}
 		\end{align*}
 		which dependent on $\lambda$.
-	\item Then using the aforementioned $(W,b)=(W,b)(\lambda)$, we evaluate $\mathcal{E}_\lambda(\frak{X})$ and $\mathcal{E}_\lambda(\mathcal{D})$.
-	\item After finding $\mathcal{E}_\lambda(\frak{X})$ and $\mathcal{E}_\lambda(\mathcal{D})$ for each $\lambda\in\Lambda$, we choose our desired $\lambda$ and hence our desired parameters $W$ and $b$.
+	\item Then using the aforementioned $(W,b)=(W,b)(\lambda)$, we evaluate $\mathcal{E}_\lambda(\X)$ and $\mathcal{E}_\lambda(\mathcal{D})$.
+	\item After finding $\mathcal{E}_\lambda(\X)$ and $\mathcal{E}_\lambda(\mathcal{D})$ for each $\lambda\in\Lambda$, we choose our desired $\lambda$ and hence our desired parameters $W$ and $b$.
 	\item We evaluate our model on $\mathcal{T}$ to determine the overall accuracy.
 \end{enumerate}
 
