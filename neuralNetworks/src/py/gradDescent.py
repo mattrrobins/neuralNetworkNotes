@@ -65,20 +65,22 @@ def initialize_momenta(layers):
 
     return v, s
 
-def learning_rate_decay(epoch, learning_rate, decay_rate=0.95):
+def learning_rate_decay(epoch, learning_rate=0.01, decay_rate=0.0):
     """
     Parameters
     ----------
+    eposh : int
     learning_rate : float
+        Default: 0.01
     decay_rate : float
-        Default: 0.95
+        Default: 0.0 - Returns a constant learning_rate
 
     Returns
     -------
-    alpha : float
+    learning_rate : float
     """
-    alpha = (1 / (1 + epoch * decay_rate)) * learning_rate
-    return alpha
+    learning_rate = (1 / (1 + epoch * decay_rate)) * learning_rate
+    return learning_rate
 
 def corrected_momentum(v, grads, update_iter, beta1=0.0):
     """
@@ -99,9 +101,9 @@ def corrected_momentum(v, grads, update_iter, beta1=0.0):
 
     Returns
     -------
-    velocities : Dict[Dict[array_like]]
-        velocities['w'][l].shape = dw[l].shape
-        velocities['b'][l].shape = db[l].shape
+    v : Dict[Dict[array_like]]
+        v['w'][l].shape = dw[l].shape
+        v['b'][l].shape = db[l].shape
     """
     ## Retrieve velocities and gradients
     vw = v['w']
@@ -118,8 +120,8 @@ def corrected_momentum(v, grads, update_iter, beta1=0.0):
         vb[l] /= (1 - beta1 ** update_iter)
         assert(vb[l].shape == db[l].shape)
 
-    velocities = {'w' : vw, 'b' : vb}
-    return velocities
+    v = {'w' : vw, 'b' : vb}
+    return v
 
 def corrected_rmsprop(s, grads, update_iter, beta2=0.999):
     """
@@ -139,9 +141,9 @@ def corrected_rmsprop(s, grads, update_iter, beta2=0.999):
 
     Returns
     -------
-    accelerations : Dict[Dict[array_like]]
-        accelerations['w'][l].shape = w[l].shape
-        accelerations['b'][l].shape = b[l].shape
+    s : Dict[Dict[array_like]]
+        s['w'][l].shape = w[l].shape
+        s['b'][l].shape = b[l].shape
     """
     ## Retrieve accelerations and gradients
     sw = s['w']
@@ -158,11 +160,11 @@ def corrected_rmsprop(s, grads, update_iter, beta2=0.999):
         sb[l] /= (1 - beta2 ** update_iter)
         assert(sb[l].shape == db[l].shape)
 
-    accelerations = {'w' : sw, 'b' : sb}
-    return accelerations
+    s = {'w' : sw, 'b' : sb}
+    return s
 
 
-def update_parameters_adam(params, grads, epoch, batch_iter, velocities, accelerations, momenta=[1e-8, 0.9, 0.999], learning_rate=0.01, decay_rate = 0.95):
+def update_parameters_adam(params, grads, epoch, batch_iter, v, s, momenta=[1e-8, 0.9, 0.999], alpha0=0.01, decay_rate = 0.95):
     """
     Parameters
     ----------
@@ -203,20 +205,20 @@ def update_parameters_adam(params, grads, epoch, batch_iter, velocities, acceler
     L = len(w)
 
     ## Update velocites and accelerations
-    v = corrected_momentum(velocities, grads, update_iter, momenta[1])
+    v = corrected_momentum(v, grads, update_iter, momenta[1])
     vw = v['w']
     vb = v['b']
-    s = corrected_rmsprop(accelerations, grads, update_iter, momenta[2])
+    s = corrected_rmsprop(s, grads, update_iter, momenta[2])
     sw = s['w']
     sb = s['b']
 
     ## Update learning rate
-    alpha = learning_rate_decay(epoch, learning_rate, decay_rate)
+    learning_rate = learning_rate_decay(epoch, alpha0, decay_rate)
 
     ## Perform update
     for l in range(1, L + 1):
-        w[l] = w[l] - alpha * vw[l] / (np.sqrt(sw[l]) + momenta[0])
-        b[l] = b[l] - alpha * vb[l] / (np.sqrt(sb[l]) + momenta[0])
+        w[l] = w[l] - learning_rate * vw[l] / (np.sqrt(sw[l]) + momenta[0])
+        b[l] = b[l] - learning_rate * vb[l] / (np.sqrt(sb[l]) + momenta[0])
 
     params = {'w' : w, 'b' : b}
     return params
