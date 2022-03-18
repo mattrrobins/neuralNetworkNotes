@@ -1,0 +1,86 @@
+
+
+
+\section{Batch Normalization}
+
+We recall feature-normalization:  Suppose $x\in\R^{m\times n}$ is some training data.  Let
+$$\mu=\E[X],\qquad\sigma^2=\E[(X-\mu)^2],$$
+denote the mean and variance of the random-vector representation $X$ of $x$, respectively.  Then we consider the map
+$$x_j\mapsto\frac{x_j-\mu}{\sigma}=:\hat{x}_j,$$
+to be the \textit{normalization} of $x_j$.
+
+This definition is so ``vanilla'', that it should be clear that this can be easily applied to each hidden-layer of a neural network as well.  However, we first note that there is an ambiguous choice amongst the implementation, namely, do we normalize $\lay{z}{\ell}$ or $\lay{a}{\ell}$, i.e., does normalization occur before or after we compute the activation unit.  It seems more common to apply normalization to $\lay{z}{\ell}$, so that is what we do here without further mention of this choice.
+
+Moreover, let $\gamma,\beta\in\R^m$, if we consider the map
+$$\hat{x}_j\mapsto\gamma\odot\hat{x}_j+\beta:=\tilde{x}_j,$$
+we can see fairly trivially that we can recover $x_j$, indeed, let $\gamma=\sigma$ and $\beta=\mu$, and hence
+\begin{align*}
+	\tilde{x}_j&=\gamma\odot\hat{x}_j+\beta\\
+	&=\gamma\odot\frac{x_j-\mu}{\sigma}+\beta\\
+	&=x_j-\mu_\beta\\
+	&=x_j
+\end{align*}
+as desired.  Moreover, we see that we can actually control what mean and variance we wish to impose on our input-vectors $x$.  Indeed, consider
+\begin{align*}
+	\E[\gamma\odot X+\beta]&=\frac{1}{n}\sum_{j=1}^n(\gamma\odot x_j+\beta)\\
+	&=\gamma\odot\E[X]+\beta\\
+	&=\gamma\odot\mu+\beta,
+\end{align*}
+and so if $X$ was normalized, we the new mean would be given by $\beta$.  Similarly,
+\begin{align*}
+	\E[(\gamma\odot X+\beta)^2]&=\frac{1}{n}\sum_{j=1}^n(\gamma\odot x_j+\beta)^2\\
+	&=\frac{1}{n}\sum_{j=1}^n(\gamma^2\odot x_j^2+2\beta\odot\gamma\odot x_j+\beta^2)\\
+	&=\gamma^2\odot\sigma^2+2\beta\odot\gamma\odot\mu+\beta^2,
+\end{align*}
+and so if $X$ was normalized, we see the new variance would be given by $\gamma^2+\beta^2$.  Thus, we see that by composition, the act of normalization can be characterized by the new parameters $\gamma$ and $\beta$, and is mathematically-superfluous to consider both, but for computational considerations and algorithmic stability it shall be beneficial to keep both.  That is, suppose we're training on some batch $\X^k$ given a random-vector representation $\lay{Z}{\ell}$ in layer-$\ell$, and parameters $\lay{\gamma}{\ell},\lay{\beta}{\ell}\in\R^{m_\ell}$ and some $\epsilon>0$, arbitrarily small and prescribed for numerical stability, we define the \textit{batch-normalization} map $BN_{\lay{\gamma}{\ell},\lay{\beta}{\ell}}:\R^{m_\ell}\to\R^{m_\ell}$ given by the compositional-map
+\begin{align*}
+	\lay{z}{\ell}&\mapsto\frac{1}{|\X^k|}\sum_{x\in\X^k}\lay{z}{\ell}=:\lay{\mu}{\ell};\\
+	(\lay{z}{\ell},\lay{\mu}{\ell})&\mapsto\frac{1}{|\X^k|}\sum_{x\in\X^k}(\lay{z}{\ell}-\lay{\mu}{\ell})^2=:\lay{\sigma}{\ell}{^2};\\
+	(\lay{z}{\ell},\lay{\mu}{\ell},\lay{\sigma}{\ell},\epsilon)&\mapsto\frac{\lay{z}{\ell}-\lay{\mu}{\ell}}{\sqrt{\lay{\sigma}{\ell}{^2}+\epsilon}}=:\lay{\hat{z}}{\ell};\\
+	(\lay{\hat{z}}{\ell},\lay{\gamma}{\ell},\lay{\beta}{\ell})&\mapsto \lay{\gamma}{\ell}\odot\lay{\hat{z}}{\ell}+\lay{\beta}{\ell}=:\lay{\tilde{z}}{\ell}.
+\end{align*}
+
+
+Suppose we have an $L$-layer neural network, each layer with $m_\ell$ nodes, and we focus on the $\ell$-th layer specifically to expand:
+\begin{equation*}
+	\cdots\layerfctn{\lay{\varphi}{\ell}}
+	\underbrace{
+		\begin{bmatrix}
+			\lay{z}{1}{^1}\\
+			\vdots\\
+			\lay{z}{1}{^{m_\ell}}
+		\end{bmatrix}
+		\layerfctn{BN_{\lay{\gamma}{\ell},\lay{\beta}{\ell}}}
+		\begin{bmatrix}
+			\lay{\tilde{z}}{\ell}{^1}\\
+			\vdots\\
+			\lay{\tilde{z}}{\ell}{_{m_\ell}}
+		\end{bmatrix}
+		\layerfctn{\lay{g}{\ell}}
+		\begin{bmatrix}
+			\lay{a}{1}{^1}\\
+			\vdots\\
+			\lay{a}{1}{^{m_\ell}}
+		\end{bmatrix}
+		}_{\text{Layer } \ell}
+	\layerfctn{\lay{\varphi}{\ell+1}}\cdots
+\end{equation*}
+The procedure for forward propagation should be immediately obvious from the closer look at layer-$\ell$. For backward propagation, we compute derivatives in coordinates
+\begin{align*}
+	\frac{\partial\lay{\tilde{z}}{\ell}{^i}}{\partial\lay{z}{\ell}{^\nu}}&=\frac{\lay{\gamma}{\ell}{^i}}{\lay{\sigma}{\ell}{^i}}\delta^i_\nu,\\
+	\frac{\partial\lay{\tilde{z}}{\ell}{^i}}{\partial\lay{\gamma}{\ell}{^\nu}}&=\frac{\lay{z}{\ell}{^i}-\lay{\mu}{\ell}{^i}}{\lay{\sigma}{\ell}{^i}}\delta^i_\nu,\\
+	\frac{\partial\lay{\tilde{z}}{\ell}{^i}}{\partial\lay{\beta}{\ell}{^\nu}}&=\delta^i_\nu.
+\end{align*}
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -103,5 +103,30 @@ def main2():
         print(f'At the point \n{x}\n the gradient is\n{grad}\n with error {e}%')
 
 
+
+def hyperparameter_scale(k, p):
+    """
+    Parameters
+    ----------
+    k : int
+        The number random points to generate
+    p : int
+        The smallest magnitude for our log-scale
+
+    Returns
+    -------
+    hypers : List[float]
+        The list of hyper-parameters with which to tune
+    """
+    hypers = []
+    for _ in range(k):
+        r = p * np.random.rand()
+        hypers.append(10 ** r)
+    return hypers
+
+def main3():
+    hypers = hyperparameter_scale(10, -4)
+    print(sorted(hypers))
+
 if __name__ == '__main__':
-    main2()
+    main3()

@@ -1,0 +1,40 @@
+
+
+\section{Tuning Hyper-Parameters}
+
+Suppose that we have the dataset $\D$ with the usual partition of
+$$\D=\X\cup\mathcal{D}\cup\mathcal{T}.$$
+Furthermore, suppose we impose a neural network architecture which has a collection of hyper-parameters (relabeled as):
+$$\eta_1,\eta_2,...\eta_K.$$
+
+The naive method of hyper-parameter tuning would instinctively be something of the form: Let $[d_i,d_i+k_i\Delta_i]$ denote an interval for which we require
+$$\eta_i\in[d_i,d_i+k_i\Delta_i],$$
+with an even-partition of 
+$$d_i<d_i+\Delta_i<d_i+2\Delta_i<\cdots<d_i+k_i\Delta_i,$$
+of length $\Delta_i$.  This collection forms a ``grid'' in $\R^K$ for which each point of the grid gives us a full collection of hyper-parameters which we can then use to train our model.  However, if certain hyper-parameters do not affect our model's accuracy very much, we've added at least a full dimension of validation which is not needed.  A more randomized approach would be best to determine such a hyper-parameter characterization must faster.  Thus a random collection of points $H_i$ for which we constrain $\eta_i\in H_i$.
+
+How should we implement this set $H_i$?  Suppose for example, we wish to find
+$$\eta_i\in[0.0001, 1],$$
+but the majority of the random points will likely be in $[0.1,1]$.  Suppose we partition the interval
+\begin{align*}
+	[0.0001,1]&=0.0001<0.001<0.01<0.1<1\\
+	&=10^{-4}<10^{-3}<10^{-2}<10^{-1}<10^0.
+\end{align*}
+This suggests we obtain a distribution of points using a logarithmic (in base $10$) scale.  Indeed, let
+$$p\in[0,1],$$
+be a random point.  Then letting $r=-4p\in[-4,0]$, we obtain another random point, and let
+$$H_i=\{10^{-4p}:p\in\text{rand}([0,1])\},$$
+for some prescribed set-cardinality.  This allows to choose more appropriately scaled-options for our hyper-parameters.
+
+\begin{remark}
+	Suppose we're using exponentially moving averages and have a hyper-parameter $\beta_1\in[0,1)$.  If we do not use a log-scale, then the sensitivity of our model with respect to $\beta_1$ when $\beta_1\approx 1$ is very strong.  Indeed, we recall that when $\beta_1=0.999$, this corresponds to averaging over the previous $1000$ days.  And it we change $\beta_1$ slightly to
+	$$\beta_1=0.9995,$$
+	then we've changed the interpretation of our model to the previous $2000$ days.  A subtle change for $\beta_1$, but a drastic change to our model.  The log-scale fixes this issue immediately.
+\end{remark}
+
+We finally note that our hyper-parameters can become \textit{stale} over time.  That is, suppose we've trained a neural network, and tuned the hyper-parameters to allow an acceptable accuracy for our model.  As the model refines over time, with more data being inserted to train on, it's import to re-test our hyper-parameters to make sure our model hasn't opened up to a better choice of one (or some or all) of the hyper-parameters we've previously tuned.
+
+
+
+\subsubsection{Python Implementation}
+\lstinputlisting[firstline=107,lastline=126]{src/py/miscSnippets.py}
