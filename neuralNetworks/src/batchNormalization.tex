@@ -2,6 +2,7 @@
 
 
 \section{Batch Normalization}
+\TOX{See \cite{DBLP:journals/corr/IoffeS15}.}
 
 We recall feature-normalization:  Suppose $x\in\R^{m\times n}$ is some training data, and let
 $$\mu=\E[X],\qquad\sigma^2=\E[(X-\mu)^2],$$
@@ -140,37 +141,10 @@ $$\frac{\partial G}{\partial B}=\lay{\delta}{2}\lay{a}{1}{^T}.$$
 We're now ready to compute some auxiliary differentials
 
 
-\begin{lem}
-	Let $\mathcal{N}:\R^m\times(\R^m)^N\to\R^m$ denote the usual normalization transformation, i.e.,
-	\begin{align*}
-		\hat{z}&= \mathcal{N}(z)\\
-		&=\frac{z-\mu}{\sqrt{\sigma^2+\epsilon}},
-	\end{align*}
-	where
-	$$\mu=\E[z]=\frac{1}{N}\sum_{j=1}^Nz_j,$$
-	and
-	$$\sigma^2=\E[(z-\mu)^2]=\frac{1}{N}\sum_{j=1}^N(z_j-\mu)^2.$$
-	Let $BN:\R^m\times\R^m\times\R^m\to\R^m$ denote the batch normalization transformation $z\mapsto\tilde{z}$, i.e.,
-	\begin{align*}
-		\tilde{z}&:=BN(\gamma,\beta,z)\\
-		&=\gamma\odot\hat{z}+\beta\\
-		&=\gamma\odot\frac{z-\mu}{\sqrt{\sigma^2+\epsilon}}+\beta.
-	\end{align*}
-	Then the differentials:
-	\begin{itemize}
-		\item $d(\mathcal{N})_z:T_z\R^m\to T_{\hat{z}}\R^m$ is given by
-		
-		\item $d(BN)_\gamma:T_\gamma\R^m\to T_{\tilde{z}}\R^m,$ is given by
-		$$d(BN)_\gamma(v)=\hat{z}\odot v,\qquad\frac{\partial\tilde{z}^i}{\partial\gamma^j}=\hat{z}^i\delta^i_j.$$
-		\item $d(BN)_\beta:T_\beta\R^m\to T_{\tilde{z}}\R^m$ is given by
-		$$d(BN)_\beta(v)=v,\qquad\frac{\partial\tilde{z}^i}{\partial \beta^j}=\delta^i_j.$$
-		\item $d(BN)_{\hat{z}}:T_{\hat{z}}\R^m\to T_{\tilde{z}}\R^m$ is given by
-		$$d(BN)_{\hat{z}}(v)=\gamma\odot v,\qquad\frac{\partial\tilde{z}^i}{\partial\hat{z}^j}=\gamma^i\delta^i_j.$$
-		\item $d(BN)_z:T_z\R^m\to T_{\tilde{z}}\R^m$ is given by
-		
-	\end{itemize}
-\end{lem}
 
+
+
+\begin{comment}
 \begin{lem}
 Let $\X=\{x_1,...,x_N\}\subset\R^m$ which gives rise to the mean
 $$\mu=\E[x]=\frac{1}{N}\sum_{j=1}^Nx_j,$$
@@ -210,6 +184,88 @@ Thus for $x_{j_0}\in\X$,
 	&\qquad+\left(\frac{-1}{N}((\sigma^2)^i+\epsilon)^{-1/2}\delta^i_\nu\right)+\left(((\sigma^2)^i+\epsilon)^{-1/2})\delta_{j_0}^\lambda\delta_\nu^i\right)
 \end{align*}
 \end{proof}
+
+\end{comment}
+
+
+
+\begin{lem}
+	For $N\in\N$, we define the expectation function $\E:\R^N\to\R$ given by
+	$$\E[(x^1,...,x^N)]=\frac{1}{N}\sum_{j=1}^Nx^j.$$
+	Let $z=\{z^1,...,z^N\}\subset\R$ be fixed, and define the mean
+	$$\mu:=\E[z]=\frac{1}{N}\sum_{j=1}^Nz^j.$$
+	Then as a differential, we have that $d\E_z:T_z\R^N\to T_\mu\R$ given by
+	$$d\E_z=\frac{1}{N}\sum_{j=1}^N\rest{dx^j}_{x=z},\qquad d\E_z(v)=\frac{1}{N}\sum_{j=1}^Nv^j.$$
+	Define the variance function $\V:\R^N\to\R$ given by
+	$$\V[(x^1,...,x^N)]=\frac{1}{N}\sum_{j=1}^N(x^j-\E[(x^1,...,x^N)])^2.$$
+	For fixed $z$, define the variance
+	$$\sigma^2=\V[z].$$
+	Then as a differential, we have that $d\V_z:T_z\R^N\to T_{\sigma^2}\R$ given by
+	$$d\V_z=\frac{2}{N}\sum_{j=1}^N(z^j-\mu)\rest{dx^j}_{x=z},\qquad d\V_z(v)=\frac{2}{N}\sum_{j=1}^N(z^j-\mu)v^j.$$
+\end{lem}
+
+\begin{proof}
+	Immediate from direct calculation.
+\end{proof}
+
+\begin{lem}
+	Let $\mathcal{N}:\R^N\to\R^N$ denote the normalization transformation with $\hat{x}=\mathcal{N}(x)$.  That is,
+	\begin{align*}
+		\hat{x}&:=\mathcal{N}(x)\\
+		&=\left(\frac{x^j-\E[x]}{\sqrt{\V[x]+\epsilon}}:1\leq j\leq N\right),
+	\end{align*}
+	for some $\epsilon>0$ sufficiently small.  Fix $z\in\R^N$, and let
+	$$\mu:=\E[z],\qquad\sigma^2:=\V[z],$$
+	Then as a differential, we have that $d\mathcal{N}_z:T_z\R^N\to T_{\hat{z}}\R^N$ given by
+	\begin{align*}
+		d\mathcal{N}_z&=\begin{bmatrix}
+			d\hat{x}^1_z\\
+			\vdots\\
+			d\hat{x}^N_z
+		\end{bmatrix},
+	\end{align*}
+	where
+	$$d\hat{x}^\alpha_z=\frac{1}{\sqrt{\sigma^2+\epsilon}}\left(dx^\alpha_z-d\E_z-\frac{z^\alpha-\mu}{2(\sigma^2+\epsilon)}d\V_z\right).$$
+\end{lem}
+
+\begin{proof}
+	We note that
+	\begin{align*}
+		d\hat{x}^\alpha_z&=d\left((x^\alpha-\E[x])(\V[x]+\epsilon)^{-1/2}\right)_z\\
+		&=(dx^\alpha_z-d\E_z)(\sigma^2+\epsilon)^{-1/2})-\frac{1}{2}(\sigma^2+\epsilon)^{-3/2}(z^\alpha-\mu)d\V_z\\
+		&=\frac{dx^\alpha_z}{\sqrt{\sigma^2+\epsilon}}-\frac{d\E_z}{\sqrt{\sigma^2+\epsilon}}-\frac{1}{2}\frac{z^\alpha-\mu}{(\sigma^2+\epsilon)^{3/2}}d\V_z\\
+		&=\frac{1}{\sqrt{\sigma^2+\epsilon}}\left(dx^\alpha_z-d\E_z-\frac{z^\alpha-\mu}{2(\sigma^2+\epsilon)}d\V_z\right)
+		%&=\frac{1}{\sqrt{\sigma^2+\epsilon}}\left(dx^\alpha_z-\frac{1}{N}\sum_{j=1}^Ndx^j_z-\frac{z^\alpha-\mu}{2(\sigma^2+\epsilon)}\frac{2}{N}\sum_{j=1}^N(z^j-\mu)dx^j_z\right)\\
+		%&=\frac{1}{\sqrt{\sigma^2+\epsilon}}\left(dx^\alpha_z-\frac{1}{N}\sum_{j=1}^N\left(1+\frac{z^\alpha-\mu}{\sigma^2+\epsilon}(z^j-\mu)\right)dx^j_z\right)
+	\end{align*}
+\end{proof}
+
+
+\begin{prop}
+	Let $\mathcal{N}:\R^N\to\R^N$ denote the usual normalization transformation with $\hat{x}=\mathcal{N}(x)$.
+	Let $BN:\R^m\times\R^m\times\R^{m\times N}\to\R^{m\times N}$ denote the batch normalization transformation $[z_j]\mapsto[\tilde{z}_j]$, i.e.,
+	\begin{align*}
+		\tilde{z}^i_j&=\gamma^i\hat{z}^i_j+\beta^i,
+	\end{align*}
+	where $z^i\in\R^N$, and
+	$$\hat{z}^i=\mathcal{N}(z^i),\qquad \mu^i=\E[z^i],\qquad(\sigma^2)^i=\V[z^i].$$
+	
+	
+	
+	
+	Then the differentials:
+	\begin{itemize}	
+		\item $d(BN)_\gamma:T_\gamma\R^m\to T_{\tilde{z}}\R^m,$ is given by
+		$$d(BN)_\gamma(v)=\hat{z}\odot v,\qquad\frac{\partial\tilde{z}^i}{\partial\gamma^j}=\hat{z}^i\delta^i_j.$$
+		\item $d(BN)_\beta:T_\beta\R^m\to T_{\tilde{z}}\R^m$ is given by
+		$$d(BN)_\beta(v)=v,\qquad\frac{\partial\tilde{z}^i}{\partial \beta^j}=\delta^i_j.$$
+		\item $d(BN)_{\hat{z}}:T_{\hat{z}}\R^m\to T_{\tilde{z}}\R^m$ is given by
+		$$d(BN)_{\hat{z}}(v)=\gamma\odot v,\qquad\frac{\partial\tilde{z}^i}{\partial\hat{z}^j}=\gamma^i\delta^i_j.$$
+		\item $d(BN)_z:T_z\R^m\to T_{\tilde{z}}\R^m$ is given by
+		
+	\end{itemize}
+\end{prop}
+
 
 
 
