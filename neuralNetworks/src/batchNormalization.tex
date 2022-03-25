@@ -3,36 +3,39 @@
 
 \section{Batch Normalization}
 
-We recall feature-normalization:  Suppose $x\in\R^{m\times n}$ is some training data.  Let
+We recall feature-normalization:  Suppose $x\in\R^{m\times n}$ is some training data, and let
 $$\mu=\E[X],\qquad\sigma^2=\E[(X-\mu)^2],$$
 denote the mean and variance of the random-vector representation $X$ of $x$, respectively.  Then we consider the map
 $$x_j\mapsto\frac{x_j-\mu}{\sigma}=:\hat{x}_j,$$
 to be the \textit{normalization} of $x_j$.
 
-This definition is so ``vanilla'', that it should be clear that this can be easily applied to each hidden-layer of a neural network as well.  However, we first note that there is an ambiguous choice amongst the implementation, namely, do we normalize $\lay{z}{\ell}$ or $\lay{a}{\ell}$, i.e., does normalization occur before or after we compute the activation unit.  It seems more common to apply normalization to $\lay{z}{\ell}$, so that is what we do here without further mention of this choice.
+This definition is so ``vanilla'', that it should be clear that this can be easily applied to each hidden-layer (we shall not use it on the output layer) of a neural network as well.  However, we first note that there is an ambiguous choice amongst the implementation, namely, do we normalize $\lay{z}{\ell}$ or $\lay{a}{\ell}$, i.e., does normalization occur before or after we compute the activation unit.  It seems more common to apply normalization to $\lay{z}{\ell}$, so that is what we do here without further mention of this choice.
 
-Moreover, let $\gamma,\beta\in\R^m$, if we consider the map
+Let $\gamma,\beta\in\R^m$, if we consider the map
 $$\hat{x}_j\mapsto\gamma\odot\hat{x}_j+\beta:=\tilde{x}_j,$$
-we can see fairly trivially that we can recover $x_j$, indeed, let $\gamma=\sigma$ and $\beta=\mu$, and hence
+we can see fairly trivially that we can recover $x_j$ (thus allowing for identity activation units), indeed, let $\gamma=\sigma$ and $\beta=\mu$, and hence
 \begin{align*}
 	\tilde{x}_j&=\gamma\odot\hat{x}_j+\beta\\
 	&=\gamma\odot\frac{x_j-\mu}{\sigma}+\beta\\
 	&=x_j-\mu_\beta\\
 	&=x_j
 \end{align*}
-as desired.  Moreover, we see that we can actually control what mean and variance we wish to impose on our input-vectors $x$.  Indeed, consider
+as desired.  Moreover, we see that we can actually control what mean and variance we wish to impose on our input-vectors $x$.  Indeed, let $\hat{x}$ denote the normalized $x$, and consider
 \begin{align*}
-	\E[\gamma\odot X+\beta]&=\frac{1}{n}\sum_{j=1}^n(\gamma\odot x_j+\beta)\\
-	&=\gamma\odot\E[X]+\beta\\
-	&=\gamma\odot\mu+\beta,
+	\E[\gamma\odot \hat{X}+\beta]&=\frac{1}{n}\sum_{j=1}^n(\gamma\odot \hat{x}_j+\beta)\\
+	&=\gamma\odot\E[\hat{X}]+\beta\\
+	&=0+\beta\\
+	&=\beta,
 \end{align*}
-and so if $X$ was normalized, we the new mean would be given by $\beta$.  Similarly,
+and so the new mean would be given by $\beta$.  Similarly,
 \begin{align*}
-	\E[(\gamma\odot X+\beta)^2]&=\frac{1}{n}\sum_{j=1}^n(\gamma\odot x_j+\beta)^2\\
-	&=\frac{1}{n}\sum_{j=1}^n(\gamma^2\odot x_j^2+2\beta\odot\gamma\odot x_j+\beta^2)\\
-	&=\gamma^2\odot\sigma^2+2\beta\odot\gamma\odot\mu+\beta^2,
+	\E[(\gamma\odot \hat{X}+\beta-\beta)^2]&=\frac{1}{n}\sum_{j=1}^n(\gamma\odot \hat{x}_j)^2\\
+	&=\frac{1}{n}\sum_{j=1}^n(\gamma^2\odot \hat{x}_j^2)\\
+	&=\gamma^2\odot\E[(\hat{X}-0)^2]\\
+	&=\gamma^2\odot1\\
+	&=\gamma^2
 \end{align*}
-and so if $X$ was normalized, we see the new variance would be given by $\gamma^2+\beta^2$.  Thus, we see that by composition, the act of normalization can be characterized by the new parameters $\gamma$ and $\beta$, and is mathematically-superfluous to consider both, but for computational considerations and algorithmic stability it shall be beneficial to keep both.  That is, suppose we're training on some batch $\X^k$ given a random-vector representation $\lay{Z}{\ell}$ in layer-$\ell$, and parameters $\lay{\gamma}{\ell},\lay{\beta}{\ell}\in\R^{m_\ell}$ and some $\epsilon>0$, arbitrarily small and prescribed for numerical stability, we define the \textit{batch-normalization} map $BN_{\lay{\gamma}{\ell},\lay{\beta}{\ell}}:\R^{m_\ell}\to\R^{m_\ell}$ given by the compositional-map
+and so we see the new variance would be given by $\gamma^2$.  Thus, we see that by composition, the act of normalization can be characterized by the new parameters $\gamma$ and $\beta$, and is mathematically-superfluous to consider both, but for computational considerations and algorithmic stability it shall be beneficial to keep both.  That is, suppose we're training on some batch $\X^k$ and focused on layer-$\ell$, with parameters $\lay{\gamma}{\ell},\lay{\beta}{\ell}\in\R^{m_\ell}$ and some $\epsilon>0$, arbitrarily small and prescribed for numerical stability, we define the \textit{batch-normalization} map $BN_{\lay{\gamma}{\ell},\lay{\beta}{\ell}}:\R^{m_\ell}\to\R^{m_\ell}$ given by the compositional-map
 \begin{align*}
 	\lay{z}{\ell}&\mapsto\frac{1}{|\X^k|}\sum_{x\in\X^k}\lay{z}{\ell}=:\lay{\mu}{\ell};\\
 	(\lay{z}{\ell},\lay{\mu}{\ell})&\mapsto\frac{1}{|\X^k|}\sum_{x\in\X^k}(\lay{z}{\ell}-\lay{\mu}{\ell})^2=:\lay{\sigma}{\ell}{^2};\\
@@ -65,11 +68,171 @@ Suppose we have an $L$-layer neural network, each layer with $m_\ell$ nodes, and
 		}_{\text{Layer } \ell}
 	\layerfctn{\lay{\varphi}{\ell+1}}\cdots
 \end{equation*}
-The procedure for forward propagation should be immediately obvious from the closer look at layer-$\ell$. For backward propagation, we compute derivatives in coordinates
+The procedure for forward propagation should be immediately obvious from the closer look at layer-$\ell$. However, we notice that
 \begin{align*}
-	\frac{\partial\lay{\tilde{z}}{\ell}{^i}}{\partial\lay{z}{\ell}{^\nu}}&=\frac{\lay{\gamma}{\ell}{^i}}{\lay{\sigma}{\ell}{^i}}\delta^i_\nu,\\
-	\frac{\partial\lay{\tilde{z}}{\ell}{^i}}{\partial\lay{\gamma}{\ell}{^\nu}}&=\frac{\lay{z}{\ell}{^i}-\lay{\mu}{\ell}{^i}}{\lay{\sigma}{\ell}{^i}}\delta^i_\nu,\\
-	\frac{\partial\lay{\tilde{z}}{\ell}{^i}}{\partial\lay{\beta}{\ell}{^\nu}}&=\delta^i_\nu.
+	\lay{a}{\ell-1}&\mapsto\lay{\gamma}{\ell}\odot\frac{\lay{W}{\ell}\lay{a}{\ell-1}+\lay{b}{\ell}-\lay{\mu}{\ell}}{\sqrt{\lay{\sigma}{\ell}{^2}+\epsilon}}+\lay{\beta}{\ell}\\
+	&=\frac{\lay{\gamma}{\ell}}{\sqrt{\lay{\sigma}{\ell}{^2}+\epsilon}}(\lay{W}{\ell}\lay{a}{\ell-1}-\lay{\mu}{\ell})+\lay{\beta}{\ell},
+\end{align*}
+after absorbing the $\lay{b}{\ell}$ into the parameter $\lay{\beta}{\ell}$.  That is, we have $3$ trainable parameters given by $\lay{W}{\ell}\in\R^{m_{\ell}\times m_{\ell-1}}$, $\lay{\gamma}{\ell},\lay{\beta}{\ell}\in\R^{m_\ell}.$
+
+
+
+
+\subsection{Backward Propagation}
+
+We now show how batch normalization affects the backward propagation algorithm.  For illustrative purposes, we assume a $2$-layer neural network with arbitrary activation functions and generic loss function.  We recall the setup (without bias $\lay{b}{\ell}$) used in \cref{sec:backPropDerivation}
+\begin{align*}
+	&\underbrace{\begin{bmatrix}
+		x^1\\
+		\vdots\\
+		x^{m_0}
+		\end{bmatrix}}_{\text{Layer } 0}
+	\layerfctn{\lay{\Phi}{1}}\underbrace{\begin{bmatrix}
+			\lay{z}{1}{^1}\\
+			\vdots\\
+			\lay{z}{1}{^{m_1}}
+			\end{bmatrix}
+			\layerfctn{BN_{\gamma,\beta}}
+		\begin{bmatrix}
+			\lay{\tilde{z}}{\ell}{^1}\\
+			\vdots\\
+			\lay{\tilde{z}}{\ell}{_{m_\ell}}
+		\end{bmatrix}
+			\layerfctn{\lay{g}{1}}
+			\begin{bmatrix}
+			\lay{a}{1}{^1}\\
+			\vdots\\
+			\lay{a}{1}{^{m_1}}
+			\end{bmatrix}}_{\text{Layer } 1}\layerfctn{\lay{\Phi}{2}}\cdots\\
+	&\cdots\layerfctn{\lay{\Phi}{2}}
+	\underbrace{\begin{bmatrix}
+		\lay{z}{2}{^1}\\
+		\vdots\\
+		\lay{z}{2}{^{m_2}}
+		\end{bmatrix}\layerfctn{\lay{g}{2}}
+		\begin{bmatrix}
+			\lay{a}{2}{^1}\\
+			\vdots\\
+			\lay{a}{2}{^{m_2}}
+		\end{bmatrix}}_{\text{Layer } 2}\layerfctn{=}\begin{bmatrix}
+		\hat{y}^1\\
+		\vdots\\
+		\hat{y}^{m_2}
+	\end{bmatrix},
+\end{align*}
+where
+$$\lay{\Phi}{1}:\R^{m_1\times m_0}\times\R^{m_0}\to\R^{m_1},\qquad\lay{\Phi}{1}(A,x)=Ax;$$
+and
+$$\lay{\Phi}{2}:\R^{m_2\times m_1}\times\R^{m_2}\times\R^{m_1}\to\R^{m_2},\qquad\lay{\Phi}{2}(A,b,x)=Ax+b.$$
+\HOX{Since we don't use batch normalization on the output layer, the bias term still exists.}
+Define the compositional function
+$$G:\R^{m_2\times m_1}\times\R^{m_2}\times\R^{m_1}\times\R^{m_1}\times\R^{m_1\times m_0}\times\R^{m_0}\to\R,$$
+given by
+\begin{align*}
+	G(B,b,\gamma,\beta,A,x)&=\L_y\circ\lay{g}{2}\circ\lay{\Phi}{2}(B,b,\lay{g}{1}\circ BN_{\gamma,\beta}(\lay{\Phi}{1}(A,x))).
+\end{align*}
+As before, we define
+$$\lay{\delta}{2}{^T}=d(\L_y\circ\lay{g}{2})_{\lay{z}{2}}\in\R^{1\times m_2},$$
+and so
+$$\frac{\partial G}{\partial b}=\lay{\delta}{2},$$
+and
+$$\frac{\partial G}{\partial B}=\lay{\delta}{2}\lay{a}{1}{^T}.$$
+We're now ready to compute some auxiliary differentials
+
+
+\begin{lem}
+	Let $\mathcal{N}:\R^m\times(\R^m)^N\to\R^m$ denote the usual normalization transformation, i.e.,
+	\begin{align*}
+		\hat{z}&= \mathcal{N}(z)\\
+		&=\frac{z-\mu}{\sqrt{\sigma^2+\epsilon}},
+	\end{align*}
+	where
+	$$\mu=\E[z]=\frac{1}{N}\sum_{j=1}^Nz_j,$$
+	and
+	$$\sigma^2=\E[(z-\mu)^2]=\frac{1}{N}\sum_{j=1}^N(z_j-\mu)^2.$$
+	Let $BN:\R^m\times\R^m\times\R^m\to\R^m$ denote the batch normalization transformation $z\mapsto\tilde{z}$, i.e.,
+	\begin{align*}
+		\tilde{z}&:=BN(\gamma,\beta,z)\\
+		&=\gamma\odot\hat{z}+\beta\\
+		&=\gamma\odot\frac{z-\mu}{\sqrt{\sigma^2+\epsilon}}+\beta.
+	\end{align*}
+	Then the differentials:
+	\begin{itemize}
+		\item $d(\mathcal{N})_z:T_z\R^m\to T_{\hat{z}}\R^m$ is given by
+		
+		\item $d(BN)_\gamma:T_\gamma\R^m\to T_{\tilde{z}}\R^m,$ is given by
+		$$d(BN)_\gamma(v)=\hat{z}\odot v,\qquad\frac{\partial\tilde{z}^i}{\partial\gamma^j}=\hat{z}^i\delta^i_j.$$
+		\item $d(BN)_\beta:T_\beta\R^m\to T_{\tilde{z}}\R^m$ is given by
+		$$d(BN)_\beta(v)=v,\qquad\frac{\partial\tilde{z}^i}{\partial \beta^j}=\delta^i_j.$$
+		\item $d(BN)_{\hat{z}}:T_{\hat{z}}\R^m\to T_{\tilde{z}}\R^m$ is given by
+		$$d(BN)_{\hat{z}}(v)=\gamma\odot v,\qquad\frac{\partial\tilde{z}^i}{\partial\hat{z}^j}=\gamma^i\delta^i_j.$$
+		\item $d(BN)_z:T_z\R^m\to T_{\tilde{z}}\R^m$ is given by
+		
+	\end{itemize}
+\end{lem}
+
+\begin{lem}
+Let $\X=\{x_1,...,x_N\}\subset\R^m$ which gives rise to the mean
+$$\mu=\E[x]=\frac{1}{N}\sum_{j=1}^Nx_j,$$
+and the (component-wise) variance
+$$\sigma^2=\E[(x-\mu)^2]=\frac{1}{N}\sum_{j=1}^N(x_j-\mu)^2.$$
+For $x\in\X$, define the normalization $\hat{x}\in\R^m$ by
+$$\hat{x}=(\sigma^2+\epsilon)^{-1/2}\odot(x-\mu).$$
+\end{lem}
+
+\begin{proof}
+We first note that since $\sigma^2$ depends on $\mu$ that
+	\begin{align*}
+		\frac{\partial(\sigma^2)^i}{\partial \mu^\nu}&=\frac{2}{N}\sum_{j=1}^N(x_j^i-\mu^i)(-\delta^i_\nu)\\
+		&=-2\delta^i_\nu\left(\frac{1}{N}\sum_{j=1}^Nx_j^i-\mu^i\right)\\
+		&=-2\delta^i_\nu(\mu^i-\mu^i)\\
+		&=0.
+	\end{align*}
+Moreover,
+\begin{align*}
+	\frac{d\mu^i}{d x^\nu_\lambda}&=\frac{1}{N}\sum_{j=1}^N\delta^i_\nu\delta_j^\lambda\\
+	&=\frac{1}{N}\delta^i_\nu,
+\end{align*}
+and
+\begin{align*}
+	\frac{d(\sigma^2)^i}{dx^\nu_\lambda}&=\frac{\partial(\sigma^2)^i}{\partial\mu^\rho}\frac{\partial\mu^\rho}{\partial x^\nu_\lambda}+\frac{\partial(\sigma^2)^i}{\partial x^\nu_\lambda}\\
+	&=0+\frac{\partial}{\partial x^\nu_\lambda}\left(\frac{1}{N}\sum_{j=1}^N(x_j^i-\mu^i)^2\right)\\
+	&=\frac{2}{N}\sum_{j=1}^N\left((x_j^i-\mu^i)\delta_j^\lambda\delta_\nu^i\right)\\
+	&=\frac{2}{N}(x_\lambda^i-\mu^i)\delta^i_\nu.
+\end{align*}
+Thus for $x_{j_0}\in\X$,
+\begin{align*}
+	\rest{\frac{d \hat{x}^i}{d x^\nu_\lambda}}_{x=x_{j_0}}&=\frac{\partial\hat{x}^i}{\partial (\sigma^2)^\rho}\frac{d(\sigma^2)^\rho}{dx^\nu_\lambda}+\frac{\partial \hat{x}^i}{\partial \mu^\rho}\frac{d\mu^\rho}{dx^\nu_\lambda}+\frac{\partial \hat{x}^i}{\partial x^\nu_\lambda}\\
+	&=\left(-\frac{1}{2}((\sigma^2)^i+\epsilon)^{-3/2}(x^i-\mu^i)\delta^i_\rho\right)\left(\frac{2}{N}(x^\rho_\lambda-\mu^\rho)\delta^\rho_\nu\right)\\
+	&\qquad+\left(((\sigma^2)^i+\epsilon)^{-1/2}(-\delta^i_\rho)\right)\left(\frac{1}{N}\delta^\rho_\nu\right)\\
+	&\qquad +\left(((\sigma^2)^i+\epsilon)^{-1/2})\delta_{j_0}^\lambda\delta_\nu^i\right)\\
+	&=\left(-\frac{1}{N}((\sigma^2)^i+\epsilon)^{-3/2}(x^i-\mu^i)\delta^i_\nu(x^\nu_\lambda-\mu^\nu)\right)\\
+	&\qquad+\left(\frac{-1}{N}((\sigma^2)^i+\epsilon)^{-1/2}\delta^i_\nu\right)+\left(((\sigma^2)^i+\epsilon)^{-1/2})\delta_{j_0}^\lambda\delta_\nu^i\right)
+\end{align*}
+\end{proof}
+
+
+
+
+
+
+
+
+
+\begin{comment}
+	
+
+
+
+Similar to earlier, we define
+\begin{align*}
+	\lay{\delta}{1}&=[d\lay{g}{1}_{\lay{\tilde{z}}{1}}]^TB^T\lay{\delta}{2}\\
+	&=\frac{\partial G}{\partial \lay{\tilde{z}}{1}}\\
+	&=[dG_{\lay{\tilde{z}}{1}}]^T,
+\end{align*}
+and so
+\begin{align*}
+	dG_\gamma&=dG_{\lay{\tilde{z}}{1}}\cdot d(\lay{\tilde{z}}{1})_\gamma
 \end{align*}
 
 
@@ -78,9 +241,20 @@ The procedure for forward propagation should be immediately obvious from the clo
 
 
 
+For backward propagation, we compute derivatives in coordinates
+\begin{align*}
+	\frac{\partial\lay{\tilde{z}}{\ell}{^i}}{\partial\lay{z}{\ell}{^\nu}}&=\frac{\lay{\gamma}{\ell}{^i}}{\lay{\sigma}{\ell}{^i}}\delta^i_\nu,\\
+	\frac{\partial\lay{\tilde{z}}{\ell}{^i}}{\partial\lay{\gamma}{\ell}{^\nu}}&=\frac{\lay{z}{\ell}{^i}-\lay{\mu}{\ell}{^i}}{\lay{\sigma}{\ell}{^i}}\delta^i_\nu,\\
+	\frac{\partial\lay{\tilde{z}}{\ell}{^i}}{\partial\lay{\beta}{\ell}{^\nu}}&=\delta^i_\nu.
+\end{align*}
+
+\begin{remark}
+	Note that it may seem that $\mu$ and $\sigma$ depend on the variable $z$, but they actually depend on the full set of potential values, and are hence constants.  NOT TRUE
+\end{remark}
 
 
 
 
 
 
+\end{comment}

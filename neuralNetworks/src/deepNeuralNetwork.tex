@@ -8,64 +8,64 @@ In this section we discuss a general ``deep'' neural network, which consist of $
 	&\underbrace{\begin{bmatrix}
 		x^1\\
 		\vdots\\
-		x^{s_0}
+		x^{m_0}
 		\end{bmatrix}}_{\text{Layer } 0}
 	\layerfctn{\lay{\varphi}{1}}\underbrace{\begin{bmatrix}
 			\lay{z}{1}{^1}\\
 			\vdots\\
-			\lay{z}{1}{^{s_1}}
+			\lay{z}{1}{^{m_1}}
 			\end{bmatrix}\layerfctn{\lay{g}{1}}
 			\begin{bmatrix}
 			\lay{a}{1}{^1}\\
 			\vdots\\
-			\lay{a}{1}{^{s_1}}
+			\lay{a}{1}{^{m_1}}
 			\end{bmatrix}}_{\text{Layer } 1}\layerfctn{\lay{\varphi}{2}}
 	\underbrace{\begin{bmatrix}
 		\lay{z}{2}{^1}\\
 		\vdots\\
-		\lay{z}{2}{^{s_2}}
+		\lay{z}{2}{^{m_2}}
 		\end{bmatrix}\layerfctn{\lay{g}{2}}
 		\begin{bmatrix}
 			\lay{a}{2}{^1}\\
 			\vdots\\
-			\lay{a}{2}{^{s_2}}
+			\lay{a}{2}{^{m_2}}
 		\end{bmatrix}}_{\text{Layer } 2}\layerfctn{\lay{\varphi}{3}}\cdots\\
 	&\cdots\layerfctn{\lay{\varphi}{L-1}}
 	\underbrace{\begin{bmatrix}
 		\lay{z}{L-1}{^1}\\
 		\vdots\\
-		\lay{z}{L-1}{^{s_{L-1}}}
+		\lay{z}{L-1}{^{m_{L-1}}}
 	\end{bmatrix}\layerfctn{\lay{g}{L-1}}\begin{bmatrix}
 		\lay{a}{L-1}{^1}\\
 		\vdots\\
-		\lay{a}{L-1}{^{s_{L-1}}}
+		\lay{a}{L-1}{^{m_{L-1}}}
 	\end{bmatrix}}_{\text{Layer }L-1}\layerfctn{\lay{\varphi}{L}}\underbrace{\begin{bmatrix}
 		\lay{z}{L}{^1}\\
 		\vdots\\
-		\lay{z}{L}{^{s_L}}
+		\lay{z}{L}{^{m_L}}
 	\end{bmatrix}\layerfctn{\lay{g}{L}}\begin{bmatrix}
 		\lay{a}{L}{^1}\\
 		\vdots\\
-		\lay{a}{L}{^{s_L}}
+		\lay{a}{L}{^{m_L}}
 	\end{bmatrix}}_{\text{Layer }L}\layerfctn{=}\begin{bmatrix}
 		\hat{y}^1\\
 		\vdots\\
-		\hat{y}^{s_L}
+		\hat{y}^{m_L}
 	\end{bmatrix},
 \end{align*}
 where
-$$s_\ell :=\text{ the number of nodes in layer-$\ell$},$$
-$$\lay{\varphi}{\ell}:\R^{s_{\ell-1}}\to\R^{s_\ell},\qquad \lay{\varphi}{\ell}(\xi)=\lay{W}{\ell}\xi+\lay{b}{\ell},\qquad \lay{W}{\ell}\in\R^{s_\ell\times s_{\ell-1}},b\in\R^{s_\ell},$$
+$$m_\ell :=\text{ the number of nodes in layer-$\ell$},$$
+$$\lay{\varphi}{\ell}:\R^{m_{\ell-1}}\to\R^{m_\ell},\qquad \lay{\varphi}{\ell}(\xi)=\lay{W}{\ell}\xi+\lay{b}{\ell},\qquad \lay{W}{\ell}\in\R^{m_\ell\times m_{\ell-1}},b\in\R^{m_\ell},$$
 and
-$$\lay{g}{\ell}:\R^{s_\ell}\to\R^{s_\ell},$$
+$$\lay{g}{\ell}:\R^{m_\ell}\to\R^{m_\ell},$$
 is a broadcasted activation function determined by the layer-$\ell$.
 
 As with a shallow network, our functional composition to obtain $\lay{a}{L}$ is known as forward propagation.
 
-\subsection{Backpropagation}
+\subsection{Backward Propagation}
 As the general derivation for backpropagation can be easily (if not tediously) generalized from \cref{sec:backPropDerivation} using induction, we give the general outline for computational purposes.
 
-Let $\L:\R^{s_L}\times\R^{s_L}\to\R$ be a generic loss function, and suppose our cost function is given by the usual
+Let $\L:\R^{m_L}\times\R^{m_L}\to\R$ be a generic loss function, and suppose our cost function is given by the usual
 $$\J(W,b)=\frac{1}{n}\sum_{j=1}^n\L(\hat{y}_j,y_j).$$
 Then from previous computations, we have the following gradients for any $\ell\in\{1,2,...,L\}$, that
 \begin{align*}

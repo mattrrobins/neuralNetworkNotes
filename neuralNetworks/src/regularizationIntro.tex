@@ -2,7 +2,7 @@
 
 \section{Regularization}
 
-Suppose we're training an $L$-layer neural network with dataset $\{(x_j,y_j)\}\subset\R^{s_0}\times\R^{s_L}$ with $N$ examples.  Assuming a generic loss function $\L:\R^{s_L}\times\R^{s_L}\to\R$, then we have our cost function $\J$ defined on our one-parameter families of parameters $W$ and $b$ given by
+Suppose we're training an $L$-layer neural network with dataset $\{(x_j,y_j)\}\subset\R^{m_0}\times\R^{m_L}$ with $N$ examples.  Assuming a generic loss function $\L:\R^{m_L}\times\R^{m_L}\to\R$, then we have our cost function $\J$ defined on our one-parameter families of parameters $W$ and $b$ given by
 $$\J(W,b)=\frac{1}{N}\sum_{j=1}^N\L(\hat{y}_j,y_j).$$
 If our model suffers from overfitting the training set, it's reasonable to impose constraints on the parameters $W$ and/or $b$.  That is, define the function
 $$R(W)=\frac{\lambda}{2N}\sum_{\ell=1}^L\norm{\lay{W}{\ell}}_F^2,$$
@@ -50,27 +50,27 @@ For illustrative purposes, suppose we have a $3$-layer neural network of the fol
 	&\underbrace{\begin{bmatrix}
 		x^1\\
 		\vdots\\
-		x^{s_0}
+		x^{m_0}
 		\end{bmatrix}}_{\text{Layer } 0}
 	\layerfctn{\lay{\varphi}{1}}\underbrace{\begin{bmatrix}
 		\lay{z}{1}{^1}\\
 		\vdots\\
-		\lay{z}{1}{^{s_1}}
+		\lay{z}{1}{^{m_1}}
 	\end{bmatrix}\layerfctn{\lay{g}{1}}
 	\begin{bmatrix}
 		\lay{a}{1}{^1}\\
 		\vdots\\
-		\lay{a}{1}{^{s_1}}
+		\lay{a}{1}{^{m_1}}
 	\end{bmatrix}}_{\text{Layer } 1}\layerfctn{\lay{\varphi}{2}}
 	\underbrace{\begin{bmatrix}
 		\lay{z}{2}{^1}\\
 		\vdots\\
-		\lay{z}{2}{^{s_2}}
+		\lay{z}{2}{^{m_2}}
 	\end{bmatrix}\layerfctn{\lay{g}{2}}
 	\begin{bmatrix}
 		\lay{a}{2}{^1}\\
 		\vdots\\
-		\lay{a}{2}{^{s_2}}
+		\lay{a}{2}{^{m_2}}
 	\end{bmatrix}}_{\text{Layer } 2}\layerfctn{\lay{\varphi}{3}}\text{output},
 \end{align*}
 Let $Q_0, Q_1, Q_2$ denote the collection of all nodes in Layers $0,1,2$, respectively.  Let $p_0, p_1, p_2\in[0,1]$, and define a probability distribution $\P_\ell$ on $Q_\ell$ by
@@ -82,7 +82,7 @@ where $q=1$ represents the node existing in layer-$\ell$, and $q=0$ represents t
 		\lay{D}{\ell}{_j}&=\begin{bmatrix}
 			d^1_j\\
 			\vdots\\
-			d^{s_\ell}_j
+			d^{m_\ell}_j
 		\end{bmatrix},
 	\end{align*}
 	where
