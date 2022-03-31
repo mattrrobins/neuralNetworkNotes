@@ -1,4 +1,4 @@
-
+\def\diag{\text{diag}}
 
 
 \section{Batch Normalization}
@@ -132,13 +132,8 @@ given by
 \begin{align*}
 	G(B,b,\gamma,\beta,A,x)&=\L_y\circ\lay{g}{2}\circ\lay{\Phi}{2}(B,b,\lay{g}{1}\circ BN_{\gamma,\beta}(\lay{\Phi}{1}(A,x))).
 \end{align*}
-As before, we define
-$$\lay{\delta}{2}{^T}=d(\L_y\circ\lay{g}{2})_{\lay{z}{2}}\in\R^{1\times m_2},$$
-and so
-$$\frac{\partial G}{\partial b}=\lay{\delta}{2},$$
-and
-$$\frac{\partial G}{\partial B}=\lay{\delta}{2}\lay{a}{1}{^T}.$$
-We're now ready to compute some auxiliary differentials
+
+This leads to compute some auxiliary differentials before continuing further.
 
 
 
@@ -191,28 +186,54 @@ Thus for $x_{j_0}\in\X$,
 
 \begin{lem}
 	For $N\in\N$, we define the expectation function $\E:\R^N\to\R$ given by
-	$$\E[(x^1,...,x^N)]=\frac{1}{N}\sum_{j=1}^Nx^j.$$
-	Let $z=\{z^1,...,z^N\}\subset\R$ be fixed, and define the mean
-	$$\mu:=\E[z]=\frac{1}{N}\sum_{j=1}^Nz^j.$$
+	$$\E[(x_1,...,x_N)]=\frac{1}{N}\sum_{j=1}^Nx_j.$$
+	Let $z=\{z_1,...,z_N\}\subset\R$ be fixed, and define the mean
+	$$\mu:=\E[z]=\frac{1}{N}\sum_{j=1}^Nz_j.$$
 	Then as a differential, we have that $d\E_z:T_z\R^N\to T_\mu\R$ given by
-	$$d\E_z=\frac{1}{N}\sum_{j=1}^N\rest{dx^j}_{x=z},\qquad d\E_z(v)=\frac{1}{N}\sum_{j=1}^Nv^j.$$
-	Define the variance function $\V:\R^N\to\R$ given by
-	$$\V[(x^1,...,x^N)]=\frac{1}{N}\sum_{j=1}^N(x^j-\E[(x^1,...,x^N)])^2.$$
+	$$d\E_z=\frac{1}{N}\sum_{j=1}^N\rest{dx_j}_{x=z},\qquad d\E_z(v)=\frac{1}{N}\sum_{j=1}^Nv^j.$$
+	Moreover, for $\alpha=1,...,N$, let
+	$\iota_{z_\alpha}:\R\to\R^N$ denote the inclusion
+	$$\iota_{z_\alpha}(x)=(z_1,...,z_{\alpha-1},x,z_{\alpha+1},...,z_N).$$
+	Then the differentials
+	$$d_\alpha\E_{z_\alpha}:=d(\E\circ\iota_{z_\alpha})_{z_\alpha}:T_{z_\alpha}\R\to T_\mu\R,$$
+	are given by
+	\begin{align*}
+		d_\alpha\E_{z_\alpha}&=d(\E\circ\iota_{z_\alpha})_{z_\alpha}\\
+		&=d\E_z\cdot d(\iota_{z_\alpha})_{z_\alpha}\\
+		&=\frac{1}{N}dx_{z_\alpha}.
+	\end{align*}
+	
+	
+	
+	Similarly, we define the variance function $\V:\R^N\to\R$ given by
+	$$\V[(x_1,...,x_N)]=\frac{1}{N}\sum_{j=1}^N(x_j-\E[(x_1,...,x_N)])^2.$$
 	For fixed $z$, define the variance
 	$$\sigma^2=\V[z].$$
 	Then as a differential, we have that $d\V_z:T_z\R^N\to T_{\sigma^2}\R$ given by
-	$$d\V_z=\frac{2}{N}\sum_{j=1}^N(z^j-\mu)\rest{dx^j}_{x=z},\qquad d\V_z(v)=\frac{2}{N}\sum_{j=1}^N(z^j-\mu)v^j.$$
+	$$d\V_z=\frac{2}{N}\sum_{j=1}^N(z_j-\mu)\rest{dx^j}_{x=z},\qquad d\V_z(v)=\frac{2}{N}\sum_{j=1}^N(z_j-\mu)v^j.$$
+	Moreover, for $\alpha=1,...,N$, the differentials
+	$$d_\alpha\V_{z_\alpha}:=d(\V\circ\iota_{z_\alpha})_{z_{\alpha}}:T_{z_\alpha}\R\to T_{\sigma^2}\R$$
+	are given by
+	\begin{align*}
+		d_\alpha\V_{z_\alpha}&=d(\V\circ\iota_{z_\alpha})_{z_\alpha}\\
+		&=d\V_z\cdot d(\iota_{z_\alpha})_{z_\alpha}\\
+		&=\frac{2}{N}(z_\alpha-\mu)dx_{z_\alpha}
+	\end{align*}
 \end{lem}
 
 \begin{proof}
 	Immediate from direct calculation.
 \end{proof}
 
+
+
+\begin{comment}
+
 \begin{lem}
 	Let $\mathcal{N}:\R^N\to\R^N$ denote the normalization transformation with $\hat{x}=\mathcal{N}(x)$.  That is,
 	\begin{align*}
 		\hat{x}&:=\mathcal{N}(x)\\
-		&=\left(\frac{x^j-\E[x]}{\sqrt{\V[x]+\epsilon}}:1\leq j\leq N\right),
+		&=\frac{x^j-\E[x]}{\sqrt{\V[x]+\epsilon}}\vec{e}_j,
 	\end{align*}
 	for some $\epsilon>0$ sufficiently small.  Fix $z\in\R^N$, and let
 	$$\mu:=\E[z],\qquad\sigma^2:=\V[z],$$
@@ -240,34 +261,133 @@ Thus for $x_{j_0}\in\X$,
 	\end{align*}
 \end{proof}
 
+\end{comment}
+
+\begin{cor}
+	For $\alpha=1,...,N$, let $\mathcal{N}_\alpha:\R^{m\times N}\to\R^m$ denote the $\alpha$-th component of the vector-valued, normalization transformation.  That is,
+		$$\hat{x}_\alpha=\mathcal{N}_\alpha(x_1,...,x_N),$$
+		with
+		\begin{align*}
+			\hat{x}_\alpha^i&=\frac{\pi_\alpha(x^i)-\E[x^i]}{(\V[x^i]+\epsilon)^{\frac{1}{2}}},
+		\end{align*}
+		where $\pi_\alpha:\R^N\to\R$ is the projection onto the $\alpha$-th coordinate
+		$$\pi_\alpha(x_1,...,x_N)=x_\alpha.$$
+
+	Fix $z_1,...,z_N\in\R^m$, let $\mu=\E[z]\in\R^m$ denote vector-mean and let $\sigma^2=\V[z]\in\R^m$ denote the component-wise, vector-variation (i.e., $(\sigma^2)^i=\V[z^i]$).   Then the differentials 
+	$$d_\alpha(\mathcal{N}_\alpha)_{z_\alpha}:=d(\mathcal{N}_\alpha\circ\iota_{z_\alpha})_{z_\alpha}:T_{z_\alpha}\R^m\to T_{\hat{z}_\alpha}\R^m$$ are given by the diagonal matrices
+	$$d_\alpha(\mathcal{N}_\alpha)_{z_\alpha}=\left(\frac{1-\frac{1}{N}}{\sqrt{(\sigma^2)^i+\epsilon}}-\frac{1}{N}\frac{(z_\alpha^i-\mu^i)^2}{((\sigma^2)^i+\epsilon)^{\frac{3}{2}}}\right)\delta^i_j.$$
+	
+\end{cor}
+
+\begin{proof}
+	We compute directly after noting that
+	$$d_\alpha(\mathcal{N}_\alpha)_{z_\alpha}=\begin{bmatrix}
+		d_\alpha(\hat{x}_\alpha^1)_{z_\alpha^1}&\cdots&0\\
+		0&\ddots&0\\
+		0&\cdots&d_\alpha(\hat{x}_\alpha^m)_{z_\alpha^m}
+	\end{bmatrix}$$  
+	To this end, fix $1\leq i\leq m$ and we compute
+	\begin{align*}
+		d_\alpha(\hat{x}_\alpha^i)_{z_\alpha^i}&=d_\alpha(\mathcal{N}_\alpha^i)_{z_\alpha^i}\\
+		&=\frac{d_\alpha(\pi_\alpha)_{z_\alpha^i}-d_\alpha\E_{z_\alpha^i}}{\sqrt{(\sigma^2)^i+\epsilon}}-\frac{z_\alpha^i-\mu^i}{2((\sigma^2)^i+\epsilon)^{\frac{3}{2}}}d_\alpha\V_{z_\alpha^i}\\
+		&=\frac{dx_{z_\alpha^i}-\frac{1}{N}dx_{z_\alpha^i}}{\sqrt{(\sigma^2)^i+\epsilon}}-\frac{z_\alpha^i-\mu^i}{2((\sigma^2)^i+\epsilon)^{\frac{3}{2}}}\left(\frac{2}{N}(z_\alpha^i-\mu^i)dx_{z_\alpha^i}\right)\\
+		&=\left(\frac{1-\frac{1}{N}}{\sqrt{(\sigma^2)^i+\epsilon}}-\frac{(z_\alpha^i-\mu^i)^2}{N((\sigma^2)^i+\epsilon)^{\frac{3}{2}}}\right)dz_\alpha^i,
+	\end{align*}
+	as desired.
+\end{proof}
+
 
 \begin{prop}
-	Let $\mathcal{N}:\R^N\to\R^N$ denote the usual normalization transformation with $\hat{x}=\mathcal{N}(x)$.
-	Let $BN:\R^m\times\R^m\times\R^{m\times N}\to\R^{m\times N}$ denote the batch normalization transformation $[z_j]\mapsto[\tilde{z}_j]$, i.e.,
+	Let $\mathcal{N}:\R^{m\times N}\to\R^{m\times N}$ denote the usual normalization transformation with $\hat{x}_\alpha=\mathcal{N}_\alpha(x)$.
+	Let $BN:\R^m\times\R^m\times\R^{m\times N}\to\R^{m\times N}$ denote the batch normalization transformation $[x_j]\mapsto[\tilde{x}_j]$, i.e.,
 	\begin{align*}
-		\tilde{z}^i_j&=\gamma^i\hat{z}^i_j+\beta^i,
+		\tilde{x}^i_j&=\gamma^i\hat{x}^i_j+\beta^i,
 	\end{align*}
-	where $z^i\in\R^N$, and
-	$$\hat{z}^i=\mathcal{N}(z^i),\qquad \mu^i=\E[z^i],\qquad(\sigma^2)^i=\V[z^i].$$
+	where $x^i\in\R^N$.  Moreover, given $\gamma,\beta\in\R^m$, for $\alpha\in\{1,...,N\}$, let
+	$$BN^{\gamma,\beta}_\alpha:\R^{m\times N}\to\R^m$$
+	denote
+	$$BN^{\gamma,\beta}_\alpha(x)=\gamma\odot\mathcal{N}_\alpha(x)+\beta.$$
 	
 	
+	Fix $z_1,...,z_N,\in\R^m$, and let
+	$$\hat{z}_\alpha=\mathcal{N}_\alpha(z_1,...,z_N)\in\R^m,\qquad \mu^i=\E[z^i]\in\R,\qquad(\sigma^2)^i=\V[z^i]\in\R.$$
 	
-	
-	Then the differentials:
+	For $\alpha\in\{1,...,N\}$, $z\in\R^{m\times N}$ and for $\gamma,\beta\in\R^m$, we have the differentials:
 	\begin{itemize}	
-		\item $d(BN)_\gamma:T_\gamma\R^m\to T_{\tilde{z}}\R^m,$ is given by
-		$$d(BN)_\gamma(v)=\hat{z}\odot v,\qquad\frac{\partial\tilde{z}^i}{\partial\gamma^j}=\hat{z}^i\delta^i_j.$$
-		\item $d(BN)_\beta:T_\beta\R^m\to T_{\tilde{z}}\R^m$ is given by
-		$$d(BN)_\beta(v)=v,\qquad\frac{\partial\tilde{z}^i}{\partial \beta^j}=\delta^i_j.$$
-		\item $d(BN)_{\hat{z}}:T_{\hat{z}}\R^m\to T_{\tilde{z}}\R^m$ is given by
-		$$d(BN)_{\hat{z}}(v)=\gamma\odot v,\qquad\frac{\partial\tilde{z}^i}{\partial\hat{z}^j}=\gamma^i\delta^i_j.$$
-		\item $d(BN)_z:T_z\R^m\to T_{\tilde{z}}\R^m$ is given by
-		
+		\item $d(BN_\alpha^{\beta,z})_\gamma:T_\gamma\R^m\to T_{\tilde{z}}\R^m,$ is given by
+		$$d(BN_\alpha^{\beta,z})_\gamma(v)=\hat{z}_\alpha\odot v,\qquad\frac{\partial\tilde{z}_\alpha^i}{\partial\gamma^j}=\hat{z}_\alpha^i\delta^i_j.$$
+		\item $d(BN_\alpha^{\gamma,z})_\beta:T_\beta\R^m\to T_{\tilde{z}}\R^m$ is given by
+		$$d(BN_\alpha^{\gamma,z})_\beta(v)=v,\qquad\frac{\partial\tilde{z}_\alpha^i}{\partial \beta^j}=\delta^i_j.$$
+		\item $d(BN_\alpha^{\gamma,\beta})_{\hat{z}_\alpha}:T_{\hat{z}_\alpha}\R^m\to T_{\tilde{z}}\R^m$ is given by
+		$$d(BN_\alpha^{\gamma,\beta})_{\hat{z}_\alpha}(v)=\gamma\odot v,\qquad\frac{\partial\tilde{z}_\alpha^i}{\partial\hat{z}_\alpha^j}=\gamma^i\delta^i_j.$$
+		\item $d_\alpha(BN_\alpha^{\gamma,\beta})_{z_\alpha}:=d(BN_\alpha^{\gamma,\beta}\circ\iota_{z_\alpha})_{z_\alpha}:T_{z_\alpha}\R^m\to T_{\tilde{z}_\alpha}\R^m$ is given by
+		$$d_\alpha(BN_\alpha^{\gamma,\beta})_{z_\alpha}=(\gamma\odot)d_\alpha(\mathcal{N}_\alpha)_{z_\alpha},$$
+		\begin{align*}
+			\frac{\partial\tilde{z}^i_\alpha}{\partial z^j_\alpha}&=\gamma^i\left(\frac{1-\frac{1}{N}}{\sqrt{(\sigma^2)^i+\epsilon}}-\frac{(z_\alpha^i-\mu^i)^2}{N((\sigma^2)^i+\epsilon)^{\frac{3}{2}}}\right)\delta^i_j
+		\end{align*}
 	\end{itemize}
 \end{prop}
 
+\begin{proof}
+	Follows immediately from the previous Corollary.
+\end{proof}
 
 
+
+We now return to considering the compositional function
+$$G:\R^{m_2\times m_1}\times\R^{m_2}\times\R^{m_1}\times\R^{m_1}\times\R^{m_1\times m_0}\times\R^{m_0}\to\R,$$
+given by
+\begin{align*}
+	G(B,b,\gamma,\beta,A,x_\alpha)&=\L_y\circ\lay{g}{2}\circ\lay{\Phi}{2}(B,b,\lay{g}{1}\circ BN_\alpha^{\gamma,\beta}(\lay{\Phi}{1}(A,x))).
+\end{align*}
+We compute (and since $\alpha\in\{1,...,N\}$ is fixed, we ignore implied summation for the moment)
+\begin{itemize}
+	\item \begin{align*}
+		d_BG_B(V)&=d_B(\L_y\circ\lay{g}{2}\circ\lay{\Phi}{2})_B(V)\\
+		&=\rest{\frac{d}{dt}}_{t=0}\L_y\circ\lay{g}{2}((B+tV)\lay{a}{1}{_\alpha}+b)\\
+		&=(\lay{\delta}{2}{_\alpha}{^T})_\rho\rest{\frac{d}{dt}}_{t=0}\left[(B^\rho_\lambda+tV^\rho_\lambda)\lay{a}{1}{^\lambda_\alpha} + b^\rho)\right]\\
+		&=(\lay{\delta}{2}{_\alpha}{^T})_\rho V^\rho_\lambda\lay{a}{1}{^\lambda_\alpha}\\
+		&=(\lay{a}{1}{_\alpha}\lay{\delta}{2}{_\alpha}{^T})_\rho^\lambda V_\lambda^\rho,
+	\end{align*}
+	and hence
+	$$d_BG_B=\lay{a}{1}{_\alpha}\lay{\delta}{2}{_\alpha}{^T},\qquad \frac{\partial G}{\partial B}=\lay{\delta}{2}{_\alpha}\lay{a}{1}{_\alpha}{^T}.$$
+	
+	\item \begin{align*}
+		d_bG_b(v)&=d_B(\L_y\circ\lay{g}{2}\circ\lay{\Phi}{2})_b(v)\\
+		&=(\lay{\delta}{2}{_\alpha}{^T})_\rho\rest{\frac{d}{dt}}_{t=0}\left[B^\rho_\lambda\lay{a}{1}{^\lambda_\alpha}+(b^\rho+tv^\rho)\right]\\
+		&=\lay{\delta}{2}{_\alpha}{^T}v
+	\end{align*}
+	yielding
+	$$d_bG_b=\lay{\delta}{2}{_\alpha}{^T},\qquad\frac{\partial G}{\partial b}=\lay{\delta}{2}{_\alpha}.$$
+	
+	\item \begin{align*}
+		d_\gamma G_\gamma(\xi)&=d_\gamma(\L_y\circ\lay{g}{2}\circ\lay{\Phi}{2}(B,b,\lay{g}{1}\circ BN_\alpha^{\beta,\lay{z}{1}{_\alpha}}))_\gamma(\xi)\\
+		&=(\lay{\delta}{2}{_\alpha}{^T})\cdot B\cdot d\lay{g}{1}_{\lay{\tilde{z}}{1}{_\alpha}}(\hat{z}_\alpha\odot\xi)\\
+		&=(\lay{\delta}{2}{_\alpha}{^T})\cdot B\cdot d\lay{g}{1}_{\lay{\tilde{z}}{1}{_\alpha}}\diag(\lay{\hat{z}}{1}_\alpha)\xi\\
+		&=\lay{\delta}{1}{_\alpha}{^T}\diag(\lay{\hat{z}}{1}{_\alpha})\xi,
+	\end{align*}
+	and so
+	$$d_\gamma G_\gamma=\lay{\delta}{1}{_\alpha}{^T}\diag(\lay{\hat{z}}{1}{_\alpha}),\qquad\frac{\partial G}{\partial\gamma}=\diag(\lay{\hat{z}}{1}{_\alpha})\lay{\delta}{1}{_\alpha}.$$
+	
+	\item \begin{align*}
+		d_\beta G_\beta(\eta)&=d_\beta(\L_y\circ\lay{g}{2}\circ\lay{\Phi}{2}(B,b,\lay{g}{1}\circ BN_\alpha^{\gamma,\lay{z}{1}{_\alpha}}))_\beta(\eta)\\
+		&=\lay{\delta}{1}{_\alpha}{^T}\eta,
+	\end{align*}
+	thus
+	$$d_\beta G_\beta=\lay{\delta}{1}{_\alpha}{^T},\qquad\frac{\partial G}{\partial\beta}=\lay{\delta}{1}{_\alpha}.$$
+	
+	\item \begin{align*}
+		d_AG_A(V)&=\lay{\delta}{1}{_\alpha}{^T}\cdot d_\alpha (BN_\alpha^{\gamma,\beta})_{\lay{z}{1}{_\alpha}}d\lay{\Phi}{1}_A(V)\\
+		&=\lay{\delta}{1}{_\alpha}{^T}\diag(\gamma) d_\alpha(\mathcal{N}_\alpha)_{\lay{z}{1}{_\alpha}}Vx_\alpha,
+	\end{align*}
+	and hence
+	$$d_AG_A=x_\alpha\lay{\delta}{1}{_\alpha}{^T}\diag(\gamma)d_\alpha(\mathcal{N}_\alpha)_{\lay{z}{1}{_\alpha}},$$
+	$$\frac{\partial G}{\partial A}=\diag(\gamma)d_\alpha(\mathcal{N}_\alpha)_{\lay{z}{1}{_\alpha}}\lay{\delta}{1}{_\alpha}x_\alpha{^T}.$$
+\end{itemize}
+
+Finally, since
+$$\J(\lay{W}{2},\lay{b}{2},\gamma,\beta,\lay{W}{1})=\frac{1}{N}\sum_{\alpha=1}^NG(\lay{W}{2},\lay{b}{2},\gamma,\beta,\lay{W}{1},x_\alpha),$$
+we reached our desired gradients after summation.
 
 
 
