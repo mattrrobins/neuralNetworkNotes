@@ -387,7 +387,7 @@ We compute (and since $\alpha\in\{1,...,N\}$ is fixed, we ignore implied summati
 
 Finally, since
 $$\J(\lay{W}{2},\lay{b}{2},\gamma,\beta,\lay{W}{1})=\frac{1}{N}\sum_{\alpha=1}^NG(\lay{W}{2},\lay{b}{2},\gamma,\beta,\lay{W}{1},x_\alpha),$$
-we reached our desired gradients after summation.
+we've described our desired gradients after summation.
 
 
 
@@ -434,3 +434,76 @@ For backward propagation, we compute derivatives in coordinates
 
 
 \end{comment}
+
+
+
+
+\subsection{Inferencing}
+We note that in our computation for forward propagation, that our normalization transforms change with out batches.  This leads to ambiguity when predicting a label for a new example.  One fix would be to average our means and variances over our batches.  That is, suppose during our iteration process, we have training-batches of the form $\{\X^k:1\leq k\leq K\}$, where each $\X^k$ has cardinality $|\X^k|=n$.  Then for each hidden-layer $\ell\in\{1,...,L-1\}$, we obtain the means
+$$\lay{\mu}{\ell}{_k}=\frac{1}{n}\sum_{x\in\X^k}\lay{z}{\ell},$$
+and the variances
+$$\lay{\sigma^2}{\ell}{_k}=\frac{1}{n}\sum_{x\in\X^k}(\lay{z}{\ell}-\lay{\mu}{\ell}{_k})^2.$$
+That is, for each hidden-layer $\ell$, we have the collection
+$$\{\lay{\mu}{\ell}{_k}:1\leq k\leq K\}$$
+from which we average again to obtain
+$$\lay{\mu}{\ell}:=\frac{1}{K}\sum_{k=1}^K\lay{\mu}{\ell}{_k},$$
+and the collection
+$$\{\lay{\sigma^2}{\ell}{_k}:1\leq k\leq K\},$$
+from which we use the unbiased estimate
+$$\lay{\sigma^2}{\ell}:=\frac{n}{n-1}\frac{1}{K}\sum_{k=1}^K\lay{\sigma^2}{\ell}{_k}.$$
+These quantities are what we use when computing the batch-normalization transforms of the hidden units for new examples.
+
+
+
+
+
+\subsection{Algorithm Outline}
+Suppose we have a training set $\X$ with which we wish to train a binary classification via an $L$-layer neural network.  Let $N=|\X|$ and let $n=2^p$ be the batch size with $K=\lceil\frac{N}{n}\rceil$ batches per epoch.  Then our algorithm would be as follows:
+\begin{enumerate}[1.]
+	\item Set hyper-parameters. Initialize parameters.
+	\item For $0\leq i\leq\texttt{num\_iters}$:
+	\begin{enumerate}[a.]
+		\item Generate batches $\{\X^k:1\leq k\leq K\}$.
+		\item For $1\leq k\leq K$:
+		\begin{enumerate}[i.]
+			\item Perform forward propagation on $\X^k$:
+			\begin{itemize}
+				\item $$\lay{z}{1}=\lay{W}{1}x$$
+				\item For $\ell\in\{1,...,L-1\}$:
+				\begin{itemize}
+					\item $$\lay{z}{\ell}=\lay{W}{\ell}\lay{a}{\ell-1}$$
+					\item $$\lay{\mu}{\ell}{_k}=\frac{1}{n}\sum_{x\in\X^k}\lay{z}{\ell}$$
+					\item $$\lay{\sigma^2}{\ell}{_k}=\frac{1}{n}\sum_{x\in\X^k}(\lay{z}{\ell}-\lay{\mu}{\ell}{_k})^2$$
+					\item $$\lay{\hat{z}}{\ell}=(\lay{\sigma^2}{\ell}{_k}+\epsilon)^{-\frac{1}{2}}\odot(\lay{z}{\ell}-\lay{\mu}{\ell}{_k})$$
+					\item $$\lay{\tilde{z}}{\ell}=\lay{\gamma}{\ell}\odot\lay{\hat{z}}{\ell}+\lay{\beta}{\ell}$$
+					\item $$\lay{a}{\ell}=\lay{g}{\ell}(\lay{\tilde{z}}{\ell})$$
+				\end{itemize}
+				\item $$\lay{z}{L}=\lay{W}{L}\lay{a}{L-1}+b$$
+				\item $$\lay{a}{L}=\lay{g}{L}(\lay{z}{L})$$
+			\end{itemize}
+			\item Compute cost $\J$ on $\X^k$.
+			\item Apply backwards propagation on $\X^k$ to obtain
+			$$\frac{\partial\J}{\partial\lay{W}{\ell}},\quad\frac{\partial\J}{\partial b},\quad\frac{\partial\J}{\partial\lay{\gamma}{\ell}},\quad\frac{\partial\J}{\partial\lay{\beta}{\ell}}.$$
+			\item Update parameters.
+		\end{enumerate}
+	\end{enumerate}
+	\item Compute
+	$$\lay{\mu}{\ell}=\E[\lay{\mu}{\ell}{_k}],$$
+	$$\lay{\sigma^2}{\ell}=\frac{n}{n-1}\E[\lay{\sigma^2}{\ell}{_k}]$$
+	\item Return
+	$$\lay{W}{\ell},\quad b,\quad\lay{\gamma}{\ell},\quad\lay{\beta}{\ell},\quad\lay{\mu}{\ell},\quad\lay{\sigma^2}{\ell}.$$
+\end{enumerate}
+
+
+
+
+
+
+
+\subsection{Python Implementation}
+
+
+
+
+
+

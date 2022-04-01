@@ -24,7 +24,7 @@ This suggests we obtain a distribution of points using a logarithmic (in base $1
 $$p\in[0,1],$$
 be a random point.  Then letting $r=-4p\in[-4,0]$, we obtain another random point, and let
 $$H_i=\{10^{-4p}:p\in\text{rand}([0,1])\},$$
-for some prescribed set-cardinality.  This allows to choose more appropriately scaled-options for our hyper-parameters.
+for some prescribed set-cardinality.  This allows us to choose more appropriately scaled-options for our hyper-parameters.
 
 \begin{remark}
 	Suppose we're using exponentially moving averages and have a hyper-parameter $\beta_1\in[0,1)$.  If we do not use a log-scale, then the sensitivity of our model with respect to $\beta_1$ when $\beta_1\approx 1$ is very strong.  Indeed, we recall that when $\beta_1=0.999$, this corresponds to averaging over the previous $1000$ days.  And it we change $\beta_1$ slightly to
@@ -36,5 +36,5 @@ We finally note that our hyper-parameters can become \textit{stale} over time.  
 
 
 
-\subsubsection{Python Implementation}
+\subsection{Python Implementation}
 \lstinputlisting[firstline=107,lastline=126]{src/py/miscSnippets.py}
