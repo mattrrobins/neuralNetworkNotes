@@ -425,32 +425,19 @@ $$\softmax:\R^m\to\R^m,\qquad \softmax(z)=\frac{1}{\sum_{j=1}^me^{z^j}}\begin{pm
 	\vdots\\
 	e^{z^m}
 \end{pmatrix},$$
-which we typically use on our outer-layer to obtain a probability distribution over our predicted labels.  We then calculate for $z=(z^1,...,z^m)\in\R^m$ that $d(\softmax)_z:T_z\R^m\to T_{\softmax(z)}\R^m$
+which we typically use on our outer-layer to obtain a probability distribution over our predicted labels.  Let
+$$S^i=x^i\circ\softmax(z),$$
+denote the $i$-th component of $\softmax(z)$, and so we calculate
 \begin{align*}
-	d(\softmax)_z(v)&=\rest{\frac{d}{dt}}_{t=0}\softmax(z+tv)\\
-	&=\rest{\frac{d}{dt}}_{t=0}\frac{1}{\sum_{j=1}^me^{z^j+tv^j}}\begin{pmatrix}
-		e^{z^1+tv^1}\\
-		e^{z^2+tv^2}\\
-		\vdots\\
-		e^{z^m+tv^m}
-	\end{pmatrix}\\
-	&=\frac{-1}{\left(\sum_{j=1}^me^{z^j}\right)^2}\left(\sum_{j=1}^me^{z^j}v^j\right)\begin{pmatrix}
-		e^{z^1}\\
-		\vdots\\
-		e^{z^m}
-	\end{pmatrix}+\frac{1}{\sum_{j=1}^me^{z^j}}\begin{pmatrix}
-		e^{z^1}v^1\\
-		\vdots\\
-		e^{z^m}v^m
-	\end{pmatrix}\\
-	&=-\ip{\softmax(z),v}\softmax(z)+\softmax(z)\odot v,
+	\frac{\partial S^i}{\partial z^j}&=\frac{\partial}{\partial z^j}\left[\left(\sum_{k=1}^me^{z^k}\right)^{-1}e^{z^i}\right]\\
+	&=-\left(\sum_{k=1}^me^{z^k}\right)^{-2}\left(\sum_{k=1}^me^{z^k}\delta_j^k\right)e^{z^i}+\left(\sum_{k=1}^me^{z^k}\right)^{-1}e^{z^i}\delta^i_j\\
+	&=-\left(\sum_{k=1}^me^{z^k}\right)^{-2}e^{z^j}e^{z^i}+S^i\delta^i_j\\
+	&=-S^jS^i+S^i\delta^i_j\\
+	&=S^i(\delta^i_j-S^j).
 \end{align*}
-or rather in coordinates
-\begin{align*}
-	[d(\softmax)_z]^i_j&=S^i(\delta^i_j+\delta_{\rho j}S^\rho),
-\end{align*}
-where
-$$S^\mu=x^\mu\circ\softmax(z).$$
+That is, as a map $dS_z:T_z\R^m\to T_{S(z)}\R^m$, we have that
+$$dS_z=[S^i(\delta^i_j-S_j)]^i_j,$$
+and we make note that $dS_z$ is symmetric.
 
 
 

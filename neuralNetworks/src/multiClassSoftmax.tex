@@ -1,0 +1,137 @@
+
+
+\section{Multi-Class Softmax Regression}
+
+Thus far, we've mostly been dealing with binary classification problems, that is, our true label $y$ takes values in $\{0,1\}$, where $y=1$ represents when the object in question represents our desired classification, and $y=0$ when it does not.  However, in many examples we wish to expand upon this, for example, instead of knowing whenever an image contains a cat ($y=1$) or it doesn't contain a cat ($y=0$), maybe we would like to have a table of the following
+
+\begin{table*}[h!]
+	\begin{center}
+		\caption{Classification}
+		\begin{tabular}{l|r}
+		$y$&\text{Label}\\
+		\hline
+		$y=0$&\text{None of the following}\\	
+		$y=1$&\text{Cat}\\
+		$y=2$&\text{Dog}\\
+		$y=3$&\text{Bird}\\
+		$y=4$&\text{Elephant}\\
+		$y=5$&\text{Bear}
+		\end{tabular}
+	\end{center}
+\end{table*}
+
+That is, we have a total of $6$ classes we wish to distinguish.  If we were to train a neural network for this classification problem, the only time this needs to be considered is on the output layer.  With this in mind, we shall only consider the simple regression problem
+$$\begin{bmatrix}
+x^1\\
+\vdots\\
+x^m	
+\end{bmatrix}
+\overbrace{\longrightarrow}^{Wx+b}
+\begin{bmatrix}
+	z^1\\
+	\vdots\\
+	z^C
+\end{bmatrix}
+\overbrace{\longrightarrow}^{g(z)}
+\begin{bmatrix}
+	a^1\\
+	\vdots\\
+	a^C
+\end{bmatrix}
+\longrightarrow\hat{y},$$
+where $C$ is the number of labels in our classification.
+
+First, we need to \textit{one-hot encode} our labels.  That is, if our labels are given by
+$$\{0,1,...,C-1\},$$
+then we consider the basis vectors in $\R^C$
+$$\{e_1,...,e_C\},$$
+which clearly admits a bijection
+$$\{0,1,...,C-1\}\congto\{e_1,...,e_C\},\qquad i\mapsto e_{i+1}.$$
+Thus, we've effectively mapped our true labels
+$$y\in\{0,1,...,C-1\}^N\mapsto y\in\R^{C\times N},$$
+where
+$$(y=i)\mapsto (y=e_{i+1}).$$
+
+Next, we need to decide which type of nonlinearity $g:\R^C\to\R^C$ to impose.  To this end, we would like $a^i$ to satisfy
+$$a^i=\P(y=i-1),$$
+then we can declare a prediction via
+$$i_0=\arg\max_ia^i,\qquad \hat{y}=e_{i_0}\leftrightarrow\hat{y}=i_0-1.$$
+That is, we would like our target output vector $a\in\R^C$ to be a probability distribution, i.e.,
+$$0\leq a^i\leq 1,i\in\{1,...,C\},$$
+and
+$$\sum_{i=1}^Ca^i=1.$$
+This leads us to letting $g$ be the $\softmax$ function, i.e.,
+$$g(z^1,...,z^C)=\frac{1}{\sum_{i=1}^Ce^{z^i}}\begin{bmatrix}
+	e^{z^1}\\
+	\vdots\\
+	e^{z^C}
+\end{bmatrix}.$$
+
+Finally, we need to define a cost function $\L:\R^C\times\R^C\to\R$ with which we can compare our true value to our predicted value.  To this end, we consider the cross-entropy function $\L$ defined by
+$$\L(a_j,y_j)=-\sum_{i=1}^Cy^i_j\log{a^i_j}.$$
+We note that since $y_j=e_k$ for some $k\in\{1,...,C\}$, that this sum is actually a single element.  Moreover, when $C=2$, we recover our log-loss function for the sigmoid activation.  This finally yields a cost function
+\begin{align*}
+	\J(W,b)&=-\frac{1}{N}\sum_{j=1}^N\sum_{i=1}^Cy^i_j\log{a^i_j}\\
+	&=-\frac{1}{N}(y:\log{a}),
+\end{align*}
+where
+$$A:B=\ip{A,B}_F=\tr(A^TB),$$
+is the Frobenius norm on $\R^{C\times N}$.
+
+To minimize our cost, we first note
+\begin{align*}
+	\frac{\partial\L_y\circ g}{\partial z^\mu}&=\sum_{i=1}^C\frac{\partial\L_y}{\partial a^i}\frac{\partial S^i}{\partial z^\mu}\\
+	&=-\sum_{i=1}^C\frac{y^i}{a^i}a^i(\delta^i_\mu-a^\mu)\\
+	&=-\sum_{i=1}^Cy^i(\delta^i_\mu-a^\mu)\\
+	&=-y^\mu+a^\mu\underbrace{\sum_{i=1}^Cy^i}_{=1}\\
+	&=a^\mu-y^\mu,
+\end{align*}
+then we see that
+\begin{align*}
+	\frac{\partial z^\mu}{\partial W^\alpha_\beta}&=\frac{\partial}{\partial W^\alpha_\beta}(W^\mu_kx^k+b^\mu)\\
+	&=\sum_{k=1}^m\delta^\mu_\alpha\delta_k^\beta x^k\\
+	&=\delta^\mu_\alpha x^\beta,
+\end{align*}
+and
+\begin{align*}
+	\frac{\partial z^\mu}{\partial b^\alpha}=\delta^\mu_\alpha.
+\end{align*}
+Hence,
+\begin{align*}
+	\frac{\partial\L_y}{\partial W^\alpha_\beta}&=\sum_{\mu=1}^C(a^\mu-y^\mu)\delta_\alpha^\mu x^\beta\\
+	&=x(a-y)^T,
+\end{align*}
+yielding a gradient of
+$$\frac{\partial\L_y}{\partial W}=(a-y)x^T,$$
+and similarly
+\begin{align*}
+	\frac{\partial\L_y}{\partial b^\alpha}&=\sum_{\mu=1}^C(a^\mu-y^\mu)\delta^\mu_\alpha\\
+	&=a^\alpha-y^\alpha,
+\end{align*}
+and so
+$$\frac{\partial\L_y}{\partial b}=a-y.$$
+Finally, we conclude that
+$$\frac{\partial\J}{\partial W}=\frac{1}{N}\sum_{j=1}^N(a_j-y_j)(x_j)^T=\frac{1}{N}(a-y)x^T,$$
+and
+$$\frac{\partial\J}{\partial b}=\frac{1}{N}\sum_{j=1}^N(a_j-y_j).$$
+
+We remark that for a deep neural network, the backwards propagation follows a similar path backwards through the network since we have the aforementioned differentials.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
