@@ -1,0 +1,291 @@
+
+
+\section{An Introduction to Convolution Networks}
+
+One common application of neural networks is that of image detection/classification.  Recall that an image in grayscale can be seen as a matrix $x\in\R^{m\times n}$, where
+$$x^i_j\in\{0,1,...,9,10\},$$
+and $10$ represents ``white'' and $0$ represents ``black''.
+
+Instead of flattening the pixels into a vector $\vec{x}\in\R^{nm}$ and feeding the input into a deep network, we observe that several simple detections may be imposed on the image first while it's in matrix form.  That is, suppose we wish to detect vertical or horizontal edges in the image first.  As there are typically several of such edges in an image, and these edges are the ``atomic'' pieces of full images, this initial detection would be of great benefit.
+
+To this end, we wish to impose an operation which finds where a pixel $x^i_j$ changes dramatically when moving to a neighboring pixel.  One way to find these changes is with convolutions, or cross-correlations.
+
+
+\subsection{Cross-Correlation}
+
+We first recall that given two function $f,g:\Z\to\R$, the (discrete) cross-correlation $f*g$ is defined by
+$$f*g(n)=\sum_{j=-\infty}^\infty f(j)g(j+n).$$
+We note that cross-correlation is not commutative, however, we see that
+\begin{align*}
+	g*f(-n)&=\sum_{j=-\infty}^\infty g(j)f(j-n)\qquad i=j-n\\
+	&=\sum_{i=-\infty}^\infty f(i)g(i+n)\\
+	&=f*g(n).
+\end{align*}
+
+We may similarly define for $f,g:\Z^2\to\R$,
+$$f*g(k,l)=\sum_{(i,j)\in\Z^2}f(i,j)g(i+k,j+l).$$
+
+
+
+Whenever $f$ or $g$ has finite support, say in $[-M,M]$, the above sum reduces to
+$$f*g(n)=\sum_{j=-M}^Mf(j)g(j+n).$$
+
+
+Suppose $x\in\R^{\lay{n_h}{0}\times \lay{n_w}{0}}$ and let $F\in\R^{\lay{f}{1}\times\lay{f}{1}}$ with $\lay{f}{1}\leq\min\{\lay{n_h}{0},\lay{n_w}{0}\}$.  Define
+$$\lay{n_\alpha}{1}=\lay{n_\alpha}{0}-\lay{f}{1}+1,\qquad \alpha=h,w,$$
+and we obtain the matrix $F*x\in\R^{\lay{n_h}{1}\times\lay{n_w}{1}}$ given by
+\begin{align*}
+	(F*x)^k_l&=\sum_{i,j=1}^{\lay{f}{1}}F^i_jx^{i+k-1}_{j+l-1}.
+\end{align*}
+In what follows, this cross-correlation operator will be called the \textit{convolution} operator, and $F$ will be called the filter (or kernel).
+
+\begin{ex}
+	Suppose
+	$$x=\begin{bmatrix}
+		1&2&0&3\\
+		4&5&6&0\\
+		0&1&2&3
+	\end{bmatrix}$$
+	and
+	$$F=\begin{bmatrix}
+		1&0\\
+		1&1
+	\end{bmatrix}.$$
+	Then $f=2$, $\lay{n_h}{0}=3$, $\lay{n_w}{0}=4$, and so
+	$$\lay{n_h}{1}=3-2+1=2,$$
+	$$\lay{n_w}{1}=4-2+1=3.$$
+	We now compute $(F*x)\in\R^{2\times 3}$
+	\begin{align*}
+		(F*x)^1_1&=1*1+0*2+1*4+1*5=10\\
+		(F*x)^1_2&=1*2+0*0+1*5+1*6=13\\
+		(F*x)^1_3&=1*0+0*3+1*6+1*0=6\\
+		(F*x)^2_1&=1*4+0*5+1*0+1*1=5\\
+		(F*x)^2_2&=1*5+0*6+1*1+2*2=10\\
+		(F*x)^2_3&=1*6+0*0+1*2+1*3=11,
+	\end{align*}
+	and hence
+	$$F*x=\begin{bmatrix}
+		10&13&6\\
+		5&10&11
+	\end{bmatrix}.$$
+\end{ex}
+
+\begin{ex}
+	Suppose
+	$$x=\begin{bmatrix}
+		10&10&10&0&0&0\\
+		10&10&10&0&0&0\\
+		10&10&10&0&0&0\\
+		10&10&10&0&0&0\\
+		10&10&10&0&0&0\\
+		10&10&10&0&0&0
+	\end{bmatrix},$$
+	which can be seen as a grayscale image that's white on the left half of the image and black on the right half.  Now define the filter
+	$$F=\begin{bmatrix}
+		1&0&-1\\
+		1&0&-1\\
+		1&0&-1
+	\end{bmatrix}.$$
+	Then $F*x\in\R^{4\times 4}$ and is given by
+	$$F*x=\begin{bmatrix}
+		0&30&30&0\\
+		0&30&30&0\\
+		0&30&30&0\\
+		0&30&30&0
+	\end{bmatrix},$$
+	which looks like an image a ``white'' edge in the middle, telling us the original has an edge in the middle that goes from ``bright'' pixels to ``dark'' pixels.
+\end{ex}
+
+This idea of convolution seems to be able to detect our edges.  However, we see that the pixels in the ``interior'' of the matrix affect the convolution much more the the pixels on the ``boundary''.  This may not always matter, but when it does, we need a technique to allow for the boundary pixels to be more prominent.  One such fix is to add some ``padding'' around the original image.
+
+\subsection{Convolution with Padding}
+
+Suppose $x\in\R^{m\times n}$ is matrix, and let $p\in\Z_{\geq0}$, which we will call the \textit{padding}.  Define a new matrix $(x,p)\in\R^{(m+2p)\times (n+2p)}$ given by
+$$(x,p)^k_l=\begin{cases}
+	x^{k-p}_{l-p}&\text{if }p<k\leq m+p\text{ and }p<l\leq n+p,\\
+	0&\text{ else.}
+\end{cases}$$
+
+\begin{ex}
+	Suppose
+	$$x=\begin{bmatrix}
+		1&2\\
+		3&4
+	\end{bmatrix}.$$
+	Then $(x,0)=x$ immediately,
+	$$(x,1)=\begin{bmatrix}
+		0&0&0&0\\
+		0&1&2&0\\
+		0&3&4&0\\
+		0&0&0&0
+	\end{bmatrix},$$
+	$$(x,2)=\begin{bmatrix}
+		0&0&0&0&0&0\\
+		0&0&0&0&0&0\\
+		0&0&1&2&0&0\\
+		0&0&3&4&0&0\\
+		0&0&0&0&0&0\\
+		0&0&0&0&0&0
+	\end{bmatrix}=((x,1),1).$$
+\end{ex}
+
+From the previous example, we see a recursive property with padding, i.e.,
+\begin{align*}
+	(x,p)&=((x,p-1),1)\\
+	&=(((x,p-2),1),1)\\
+	&\vdots\\
+	&=\underbrace{((\cdots((}_{\text{p-\text{times}}}x,\underbrace{1),1),\cdots1),1)}_{p-\text{times}}
+\end{align*}
+
+
+Suppose $x\in\R^{\lay{n_h}{0}\times \lay{n_w}{0}}$, let $F\in\R^{\lay{f}{1}\times\lay{f}{1}}$ be a filter, and let $p\in\Z_{\geq0}$ be the padding.  Then since $(x,p)$ is an $(\lay{n_h}{0}+2p)\times(\lay{n_w}{0}+2p)$-matrix, we have that the convolution $F*(x,p)$ has a size given by
+$$\lay{n_\alpha}{1}=\lay{n_\alpha}{0}+2p-\lay{f}{1}+1,\qquad \alpha=h,w,$$
+and we write
+$$F*^px=F*(x,p).$$
+
+When $p=0$, we say that $F*^px$ is a \textit{valid convolution}, and we'll typically drop the $p$-superscript.  When $p=\frac{\lay{f}{1}-1}{2}$, we say that $F*^px$ is a \textit{same convolution}, since
+$$\lay{n_\alpha}{1}=\lay{n_\alpha}{0},\qquad\alpha=h,w.$$
+
+We remark here that in many application our desired filters have $\lay{f}{1}$ being odd (if it's not odd, then it cannot be a same convolution).
+
+
+
+\subsection{Strided Convolution}
+
+We note that in our definition of a convolution
+$$(F*x)^k_l=\sum_{i,j=1}^{\lay{f}{1}}F^i_jx^{i+k-1}_{j+l-1},$$
+that we're sliding our filter $F$ along $x$ with a \textit{stride} of $s=1$.  This does not necessarily have to be the case.  We modify our definition of convolution to allow for $s\in\N$ as follows:
+
+Suppose $x\in\R^{\lay{n_h}{0}\times \lay{n_w}{0}}$, let $F\in\R^{\lay{f}{1}\times\lay{f}{1}}$ be a filter and let $s\in\N$ be the stride.   Let
+$$\lay{n_\alpha}{1}=\lfloor\frac{\lay{n_\alpha}{0}-\lay{f}{1}}{s}+1\rfloor,\qquad \alpha=h,w,$$
+and define $F*_sx\in\R^{\lay{n_h}{1}\times\lay{n_w}{1}}$ to be the matrix given by
+\begin{align*}
+	(F*_sx)^k_l&=\sum_{i,j=1}^{\lay{f}{1}}F^i_jx^{i+s(k-1)}_{j+s(l-1)}.
+\end{align*}
+
+We note that the definition of a strided convolution is a direct generalization of our previous definition of convolution, namely with stride $s=1$.
+
+
+\begin{ex}
+	Suppose
+	$$x=\begin{bmatrix}
+		1&0&2&0\\
+		3&0&4&0\\
+		0&5&0&6\\
+		7&0&8&0
+	\end{bmatrix},$$
+	$$F=\begin{bmatrix}
+		1&1\\
+		2&0
+	\end{bmatrix},$$
+	and suppose we have a stride of $2$ (any larger stride would result in a $(1\times 1)$-matrix).  Then we see that
+	$$\lay{n_\alpha}{1}=\lfloor\frac{4-2}{2}+1\rfloor=2,\qquad \alpha=h,w,$$
+	and hence that
+	\begin{align*}
+		(F*_2x)^1_1&=1*1+1*0+2*3+0*0=7\\
+		(F*_2x)^1_2&=1*2+1*0+2*4+0*0=10\\
+		(F*_2x)^2_1&=1*0+1*5+2*7+0*0=19\\
+		(F*_2x)^2_2&=1*0+1*6+2*8+0*0=22,
+	\end{align*}
+	or rather
+	$$F*_2x=\begin{bmatrix}
+		7&10\\
+		19&22
+	\end{bmatrix}.$$
+\end{ex}
+
+
+
+\subsection{Strided Convolutions with Padding}
+
+Suppose $x\in\R^{\lay{n_h}{0}\times \lay{n_w}{0}}$, let $F\in\R^{\lay{f}{1}\times\lay{f}{1}}$ be a filter, let $s\in\N$ be the stride, and let $p\in\Z_{\geq0}$ be the padding.  We define
+$$F*_s^px:=F*_s(x,p),$$
+that is, we first pad $x$, the compute the strided convolution of the filter $F$ with $(x,p)$.  From our previous work, we see that for $\alpha=h,w$, that
+\begin{align*}
+	\lay{n_\alpha}{1}&=\left\lfloor\frac{\lay{n'_\alpha}{0}-\lay{f}{1}}{s}+1\right\rfloor,\qquad n'\sim (x,p)\\
+	&=\left\lfloor\frac{\lay{n_\alpha}{0}+2p-\lay{f}{1}}{s}+1\right\rfloor.
+\end{align*}
+
+Moreover, to compute a closed form of the strided convolution with padding, we first define the set
+
+\begin{align*}
+	\lay{\mathcal{I}}{1}{^k_l}&=\mathcal{I}(\lay{n_h}{0},\lay{n_w}{0},p,s;k,l)\\
+	&:=\left\{(i,j)\in\Z^2:p<i+s(k-1)-p\leq \lay{n_h}{0}+p\right.; \\
+	&\hspace{4cm} \left.p<j+s(l-1)-p\leq \lay{n_w}{0}+p\right\}\\
+	&=\left\{(i,j)\in\Z^2:2p-s(k-1)<i\leq 2p-s(k-1)+\lay{n_h}{0}\right.;\\
+	&\hspace{4cm}\left.2p-s(l-1)<j\leq 2p-s(l-1)+\lay{n_w}{0}\right\}
+\end{align*}
+and now we immediately see by chasing the definitions that
+\begin{align*}
+	(F*_s^px)^k_l&=(F*_s(x,p))^k_l\\
+	&=\sum_{i,j=1}^{\lay{f}{1}}F^i_j(x,p)^{i+s(k-1)}_{j+s(l-1)}\\
+	&=\sum_{i,j=1}^{\lay{f}{1}}F^i_jx^{i+s(k-1)+p}_{j+s(l-1)-p}\chi_{\lay{\mathcal{I}}{1}{^k_l}}(i,j)
+\end{align*}
+
+\begin{ex}
+	Suppose
+	$$x=\begin{bmatrix}
+		1&0&2\\
+		0&3&0\\
+		4&0&5
+	\end{bmatrix},$$
+	and we have a filter
+	$$F=\begin{bmatrix}
+		1&1\\
+		0&1
+	\end{bmatrix}.$$
+	
+	We first compute $F*_2^1x$:  Since we we're using a padding of $p=1$, we have that
+	$$(x,1)=\begin{bmatrix}
+		0&0&0&0&0\\
+		0&1&0&2&0\\
+		0&0&3&0&0\\
+		0&4&0&5&0\\
+		0&0&0&0&0
+	\end{bmatrix}.$$
+	Using a stride of $s=2$, we see we have resultant dimensions of the form
+	\begin{align*}
+		\lay{n_\alpha}{1}&=\lfloor\frac{3+2*1-2}{2}+1\rfloor\\
+		&=2,
+	\end{align*}
+	that is, $F*_2^1x\in\R^{2\times 2}$.  We now compute
+	\begin{align*}
+		(F*_2^1x)^1_1&=1*0+1*0+0*0+1*1=1\\
+		(F*_2^1x)^1_2&=1*0+1*0+0*0+1*2=2\\
+		(F*_2^1x)^2_1&=1*0+1*0+0*0+1*4=4\\
+		(F*_2^1x)^2_2&=1*0+1*0+0*5+1*0=0,
+	\end{align*}
+	or rather
+	$$F*_2^1x=\begin{bmatrix}
+		1&2\\
+		4&0
+	\end{bmatrix}.$$
+\end{ex}
+
+
+
+
+\subsection{Convolutions Over Volumes}
+
+At the beginning of this section, we began by consider a grayscale image which we represented as a matrix $x\in\R^{n_h\times n_w}$.  Suppose that instead of grayscale, we have an RGB image.  Then for each fixed color component, we may represent the component as matrix as before.  However, since flattening a color image into a grayscale image would break our desired symmetries (e.g., for edges, etc), we would like a way to handle convolutions of an RGB image being represented as a rank-$3$ tensor $x\in\R^{n_h\times n_w\times n_c}$.  This $n_c$ parameter represents the ``depth'' of the image, which we shall call the \textit{channels}.  That is, $x$ has a red, a green, and a blue channel.  We wish to work with channels simultaneously to see simplifications in their relationships with each other.  To this end, we introduce a notion of convolution over volumes.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
