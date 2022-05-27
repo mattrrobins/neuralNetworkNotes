@@ -47,7 +47,13 @@
 \let\oldpart\part
 \renewcommand\part{\newpage\oldpart}
 
+\usepackage{tikz-cd}
+\usepackage{tikz}
+\usetikzlibrary{positioning}
 
+\tikzset{big box/.style={draw, minimum width=5cm, minimum height=4cm},
+    small box/.style={draw, minimum width=1cm, minimum height=1cm}}
+   
 
 
 
@@ -85,7 +91,7 @@
 		\include{src/logisticRegression}
 		\include{src/neuralNetworkIntroduction}
 		\include{src/deepNeuralNetwork}
-		
+
 	\part{Improving Deep Neural Networks: Hyperparameter Tuning, Regularization, and Optimization}
 		\include{src/trainDevTestSets}
 		\include{src/regularizationIntro}
@@ -93,10 +99,13 @@
 		\include{src/optimizationAlgorithms}
 		\include{src/hyperparameterTuning}
 		\include{src/batchNormalization}
+		
+		\begin{comment}
 		\include{src/multiClassSoftmax}
 		
 	\part{Convolutional Neural Networks}
 		\include{cnnIntro}
+		\include{convNets}
 
 
 	\begin{comment}

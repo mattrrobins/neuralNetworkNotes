@@ -1,4 +1,3 @@
-\def\diag{\text{diag}}
 
 
 \section{Batch Normalization}
@@ -498,12 +497,395 @@ Suppose we have a training set $\X$ with which we wish to train a binary classif
 
 
 
+\subsection{Better Backpropagation}
 
+We consider a neural network utilizing batch normalization of the form
+{\tiny
+\begin{equation*}
+	\begin{tikzcd}
+		{}
+		&\R^{\lay{n}{1}\times\lay{n}{0}}
+		\arrow[d]
+		&{}
+		&\R^{\lay{n}{1}}
+		\arrow[d]
+		&\R^{\lay{n}{1}}
+		\arrow[d]
+		&{}
+		\\
+		\R^{\lay{n}{0}\times N}
+		\arrow[r]
+		&\boxed{\lay{\phi}{1}}
+		\arrow[r]
+		&\boxed{\lay{N}{1}}
+		\arrow[r]
+		&\boxed{\lay{\Gamma}{1}}
+		\arrow[r]
+		&\boxed{\lay{\psi}{1}}
+		\arrow[r]
+		&\boxed{\lay{G}{1}}
+		\arrow[r]
+		&\cdots\\
+		{}
+		&\cdots
+		\arrow[r]
+		&\boxed{\lay{\phi}{2}}
+		\arrow[r]
+		&\boxed{\lay{\psi}{2}}
+		\arrow[r]
+		&\boxed{\lay{G}{2}}
+		\arrow[r]
+		&\boxed{\L}
+		\arrow[r]
+		&\R
+		\\
+		{}
+		&{}
+		&\R^{\lay{n}{2}\times\lay{n}{1}}
+		\arrow[u]
+		&\R^{\lay{n}{2}}
+		\arrow[u]
+		&{}
+		&\R^{\lay{n}{2}\times N}
+		\arrow[u]
+		&{}
+	\end{tikzcd}
+\end{equation*}
+}
+where we have the functions
+\begin{enumerate}
+	\item $$\lay{G}{\ell}:\R^{\lay{n}{\ell}\times N}\to\R^{\lay{n}{\ell}\times N}$$
+	is the broadcasting of the activation unit $\lay{g}{\ell}:\R\to\R$.
+	
+	\item $$\lay{\phi}{\ell}:\R^{\lay{n}{\ell}\times\lay{n}{\ell-1}}\times\R^{\lay{n}{\ell-1}\times N}\to\R^{\lay{n}{\ell}\times N}$$
+	is given by
+	$$\lay{\phi}{\ell}(W,x)=Wx.$$
+	
+	\item $$\lay{\psi}{\ell}:\R^{\lay{n}{\ell}}\times\R^{\lay{n}{\ell}\times N}\to\R^{\lay{n}{\ell}\times N}$$
+	is given by
+	$$\psi(b,x)=x+b\vec{1}^T,$$
+	where
+	$$\vec{1}^T=\begin{bmatrix}
+		1&1&\cdots&1
+	\end{bmatrix}\in\R^{\lay{n}{\ell}}.$$
+	
+	\item $$\lay{N}{1}:\R^{\lay{n}{1}\times N}\to\R^{\lay{n}{1}\times N}$$
+	is the normalization operator given by
+	$$\lay{N}{1}:x^i_j\mapsto \frac{x^i_j-\E[x^i]}{\sqrt{\V[x^i]+\epsilon}},$$
+	where $\E$ is the expectation operator, i.e.,
+	$$\E[x^i]=\frac{1}{N}\sum_{j=1}^Nx^i_j,$$
+	and $\V$ is the variance operator, i.e.,
+	$$\V[x^i]=\E[(x^i-\E[x^i])^2].$$
+	
+	\item $$\lay{\Gamma}{\ell}:\R^{\lay{n}{\ell}}\times\R^{\lay{n}{\ell}\times N}\to\R^{\lay{n}{\ell}\times N}$$
+	is given by
+	$$\Gamma(\gamma, x)=\gamma\vec{1}^T\odot x,$$
+	where
+	$$\vec{1}^T=\begin{bmatrix}
+		1&1&\cdots&1
+	\end{bmatrix}\in\R^{\lay{n}{\ell}}.$$
+\end{enumerate}
+
+We now consider back-propagating through the network via reverse differentiations as in the following diagram:
+
+
+{\tiny
+\begin{equation*}
+	\begin{tikzcd}
+		{}
+		&\R^{\lay{n}{1}\times\lay{n}{0}}
+		&{}
+		&\R^{\lay{n}{1}}
+		&\R^{\lay{n}{1}}
+		&{}
+		\\
+		\R^{\lay{n}{0}\times N}
+		&\boxed{\lay{\phi}{1}}
+		\arrow[l, swap, "r"]
+		\arrow[u, "r_1"]
+		&\boxed{\lay{N}{1}}
+		\arrow[l, swap, "r"]
+		&\boxed{\lay{\Gamma}{1}}
+		\arrow[l, swap, "r"]
+		\arrow[u, "\hat{r}_1"]
+		&\boxed{\lay{B}{2}}
+		\arrow[l, swap, "r"]
+		\arrow[u, "\tilde{r}_1"]
+		&\boxed{\lay{G}{1}}
+		\arrow[l, swap, "r"]
+		&\cdots
+		\arrow[l, swap, "r"]
+		\\
+		{}
+		&\cdots
+		&\boxed{\lay{\phi}{2}}
+		\arrow[l, swap, "r"]
+		\arrow[d, "r_2"]
+		&\boxed{\lay{\psi}{2}}
+		\arrow[l, swap, "r"]
+		\arrow[d, "\cl{r}_2"]
+		&\boxed{\lay{G}{2}}
+		\arrow[l, swap, "r"]
+		&\boxed{\L}
+		\arrow[l, swap, "r"]
+		&\R
+		\arrow[l]
+		\\
+		{}
+		&{}
+		&\R^{\lay{n}{2}\times\lay{n}{1}}
+		&\R^{\lay{n}{2}}
+		&{}
+		&\R^{\lay{n}{2}\times N}
+		\arrow[u]
+		&{}
+	\end{tikzcd}
+\end{equation*}
+}
+
+We now need to consider our individual derivatives:
+\begin{enumerate}
+	\item Suppose $G:\R^{m\times n}\to\R^{m\times n}$ is the broadcasting of $g:\R\to\R$.  Then for any $(x,\xi)\in T\R^{m\times n}$ we have that
+	$$dG_x(\xi)=G'(x)\odot\xi.$$
+	Then for any $\zeta\in T_{G(x)}\R^{m\times n}$, we have the reverse derivative is given by
+	$$rG_x(\zeta)=G'(x)\odot\zeta.$$
+	
+	\item Suppose $\phi:\R^{m\times n}\times\R^{n\times N}\to\R^{m\times N}$ is given by
+	$$\phi(W,x)=Wx.$$
+	Then we have two differential paths to consider:
+	\begin{enumerate}
+		\item For any $(W,x)\in \R^{m\times n}\times \R^{n\times N}$ and any $\xi\in T_x\R^{n\times N}$, we have that
+		\begin{align*}
+			d\phi_{(W,x)}(\xi)&=W\cdot\xi\\
+			&=L_W(\xi),
+		\end{align*}
+		and for any $\zeta\in T_{\phi(W,x)}\R^{m\times N}$, we have the reverse differential
+		\begin{align*}
+			r\phi_{(W,x)}(\zeta)&=W^T\cdot\zeta\\
+			&=L_{W^T}(\zeta).
+		\end{align*}
+		
+		\item For any $(W,x)\in\R^{m\times n}\times \R^{n\times N}$ and any $Z\in T_W\R^{m\times n}$, we have that
+		\begin{align*}
+			d_1\phi_{(W,x)}(Z)&=Z\cdot x\\
+			R_x(Z),
+		\end{align*}
+		and for any $\zeta\in T_{\phi(W,x)}\R^{m\times N}$, we have the reverse differential
+		\begin{align*}
+			r_1\phi_{(W,x)}(\zeta)&=\zeta\cdot x^T\\
+			&=R_{x^T}(\zeta).
+		\end{align*}
+	\end{enumerate}
+	
+	\item Suppose $\psi:\R^n\times\R^{n\times N}\to\R^{n\times N}$ is given by
+	$$\psi(b,x)=x+b\vec{1}^T,$$
+	where
+	$$\vec{1}^T=\begin{bmatrix}
+		1&1&\cdots&1
+	\end{bmatrix}\in\R^N.$$
+	Then we look at the two differential paths and for any $(b,x)\in\R^n\times\R^{n\times N}$ any any $\xi\in T_x\R^{n\times N}$, $\eta\in T_b\R^n$ and $\zeta\in T_{\psi(b,x)}\R^{n\times N}$:
+	\begin{enumerate}
+		\item In the network direction, we have that
+		\begin{align*}
+			d\psi_{(b,x)}(\xi)=\xi,
+		\end{align*}
+		with reverse differential
+		$$r\psi_{(b,x)}(\zeta)=\zeta.$$
+		
+		\item In the parameter-space direction, we have that
+		\begin{align*}
+			\cl{d}\psi_{(b,x)}(\eta)&=\eta\cdot\vec{1}^T\\
+			&=R_{\vec{1}^T}(\eta),
+		\end{align*}
+		with reverse differential
+		\begin{align*}
+			\cl{r}\psi_{(b,x)}(\zeta)&=\zeta\cdot\vec{1}\\
+			&=R_{\vec{1}}(\zeta).
+		\end{align*}
+	\end{enumerate}
+	
+	\item Suppose $\Gamma:\R^n\times\R^{n\times N}\to\R^{n\times N}$ is given by
+	$$\Gamma(\gamma,x)=\gamma\vec{1}^T\odot x.$$
+	The considering the two paths of differentiation, we have that for any $((\gamma,x), (\eta,\xi))\in T(\R^n\times\R^{n\times N})$ and $\zeta\in T_{\Gamma(\gamma,x)}\R^{n\times N}$ that:
+	\begin{enumerate}
+		\item In the network direction, we have that
+		\begin{align*}
+			d\Gamma_{(\gamma,x)}(\xi)&=\gamma\vec{1}^T\odot\xi,
+		\end{align*}
+		with reverse differential
+		\begin{align*}
+			r\Gamma_{(\gamma,x)}(\zeta)&=\gamma\vec{1}^T\odot\zeta.
+		\end{align*}
+		
+		\item In the parameter-space direction, we have that
+		\begin{align*}
+			\hat{d}\Gamma_{(\gamma,x)}(\eta)&=\eta\vec{1}^T\odot x\\
+			&=\odot_x\circ R_{\vec{1}^T}(\eta),
+		\end{align*}
+		with reverse differential
+		\begin{align*}
+			\hat{r}\Gamma_{(\gamma,x)}(\zeta)&=(x\odot\zeta)\cdot\vec{1}\\
+			&=R_{\vec{1}}\circ\odot_x(\zeta).
+		\end{align*}
+	\end{enumerate}
+	
+	\item As the normalization operator is quite involved, we move its computation to the appendix.
+\end{enumerate}
+
+
+
+
+
+
+
+\subsection{The Normalization Operator}
+In this section, we wish to character the (reverse) differential of the normalization operator $N:\R^{m\times n}\to\R^{m\times n}$ given in coordinates by
+$$N:x^i_j\mapsto \frac{x^i_j-\E[x^i]}{\sqrt{\V[x^i]+\epsilon}}.$$
+First, let's rewrite this without coordinates
+\begin{align*}
+	N(x)&=(\V[x]+\vec{\epsilon})^{\odot-\frac{1}{2}}\vec{1}^T\odot(x-\E[x]\vec{1}^T)\\
+	&=:f(x)\odot g(x).
+\end{align*}
+Now, let's fix $(x,\xi)\in T\R^{m\times n}$, and we immediately see that the Hadamard product obeys the Leibniz Rule with exterior differentiation, i.e.,
+$$dN_x(\xi)=g(x)\odot df_x(\xi)+f(x)\odot dg_x(\xi),$$
+so we consider these computations separately.  Moreover, we now need to compute the derivative of the expectation $\E$ and variance $\V$ operators.
+
+\begin{enumerate}
+	\item For the expectation of a random vector, $\E:\R^{m\times n}\to\R^m$, we first rewrite $\E$ as follows
+	\begin{align*}
+		\E[x]&=\sum_{i=1}^m\left(\frac{1}{n}\sum_{j=1}^nx^i_j\right)e_i\\
+		&=\frac{1}{n}x\cdot\vec{1}\\
+		&=\frac{1}{n}R_{\vec{1}}(x)
+	\end{align*}
+	where $\vec{1}=(1,1,...,1)\in\R^n$.  This is clearly linear, so for $(x,\xi)\in T\R^{m\times n}$, we have that
+	\begin{align*}
+		d\E_x(\xi)&=\E[\xi]\\
+		&=\frac{1}{n}R_{\vec{1}}(\xi).
+	\end{align*}
+	For a fixed $x\in\R^{m\times n}$, we let $\mu:=\E[x]\in\R^m$ denote the output.
+	
+	\item For the variance of a random vector, $\V:\R^{m\times n}\to\R^m$, we rewrite $\V$ as follows
+	\begin{align*}
+		\V[x]&=\sum_{i=1}^m\left(\frac{1}{n}\sum_{j=1}^n(x^i_j-\mu^i)^2\right)e_i\\
+		&=\E\left[(x-\mu\vec{1}^T)\odot(x-\mu\vec{1}^T)\right]\\
+		&=\E\left[(x-\mu\vec{1}^T)^{\odot2}\right].
+	\end{align*}
+	From the first calculation, we know how to compute the derivative of $\E$, so we focus on the input $(x-\mu\vec{1}^T)^{\odot2}$.  
+	
+	To this end, we define $\psi:\R^{m\times n}\to\R^{m\times n}$ to be the inner-most function given by
+	\begin{align*}
+		\psi(x)&=x-\E[x]\vec{1}^T\\
+		&=\left(\id_{\R^{m\times n}}-R_{\vec{1}^T}\circ\E\right)(x),
+	\end{align*}
+	which is clearly linear. Then for $(x,\xi)\in T\R^{m\times n}$ we see that
+	\begin{align*}
+		d\psi_x(\xi)&=\left(\id_{T_x\R^{m\times n}} - \frac{1}{n}R_{\vec{1}^T}\circ R_{\vec{1}}\right)(\xi),
+	\end{align*}
+	where we used our previous computation for $d\E_x$.
+	
+	Next, define $\phi:\R^{m\times n}\to\R^{m\times n}$ to be the Hadamard-square, i.e.,
+	$$\phi(x)=x^{\odot2}=x\odot x.$$
+	  Using our previous remark of the Leibniz Rule in regard to the Hadamard product, we see that for $(x,\xi)\in T\R^{m\times n}$,
+	  \begin{align*}
+	  	d\phi_x(\xi)&=x\odot\xi+\xi\odot x\\
+	  	&=2x\odot\xi\\
+	  	&=\odot_{2x}(\xi).
+	  \end{align*}
+	  
+	  Finally, by the compositional definition of $\V$,
+	  $$\V[x]=\E\circ\phi\circ\psi(x),$$
+	  we compute for any $(x,\xi)\in T\R^{m\times n}$ that
+	  \begin{align*}
+	  	d\V_x(\xi)&=d\E_{\phi(\psi(x))}\circ d\phi_{\psi(x)}\circ d\psi_x(\xi)\\
+	  	&=d\E_{\phi(\psi(x))}\circ d\phi_{\psi(x)}\left(\xi-\frac{1}{n}\xi\vec{1}\vec{1}^T\right)\\
+	  	&=d\E_{\phi(\psi(x))}\left(2(x-\mu\vec{1}^T)\odot\left(\xi-\frac{1}{n}\xi\vec{1}\vec{1}^T\right)\right)\\
+	  	&=\E\left[2(x-\mu\vec{1}^T)\odot\left(\xi-\frac{1}{n}\xi\vec{1}\vec{1}^T\right)\right]\\
+	  	&=\E\left[2(x-\mu\vec{1}^T)\odot\xi\right]-2\E\left[(x-\mu\vec{1}^T)\odot(\E[\xi]\vec{1}^T)\right].
+	  \end{align*}
+	  Next, we notice that if we let $\gamma:=\E[\xi]\in\R^m$, then
+	  \begin{align*}
+	  	\gamma\vec{1}^T&=\begin{pmatrix}
+	  		\gamma^1\\
+	  		\vdots\\
+	  		\gamma^m
+	  	\end{pmatrix}\begin{pmatrix}
+	  		1&1&\cdots&1
+	  	\end{pmatrix}\\
+	  	&=\begin{bmatrix}
+	  		\gamma^1&\gamma^1&\cdots&\gamma^1\\
+	  		\gamma^2&\gamma^2&\cdots&\gamma^2\\
+	  		\vdots&\vdots&\ddots&\vdots\\
+	  		\gamma^m&\gamma^m&\cdots&\gamma^m
+	  	\end{bmatrix}\in\R^{m\times n}
+	  \end{align*}
+	  and hence that
+	  \begin{align*}
+	  	\E[(x-\mu\vec{1}^T)\odot\gamma\vec{1}^T]&=\sum_{i=1}^m\left(\frac{1}{n}\sum_{j=1}^n(x^i_j-\mu^i)\gamma^i\right)e_i\\
+	  	&=\sum_{i=1}^m\left(\gamma^i(\E[x^i]-\mu^i)\right)e_i\\
+	  	&=0.
+	  \end{align*}
+	  Resuming our computation, we now have that
+	  \begin{align*}
+	  	d\V_x(\xi)&=\E\left[2(x-\mu\vec{1}^T)\odot\xi\right]\\
+	  	&=\frac{2}{n}R_{\vec{1}}\circ\odot_{x-\mu\vec{1}^T}(\xi)
+	  \end{align*}
+	  We remark that for a fixed $x\in\R^{m\times n}$, we let $\sigma^2:=\V[x]$ denote the output.
+\end{enumerate}
+
+We have now computed the following differentials for any $(x,\xi)\in T\R^{m\times n}$,
+\begin{align*}
+	d\E_x(\xi)&=\frac{1}{n}R_{\vec{1}}(\xi),\\
+	d\V_x(\xi)&=\frac{2}{n}R_{\vec{1}}\circ\odot_{x-\mu\vec{1}^T}(\xi),
+\end{align*}
+and are now ready to compute the differentials of our previously defined $f$ and $g$, that is,
+$$f:\R^{m\times n}\to\R^{m\times n},\qquad f(x)=\left(\V[x]+\vec{\epsilon}\right)^{\odot-\frac{1}{2}}\vec{1}^T,$$
+and
+$$g:\R^{m\times n}\to\R^{m\times n},\qquad g(x)=x-\E[x]\vec{1}^T.$$
+However, we see here that $g\equiv\psi$ as defined, and so for any $(x,\xi)\in T\R^{m\times n}$, we have that
+$$dg_x(\xi)=\left(\id-\frac{1}{n}R_{\vec{1}^T}\circ R_{\vec{1}}\right)(\xi).$$
+Hence we need only focus on $f$.  To this end, for $(x,\xi)\in T\R^{m\times n}$, we first compute the differential of the Hadamard-root operator, $h(x)=x^{\odot-\frac{1}{2}}$,
+\begin{align*}
+	dh_x(\xi)&=\rest{\frac{d}{dt}}_{t=0}(x+t\xi)^{\odot-\frac{1}{2}}\\
+	&=\rest{\frac{d}{dt}}_{t=0}\begin{bmatrix}
+		(x^i_j+t\xi^i_j)^{-\frac{1}{2}}
+	\end{bmatrix}\\
+	&=\begin{bmatrix}
+		-\frac{1}{2}(x^i_j)^{-\frac{3}{2}}\xi^i_j
+	\end{bmatrix}\\
+	&=-\frac{1}{2}x^{\odot-\frac{3}{2}}\odot\xi\\
+	&=-\frac{1}{2}\odot_{x^{\odot-\frac{3}{2}}}(\xi).
+\end{align*}
+
+After writing $f$ as the composition
+$$f(x)=R_{\vec{1}^T}\circ h(\V[x]+\vec{\epsilon}),$$
+we now compute
+\begin{align*}
+	df_x(\xi)&=R_{\vec{1}^T}\circ dh_{\sigma^2+\vec{\epsilon}}\circ d\V_x(\xi)\\
+	&=-\frac{1}{n}R_{\vec{1}^T}\circ\odot_{(\sigma^2+\vec{\epsilon})^{\odot-\frac{3}{2}}}\circ R_{\vec{1}}\circ\odot_{x-\mu\vec{1}^T}(\xi)
+\end{align*}
+
+Finally, recalling that we defined
+$$N(x)=f(x)\odot g(x),$$
+and so we have that
+\begin{align*}
+	dN_x(\xi)&=g(x)\odot df_x(\xi)+f(x)\odot dg_x(\xi)\\
+	&=(x-\mu\vec{1}^T)\odot -\frac{1}{n}R_{\vec{1}^T}\circ\odot_{(\sigma^2+\vec{\epsilon})^{\odot-\frac{3}{2}}}\circ R_{\vec{1}}\circ\odot_{x-\mu\vec{1}^T}(\xi)\\
+	&\qquad +(\sigma^2+\vec{\epsilon})^{\odot-\frac{1}{2}}\vec{1}^T\odot \left(\id-\frac{1}{n}R_{\vec{1}^T}\circ R_{\vec{1}}\right)(\xi)
+\end{align*}
+
+
+
+
+
+
+\begin{comment}
+	
 
 \subsection{Python Implementation}
 
 \TOX{Work in Progress}
 
 
+\end{comment}
 
 

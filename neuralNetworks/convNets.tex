@@ -1,0 +1,185 @@
+
+
+
+\section{Convolutional Networks}
+
+
+We've now seen enough of how to compute convolutions, and are ready to implement them into a neural network architecture. There are three main types of layers that occur in a convolutional neural network, namely, a convolutional layer (\texttt{conv}), a pooling layer (\texttt{pool}), and a fully connected layer (\texttt{FC}), which the usual type of neural network layer we've seen previously.
+
+
+\subsection{Convolutional Layers (\texttt{conv})}
+
+Suppose we are propagating from layer-$\ell$ to layer-$(\ell+1)$ in a neural network, and suppose $\lay{a}{\ell}\in\R^{\lay{n_h}{\ell}\times\lay{n_w}{\ell}\times\lay{n_c}{\ell}}$.  Suppose we have $\lay{n_c}{\ell+1}$-filters we wish to convolve with, each of size $\lay{f}{\ell+1}\times\lay{f}{\ell+1}\times\lay{n_c}{\ell}$, and we have padding $\lay{p}{\ell+1}$ and a stride $\lay{s}{\ell+1}$.  We let $\lay{\conv}{\ell+1}(\lay{a}{\ell})$ denote the mapping:
+\begin{itemize}
+	\item For $\eta\in\{1,...,\lay{n_c}{\ell}\}$, compute
+		$$F_\eta *^{\lay{p}{\ell+1}}_{\lay{s}{\ell+1}}\lay{a}{\ell}+\lay{b_\eta}{\ell+1},$$
+		where $\lay{b_\eta}{\ell+1}\in\R$ and the sum is a broadcasting.
+	\item Stack the resultant matrices to obtain an $\lay{n_h}{\ell+1}\times\lay{n_w}{\ell+1}\times\lay{n_c}{\ell+1}$-tensor.
+\end{itemize}
+\begin{align*}
+	\lay{\conv}{\ell+1}(\lay{a}{\ell})&=F*^{\lay{p}{\ell+1}}_{\lay{s}{\ell+1}}\lay{a}{\ell}+\lay{b}{\ell+1}
+\end{align*}
+
+Letting
+$$\lay{z}{\ell+1}=\lay{\conv}{\ell+1}(\lay{a}{\ell}),$$
+we may then apply our activation unit for the layer $\lay{g}{\ell+1}$ (broadcasted to the rank-$3$ tensor).  That is, we have $\lay{a}{\ell+1}\in\R^{\lay{n_h}{\ell+1}\times\lay{n_w}{\ell+1}\times\lay{n_c}{\ell+1}}$ given by
+$$\lay{a}{\ell+1}{_\eta}{^k}{_l}=\lay{g}{\ell+1}(\lay{z_\eta}{\ell+1}){^k}{_l},$$
+where
+$$\lay{z_\eta}{\ell+1}{^k}{_l}=F_\eta*^{\lay{p}{\ell+1}}_{\lay{s}{\ell+1}}\lay{a}{\ell}+\lay{b}{\ell+1}.$$
+
+We remark here that the number of parameters we need to train is given by the filters with number of parameters
+$$\lay{f}{\ell+1}\times\lay{f}{\ell+1}\times\lay{n_c}{\ell}\times\lay{n_c}{\ell+1},$$
+plus the bias terms
+$$1\times\lay{n_c}{\ell+1},$$
+that is,
+\begin{align*}
+	\text{\#(Parameters)}&=\lay{f}{\ell+1}\times\lay{f}{\ell+1}\times\lay{n_c}{\ell}\times\lay{n_c}{\ell+1}+1\times\lay{n_c}{\ell+1}\\
+	&=\lay{n_c}{\ell+1}\left(\lay{n_c}{\ell}(\lay{f}{\ell+1})^2+1\right)
+\end{align*}
+
+
+
+\subsection{Pooling Layers (\texttt{pool})}
+
+To reduce computational cost and to help prevent over-fitting, a new type of layer is needed to reduce the overall dimensions of the input-size.  This is done with a ``pooling'' layer.  There are two main types of pooling layers that we'll discuss here, the \textit{max pooling} layer and the \textit{average pooling} layer.
+
+
+\subsubsection{Max Pooling}
+
+Suppose
+$$x=\begin{bmatrix}
+	1&3&2&1\\
+	2&9&1&1\\
+	1&3&2&3\\
+	5&6&1&2
+\end{bmatrix},$$
+and we wish to apply $\maxPool$ with a ``filter size'' of $f=2$, a stride $s=2$ and padding $p=0$.  Then we apply the $\max$ operator to the ($2\times 2$)-submatrices moving with a stride of $2$, i.e., $\maxPool(x)\in\R^{2\times 2}$ given by
+\begin{align*}
+	\maxPool(x)&=\begin{bmatrix}
+		\max\{1,3,2,9\}&\max\{2,1,1,1\}\\
+		\max\{1,3,5,6\}&\max\{2,3,1,2\}
+	\end{bmatrix}\\
+	&=\begin{bmatrix}
+		9&2\\
+		6&3
+	\end{bmatrix}.
+\end{align*}
+
+Since each layer of max pooling has $3$ hyper-parameters (and no trainable parameters), we denote these via
+$$\maxPool_{\{f,p,s\}}(x).$$
+
+
+
+\subsubsection{Average Pooling}
+Suppose
+$$x=\begin{bmatrix}
+	1&3&2&1\\
+	2&9&1&1\\
+	1&3&2&3\\
+	5&6&1&2
+\end{bmatrix},$$
+and we wish to apply $\avPool$ with a ``filter size'' of $f=2$, a stride of $s=2$ and padding $p=0$.  Then we apply the averaging operator to the $(2\times 2)$-submatrices moving with a stride of $2$, i.e., $\avPool(x)\in\R^{2\times 2}$ given by
+\begin{align*}
+	\avPool(x)&=\begin{bmatrix}
+		\E[\{1,3,2,9\}]&\E[\{2,1,1,1\}]\\
+		\E[\{1,3,5,6\}]&\E[\{2,3,1,2\}]
+	\end{bmatrix}\\
+	&=\begin{bmatrix}
+		3.75&1.25\\
+		3.75&2
+	\end{bmatrix}.
+\end{align*}
+
+Since each layer of average pooling has $3$ hyper-parameters (and again, no trainable parameters), we denote these via
+$$\avPool_{\{f,p,s\}}(x).$$
+
+
+
+
+\subsection{A Convolutional Network}
+
+Suppose we have a collection of images (our training set), where each image is of the form $x\in\R^{\lay{n_h}{0}\times\lay{n_w}{0}\times\lay{n_c}{0}}$.  We shall denote the forward propagation from layer-$0$ to layer-$1$ via convolution as the mapping $\conv(1)$ which encompasses the following information:
+$$\conv(1)=\begin{cases}
+	\text{filter}\\
+	\text{padding}\\
+	\text{stride}\\
+	\text{number of filter}.
+\end{cases}.$$
+We similarly use $\pool(1)$ to encompass the following information:
+$$\pool(1)=\begin{cases}
+	\text{pool type}\\
+	\text{filter}\\
+	\text{padding}\\
+	\text{stride}.
+\end{cases}$$
+
+This yields a network architecture of the following form:
+\begin{align*}
+	[x]&\overset{\lay{\conv}{1}}{\longrightarrow}[\lay{z}{1}]\overset{\lay{\pool}{1}}{\longrightarrow}[\lay{\zeta}{1}]\overset{\lay{g}{1}}{\longrightarrow}[\lay{a}{1}]\overset{\lay{\conv}{2}}{\longrightarrow}[\lay{z}{2}]\overset{\lay{\pool}{2}}{\longrightarrow}[\lay{\zeta}{2}]\overset{\lay{g}{2}}{\longrightarrow}\\
+	&\overset{\lay{g}{2}}{\longrightarrow}[\lay{a}{2}]\overset{\text{flatten}}{\longrightarrow}[\lay{a}{2}]\overset{\lay{\varphi}{1}}{\longrightarrow}[\lay{z}{3}]\overset{\lay{g}{3}}{\longrightarrow}[\lay{a}{3}]\longrightarrow\cdots\longrightarrow\hat{y}
+\end{align*}
+
+We remark here that the convolution and pooling layers are done before the fully connected layers.  Moreover, we apply the nonlinearity after the pooling, but this doesn't matter when doing max pooling, since our nonlinearities are typically non-decreasing.  We choose this order because it's typically computationally cheaper.  
+
+We also remark that since each output of a convolutional layer only depends on a subset of features, our model is less prone to over-fitting.
+
+
+
+
+\subsection{Backpropagation}
+
+We introduce the following tensoral notation:  We say $x\in\R^a{_{b,c}}$ is a $(1,2)$-tensor written in index form
+$$x=(x^\rho{_{ij}})$$
+with $1\leq \rho\leq a$, $1\leq i\leq b$ and $1\leq j\leq c$.  Similarly, we say $W\in\R^{a,b,c}{_d}$ is a $(3,1)$-tensor written in index form
+$$W=(W^{\eta ij}{_\rho}).$$
+
+Suppose $x\in\R^{n_c}{_{n_h,n_w}}$, $W\in\R^{m_c,f,f}{_{n_c}}$ and $b\in\R^{m_c}$ with padding $p\geq0$ and stride $s\in\N$.  Then we have that
+$$z=\conv(x)\in\R^{m_c}{_{m_h,m_w}}$$
+is given by
+$$z{^\eta}{_{k,l}}=\sum_{\rho=1}^{n_c}\sum_{i,j=1}^fW^{\eta,i,j}{_\rho}x^\rho{_{i+s(k-1)-p,j+s(l-1)-p}}\chi_{\mathcal{I}_{k,l}}(i,j)+b^\eta.$$
+This is the general formula for the forward propagation of a $\conv$ layer.
+
+We now compute derivatives for general loss function $\L$:
+\begin{align*}
+	\frac{\partial z{^\eta}{_{k,l}}}{\partial b^\mu}&=\delta^\eta_\mu,
+\end{align*}
+and hence
+\begin{align*}
+	\frac{\partial\L}{\partial b^\mu}&=\sum_{\eta=1}^{m_c}\sum_{k=1}^{m_h}\sum_{l=1}^{m_w}\frac{\partial\L}{\partial z^\eta{_{k,l}}}\frac{\partial z^\eta{_{k,l}}}{\partial b^\mu}\\
+	&=\sum_{\eta=1}^{m_c}\sum_{k=1}^{m_h}\sum_{l=1}^{m_w}\frac{\partial\L}{\partial z^\eta{_{k,l}}}\delta^\eta_\mu\\
+	&=\sum_{k=1}^{m_h}\sum_{l=1}^{m_w}\frac{\partial\L}{\partial z^\mu{_{k,l}}}.
+\end{align*}
+
+Next we consider
+\begin{align*}
+	\frac{\partial z{^\eta}{_{k,l}}}{\partial W^{\alpha,\mu,\nu}{_\beta}}&=\sum_{\rho=1}^{n_c}\sum_{i,j=1}^f\delta^\eta_\alpha\delta^i_\mu\delta^j_\nu\delta^\beta_\rho x^\rho{_{i+s(k-1)-p,j+s(l-1)-p}}\chi_{\mathcal{I}_{k,l}}(i,j)\\
+	&=\delta^\eta_\alpha x^\beta{_{\mu+s(k-1)-p,\nu+s(l-1)-p}}\chi_{\mathcal{I}_{k,l}}(\mu,\nu)
+\end{align*}
+and hence
+\begin{align*}
+	\frac{\partial\L}{\partial W^{\alpha,\mu,\nu}{_\beta}}&=\sum_{\eta=1}^{m_c}\sum_{k=1}^{m_h}\sum_{l=1}^{m_w}\frac{\partial\L}{\partial z^\eta{_{k,l}}}\frac{\partial z{^\eta}{_{k,l}}}{\partial W^{\alpha,\mu,\nu}{_\beta}}\\
+	&=\sum_{\eta=1}^{m_c}\sum_{k=1}^{m_h}\sum_{l=1}^{m_w}\frac{\partial\L}{\partial z^\eta{_{k,l}}}\delta^\eta_\alpha x^\beta{_{\mu+s(k-1)-p,\nu+s(l-1)-p}}\chi_{\mathcal{I}_{k,l}}(\mu,\nu)\\
+	&=\sum_{k=1}^{m_h}\sum_{l=1}^{m_w}\frac{\partial\L}{\partial z^\alpha{_{k,l}}}x^\beta{_{\mu+s(k-1)-p,\nu+s(l-1)-p}}\chi_{\mathcal{I}_{k,l}}(\mu,\nu).
+\end{align*}
+
+Finally, we consider
+\begin{align*}
+	\frac{\partial z^\eta{_{k,l}}}{\partial x^\alpha{_{\mu,\nu}}}&=\sum_{\rho=1}^{n_c}\sum_{i,j=1}^fW^{\eta,i,j}{_\rho}\delta_\alpha^\rho\delta^\mu_{i+s(k-1)-p}\delta^\nu_{j+s(l-1)-p}\chi_{\mathcal{I}_{k,l}}(i,j)\\
+	&=W^{\eta,\mu-p-s(k-1),\nu-p-s(l-1)}{_\alpha}\chi_{\mathcal{I}_{k,l}}(\mu-p-s(k-1),\nu-p-s(l-1))\\
+	&=W^{\eta,\mu-p-s(k-1),\nu-p-s(l-1)}{_\alpha}\begin{cases}
+		1&\text{if }p<(\mu,\nu)\leq p+(n_h,n_w)\\
+		0&\text{else}
+	\end{cases},
+\end{align*}
+and hence
+\begin{align*}
+	\frac{\partial\L}{\partial x^\alpha{_\mu,\nu}}&=\sum_{\eta=1}^{m_c}\sum_{k=1}^{m_h}\sum_{l=1}^{m_w}\frac{\partial\L}{\partial z^\eta{_{k,l}}}\frac{\partial z^\eta{_{k,l}}}{\partial x^\alpha{_{\mu,\nu}}}\\
+	&=
+\end{align*}
+
+
+
+
+
+
+

@@ -1,6 +1,6 @@
 
 
-\section{An Introduction to Convolution Networks}
+\section{An Introduction to Convolutions}
 
 One common application of neural networks is that of image detection/classification.  Recall that an image in grayscale can be seen as a matrix $x\in\R^{m\times n}$, where
 $$x^i_j\in\{0,1,...,9,10\},$$
@@ -37,6 +37,8 @@ and we obtain the matrix $F*x\in\R^{\lay{n_h}{1}\times\lay{n_w}{1}}$ given by
 \begin{align*}
 	(F*x)^k_l&=\sum_{i,j=1}^{\lay{f}{1}}F^i_jx^{i+k-1}_{j+l-1}.
 \end{align*}
+Note that this is exactly the cross-correlation defined above, except with finite support and reindexed to start at $1$.
+
 In what follows, this cross-correlation operator will be called the \textit{convolution} operator, and $F$ will be called the filter (or kernel).
 
 \begin{ex}
@@ -200,7 +202,7 @@ We note that the definition of a strided convolution is a direct generalization 
 
 Suppose $x\in\R^{\lay{n_h}{0}\times \lay{n_w}{0}}$, let $F\in\R^{\lay{f}{1}\times\lay{f}{1}}$ be a filter, let $s\in\N$ be the stride, and let $p\in\Z_{\geq0}$ be the padding.  We define
 $$F*_s^px:=F*_s(x,p),$$
-that is, we first pad $x$, the compute the strided convolution of the filter $F$ with $(x,p)$.  From our previous work, we see that for $\alpha=h,w$, that
+that is, we first pad $x$, then compute the strided convolution of the filter $F$ with $(x,p)$.  From our previous work, we see that for $\alpha=h,w$, that
 \begin{align*}
 	\lay{n_\alpha}{1}&=\left\lfloor\frac{\lay{n'_\alpha}{0}-\lay{f}{1}}{s}+1\right\rfloor,\qquad n'\sim (x,p)\\
 	&=\left\lfloor\frac{\lay{n_\alpha}{0}+2p-\lay{f}{1}}{s}+1\right\rfloor.
@@ -219,7 +221,7 @@ and now we immediately see by chasing the definitions that
 \begin{align*}
 	(F*_s^px)^k_l&=(F*_s(x,p))^k_l\\
 	&=\sum_{i,j=1}^{\lay{f}{1}}F^i_j(x,p)^{i+s(k-1)}_{j+s(l-1)}\\
-	&=\sum_{i,j=1}^{\lay{f}{1}}F^i_jx^{i+s(k-1)+p}_{j+s(l-1)-p}\chi_{\lay{\mathcal{I}}{1}{^k_l}}(i,j)
+	&=\sum_{i,j=1}^{\lay{f}{1}}F^i_jx^{i+s(k-1)-p}_{j+s(l-1)-p}\chi_{\lay{\mathcal{I}}{1}{^k_l}}(i,j)
 \end{align*}
 
 \begin{ex}
@@ -267,11 +269,27 @@ and now we immediately see by chasing the definitions that
 
 \subsection{Convolutions Over Volumes}
 
-At the beginning of this section, we began by consider a grayscale image which we represented as a matrix $x\in\R^{n_h\times n_w}$.  Suppose that instead of grayscale, we have an RGB image.  Then for each fixed color component, we may represent the component as matrix as before.  However, since flattening a color image into a grayscale image would break our desired symmetries (e.g., for edges, etc), we would like a way to handle convolutions of an RGB image being represented as a rank-$3$ tensor $x\in\R^{n_h\times n_w\times n_c}$.  This $n_c$ parameter represents the ``depth'' of the image, which we shall call the \textit{channels}.  That is, $x$ has a red, a green, and a blue channel.  We wish to work with channels simultaneously to see simplifications in their relationships with each other.  To this end, we introduce a notion of convolution over volumes.
+At the beginning of this section, we began by considering a grayscale image which we represented as a matrix $x\in\R^{n_h\times n_w}$.  Suppose that instead of grayscale, we have an RGB image.  Then for each fixed color component, we may represent the component as a matrix as before.  However, since flattening a color image into a grayscale image would break our desired symmetries (e.g., for edges, etc), we would like a way to handle convolutions of an RGB image being represented as a rank-$3$ tensor $x\in\R^{n_h\times n_w\times n_c}$.  This $n_c$ parameter represents the ``depth'' of the image, which we shall call the \textit{channels}.  That is, $x$ has a red, a green, and a blue channel.  We wish to work with channels simultaneously to see simplifications in their relationships with each other.  To this end, we introduce a notion of convolution over volumes, which instead of moving a $\lay{f}{1}\times\lay{f}{1}$-square across $x$, we move a $\lay{f}{1}\times\lay{f}{1}\times\lay{n_c}{0}$-prism across $x$ instead.
+
+Suppose $x\in\R^{\lay{n_h}{0}\times\lay{n_w}{0}\times\lay{n_c}{0}}$, and suppose $F\in\R^{\lay{f}{1}\times\lay{f}{1}\times\lay{n_c}{0}}$ is a filter (noted the channel size of the input must match the channel size of the filter).  Then as before we have that
+$$\lay{n_\alpha}{1}=\lay{n_\alpha}{0}-f+1,\qquad\alpha=h,w,$$
+and we define $F*x\in\R^{\lay{n_h}{1}\times\lay{n_w}{1}}$ by
+$$(F*x)^k_l=\sum_{i,j=1}^{\lay{f}{1}}\sum_{\rho=1}^{\lay{n_c}{0}}F{^i}{_j}{^\rho}x{^{i+k-1}}{_{j+l-1}}{^\rho}.$$
+
+Similarly, if $p\in\Z_{\geq0}$ is the padding and $s\in\N$ is the stride, we have that
+$$\lay{n_\alpha}{1}=\left\lfloor\frac{\lay{n_\alpha}{0}+2p-\lay{f}{1}}{s}+1\right\rfloor,\qquad \alpha=h,w,$$
+and we define $F*^p_sx\in\R^{\lay{n_h}{1}\times\lay{n_w}{1}}$ by
+$$(F*^p_sx)^k_l=\sum_{\rho=1}^{\lay{n_c}{0}}\sum_{i,j=1}^{\lay{f}{1}}F{^i}{_j}{^\rho}x{^{i+s(k-1)-p}}{_{j+s(l-1)-p}}{^\rho}\chi_{\lay{\mathcal{I}}{1}{^k_l}}(i,j).$$
 
 
+\subsection{Multiple Filters}
 
-
+Suppose $x\in\R^{\lay{n_h}{0}\times\lay{n_w}{0}\times\lay{n_c}{0}}$, and we wish to convolve $x$ with $\lay{n_c}{1}$-filters, i.e.,
+$$F_\eta\in\R^{\lay{f}{1}\times\lay{f}{1}\times\lay{n_c}{0}},\qquad\eta\in\{1,...,\lay{n_c}{1}\}.$$
+Then we have that 
+$$\lay{n_\alpha}{1}=\left\lfloor\frac{\lay{n_\alpha}{0}+2p-\lay{f}{1}}{s}+1\right\rfloor,\qquad \alpha=h,w,$$
+and letting $F=\{F_\eta:1\leq\eta\leq\lay{n_c}{1}\}$, we define $F*^p_sx\in\R^{\lay{n_h}{1}\times\lay{n_w}{1}\times\lay{n_c}{1}}$ to be given by
+$$(F*^p_sx){_\eta}{^k}{_l}=(F_\eta*^p_sx){^k}{_l}.$$
 
 
 
