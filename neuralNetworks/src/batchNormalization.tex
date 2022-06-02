@@ -869,12 +869,75 @@ $$N(x)=f(x)\odot g(x),$$
 and so we have that
 \begin{align*}
 	dN_x(\xi)&=g(x)\odot df_x(\xi)+f(x)\odot dg_x(\xi)\\
-	&=(x-\mu\vec{1}^T)\odot -\frac{1}{n}R_{\vec{1}^T}\circ\odot_{(\sigma^2+\vec{\epsilon})^{\odot-\frac{3}{2}}}\circ R_{\vec{1}}\circ\odot_{x-\mu\vec{1}^T}(\xi)\\
-	&\qquad +(\sigma^2+\vec{\epsilon})^{\odot-\frac{1}{2}}\vec{1}^T\odot \left(\id-\frac{1}{n}R_{\vec{1}^T}\circ R_{\vec{1}}\right)(\xi)
+	&=-\frac{1}{n}\odot_{x-\mu\vec{1}^T}R_{\vec{1}^T}\circ\odot_{(\sigma^2+\vec{\epsilon})^{\odot-\frac{3}{2}}}\circ R_{\vec{1}}\circ\odot_{x-\mu\vec{1}^T}(\xi)\\
+	&\qquad +(\sigma^2+\vec{\epsilon})^{\odot-\frac{1}{2}}\vec{1}^T\odot \left(\id-\frac{1}{n}R_{\vec{1}^T}\circ R_{\vec{1}}\right)(\xi).
+\end{align*}
+To simplify the expression for implementation in python, we make the auxiliary definitions (which only depend on the forward propagating computations)
+$$\eta:\R^{m\times n}\to\R^{m\times n},\qquad\eta(\xi)=(x-\mu\vec{1}^T)\odot(\xi),$$
+$$\theta:\R^{m\times n}\to\R^{m\times n},\qquad \theta(\xi)=(\sigma^2-\epsilon\vec{1})^{\odot-\frac{1}{2}}\vec{1}^T\odot(\xi),$$
+$$\Theta:\R^{m\times n}\to\R^{m\times n},\qquad \Theta(\xi)=(\sigma^2-\epsilon\vec{1})^{\odot-\frac{3}{2}}\odot(\xi)$$
+Then our computation reduces to
+\begin{align*}
+	dN_x(\xi)&=-\frac{1}{n}\eta\circ R_{\vec{1}^T}\circ\Theta\circ R_{\vec{1}}\circ\eta(\xi)+\theta\circ\left(\id-\frac{1}{n}R_{\vec{1}^T}\circ R_{\vec{1}}\right)(\xi)\\
+	&=\left[-\frac{1}{n}\eta\circ R_{\vec{1}^T}\circ\Theta\circ R_{\vec{1}}\circ\eta+\theta-\frac{1}{n}\theta\circ R_{\vec{1}^T}\circ R_{\vec{1}}\right](\xi).
+\end{align*}
+Then for $\zeta\in T_{N(x)}\R^{m\times n}$, we have the reverse differential
+\begin{align*}
+	\ip{rN_x(\zeta),\xi}_F&=\ip{\zeta,dN_x(\xi)}_F\\
+	&=\ip{\left[-\frac{1}{n}\eta\circ R_{\vec{1}^T}\circ \Theta\circ R_{\vec{1}}\circ\eta+\theta-\frac{1}{n}R_{\vec{1}^T}\circ R_{\vec{1}}\circ\theta\right](\zeta),\xi}_F.
+\end{align*}
+To implement, let $T:=rN_x$ denote the rank $(2,2)$-tensor, then for basis vectors $\epsilon_k^l$ and $E_\rho^\lambda$, we compute for that
+$$T=T{^k}{_l}{^\rho}{_\lambda}\epsilon^l_k\otimes E_\rho^\lambda,$$
+\begin{align*}
+	T{^i}{_j}{^\alpha}{_\beta}&=\ip{T(E_i^j),E_\alpha^\beta}\\
+	&=\ip{T(}
 \end{align*}
 
 
 
+
+
+\subsection{$\mathcal{B}(\R^{m\times n},\R^{m\times n})$}
+
+Suppose $T:\R^{m\times n}\to\R^{m\times n}$ is linear.  Then for $A\in\R^{m\times n}$, we have that
+$$B=T(A),\qquad B{^i}{_j}=T{^\alpha}{_\beta}{^i}{_j}A_{\alpha\beta},$$
+and
+$$T=T^{\alpha\beta}{_{ij}}\epsilon_{\alpha\beta}\otimes E^{ij}.$$
+Then
+\begin{align*}
+	T(E^{\mu\nu})&=T^{\alpha\beta}{_{ij}}\delta_\alpha^\mu\delta_\beta^\nu E^{ij}\\
+	&=T^{\mu\nu}{_{ij}}E^{ij},
+\end{align*}
+and
+\begin{align*}
+	\ip{T(E^{\mu\nu}),E^{kl})}_F&=T^{\mu\nu}{_{ij}}\ip{E^{ij},E^{kl}}_F\\
+	&=T^{\mu\nu}{_{ij}}\delta_{ac}\delta_{bd}\delta
+\end{align*}
+
+
+
+
+
+
+
+
+
+
+
+
+\subsection{The Normalization Operator v.2}
+
+Suppose $N:(\R^m)^n\to(\R^m)^n$ is given by
+$$N(x_1,...,x_n)=(y_1,...,y_n),$$
+where
+$$y_j=\frac{x^i_j-\E[\pi^i(x)]}{\sqrt{\V[\pi^i(x)]+\epsilon}}.$$
+Then for $(x,\xi)\in T(\R^m)^n$, we have that
+$$dN_x(\xi)=\bigoplus_{j=1}^nd_jN_x(\xi_j).$$
+
+For what follows, we fix $x\in(\R^m)^n$, $\alpha\in\{1,...,n\}$, and let $\xi\in T_{x_\alpha}\R^m$ and consider
+$$d_\alpha N_x(\xi).$$
+Furthermore, we fix $\beta\in\{1,...,n\}$, let $y=y_\beta:(\R^m)^n\to\R^m$ and only consider
+$$d_\alpha y_x(\xi).$$
 
 
 
