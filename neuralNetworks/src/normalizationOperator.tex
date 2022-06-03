@@ -1,0 +1,293 @@
+
+
+
+\section{The Normalization Operator}
+
+
+
+In this section, we wish to character the (reverse) differential of the normalization operator $N:\R^{m\times n}\to\R^{m\times n}$ given in coordinates by
+$$N:x^i_j\mapsto \frac{x^i_j-\E[x^i]}{\sqrt{\V[x^i]+\epsilon}}.$$
+First, let's rewrite this without coordinates
+\begin{align*}
+	N(x)&=(\V[x]+\vec{\epsilon})^{\odot-\frac{1}{2}}\vec{1}^T\odot(x-\E[x]\vec{1}^T)\\
+	&=:f(x)\odot g(x).
+\end{align*}
+Now, let's fix $(x,\xi)\in T\R^{m\times n}$, and we immediately see that the Hadamard product obeys the Leibniz Rule with exterior differentiation, i.e.,
+$$dN_x(\xi)=g(x)\odot df_x(\xi)+f(x)\odot dg_x(\xi),$$
+so we consider these computations separately.  Moreover, we now need to compute the derivative of the expectation $\E$ and variance $\V$ operators.
+
+\begin{enumerate}
+	\item For the expectation of a random vector, $\E:\R^{m\times n}\to\R^m$, we first rewrite $\E$ as follows
+	\begin{align*}
+		\E[x]&=\sum_{i=1}^m\left(\frac{1}{n}\sum_{j=1}^nx^i_j\right)e_i\\
+		&=\frac{1}{n}x\cdot\vec{1}\\
+		&=\frac{1}{n}R_{\vec{1}}(x)
+	\end{align*}
+	where $\vec{1}=(1,1,...,1)\in\R^n$.  This is clearly linear, so for $(x,\xi)\in T\R^{m\times n}$, we have that
+	\begin{align*}
+		d\E_x(\xi)&=\E[\xi]\\
+		&=\frac{1}{n}R_{\vec{1}}(\xi).
+	\end{align*}
+	For a fixed $x\in\R^{m\times n}$, we let $\mu:=\E[x]\in\R^m$ denote the output.
+	
+	\item For the variance of a random vector, $\V:\R^{m\times n}\to\R^m$, we rewrite $\V$ as follows
+	\begin{align*}
+		\V[x]&=\sum_{i=1}^m\left(\frac{1}{n}\sum_{j=1}^n(x^i_j-\mu^i)^2\right)e_i\\
+		&=\E\left[(x-\mu\vec{1}^T)\odot(x-\mu\vec{1}^T)\right]\\
+		&=\E\left[(x-\mu\vec{1}^T)^{\odot2}\right].
+	\end{align*}
+	From the first calculation, we know how to compute the derivative of $\E$, so we focus on the input $(x-\mu\vec{1}^T)^{\odot2}$.  
+	
+	To this end, we define $\psi:\R^{m\times n}\to\R^{m\times n}$ to be the inner-most function given by
+	\begin{align*}
+		\psi(x)&=x-\E[x]\vec{1}^T\\
+		&=\left(\id_{\R^{m\times n}}-R_{\vec{1}^T}\circ\E\right)(x),
+	\end{align*}
+	which is clearly linear. Then for $(x,\xi)\in T\R^{m\times n}$ we see that
+	\begin{align*}
+		d\psi_x(\xi)&=\left(\id_{T_x\R^{m\times n}} - \frac{1}{n}R_{\vec{1}^T}\circ R_{\vec{1}}\right)(\xi),
+	\end{align*}
+	where we used our previous computation for $d\E_x$.
+	
+	Next, define $\phi:\R^{m\times n}\to\R^{m\times n}$ to be the Hadamard-square, i.e.,
+	$$\phi(x)=x^{\odot2}=x\odot x.$$
+	  Using our previous remark of the Leibniz Rule in regard to the Hadamard product, we see that for $(x,\xi)\in T\R^{m\times n}$,
+	  \begin{align*}
+	  	d\phi_x(\xi)&=x\odot\xi+\xi\odot x\\
+	  	&=2x\odot\xi\\
+	  	&=\odot_{2x}(\xi).
+	  \end{align*}
+	  
+	  Finally, by the compositional definition of $\V$,
+	  $$\V[x]=\E\circ\phi\circ\psi(x),$$
+	  we compute for any $(x,\xi)\in T\R^{m\times n}$ that
+	  \begin{align*}
+	  	d\V_x(\xi)&=d\E_{\phi(\psi(x))}\circ d\phi_{\psi(x)}\circ d\psi_x(\xi)\\
+	  	&=d\E_{\phi(\psi(x))}\circ d\phi_{\psi(x)}\left(\xi-\frac{1}{n}\xi\vec{1}\vec{1}^T\right)\\
+	  	&=d\E_{\phi(\psi(x))}\left(2(x-\mu\vec{1}^T)\odot\left(\xi-\frac{1}{n}\xi\vec{1}\vec{1}^T\right)\right)\\
+	  	&=\E\left[2(x-\mu\vec{1}^T)\odot\left(\xi-\frac{1}{n}\xi\vec{1}\vec{1}^T\right)\right]\\
+	  	&=\E\left[2(x-\mu\vec{1}^T)\odot\xi\right]-2\E\left[(x-\mu\vec{1}^T)\odot(\E[\xi]\vec{1}^T)\right].
+	  \end{align*}
+	  Next, we notice that if we let $\gamma:=\E[\xi]\in\R^m$, then
+	  \begin{align*}
+	  	\gamma\vec{1}^T&=\begin{pmatrix}
+	  		\gamma^1\\
+	  		\vdots\\
+	  		\gamma^m
+	  	\end{pmatrix}\begin{pmatrix}
+	  		1&1&\cdots&1
+	  	\end{pmatrix}\\
+	  	&=\begin{bmatrix}
+	  		\gamma^1&\gamma^1&\cdots&\gamma^1\\
+	  		\gamma^2&\gamma^2&\cdots&\gamma^2\\
+	  		\vdots&\vdots&\ddots&\vdots\\
+	  		\gamma^m&\gamma^m&\cdots&\gamma^m
+	  	\end{bmatrix}\in\R^{m\times n}
+	  \end{align*}
+	  and hence that
+	  \begin{align*}
+	  	\E[(x-\mu\vec{1}^T)\odot\gamma\vec{1}^T]&=\sum_{i=1}^m\left(\frac{1}{n}\sum_{j=1}^n(x^i_j-\mu^i)\gamma^i\right)e_i\\
+	  	&=\sum_{i=1}^m\left(\gamma^i(\E[x^i]-\mu^i)\right)e_i\\
+	  	&=0.
+	  \end{align*}
+	  Resuming our computation, we now have that
+	  \begin{align*}
+	  	d\V_x(\xi)&=\E\left[2(x-\mu\vec{1}^T)\odot\xi\right]\\
+	  	&=\frac{2}{n}R_{\vec{1}}\circ\odot_{x-\mu\vec{1}^T}(\xi)
+	  \end{align*}
+	  We remark that for a fixed $x\in\R^{m\times n}$, we let $\sigma^2:=\V[x]$ denote the output.
+\end{enumerate}
+
+We have now computed the following differentials for any $(x,\xi)\in T\R^{m\times n}$,
+\begin{align*}
+	d\E_x(\xi)&=\frac{1}{n}R_{\vec{1}}(\xi),\\
+	d\V_x(\xi)&=\frac{2}{n}R_{\vec{1}}\circ\odot_{x-\mu\vec{1}^T}(\xi),
+\end{align*}
+and are now ready to compute the differentials of our previously defined $f$ and $g$, that is,
+$$f:\R^{m\times n}\to\R^{m\times n},\qquad f(x)=\left(\V[x]+\vec{\epsilon}\right)^{\odot-\frac{1}{2}}\vec{1}^T,$$
+and
+$$g:\R^{m\times n}\to\R^{m\times n},\qquad g(x)=x-\E[x]\vec{1}^T.$$
+However, we see here that $g\equiv\psi$ as defined, and so for any $(x,\xi)\in T\R^{m\times n}$, we have that
+$$dg_x(\xi)=\left(\id-\frac{1}{n}R_{\vec{1}^T}\circ R_{\vec{1}}\right)(\xi)=\xi-\frac{1}{n}\xi\vec{1}\vec{1}^T.$$
+Hence we need only focus on $f$.  To this end, for $(x,\xi)\in T\R^{m\times n}$, we first compute the differential of the Hadamard-root operator, $h(x)=x^{\odot-\frac{1}{2}}$,
+\begin{align*}
+	dh_x(\xi)&=\rest{\frac{d}{dt}}_{t=0}(x+t\xi)^{\odot-\frac{1}{2}}\\
+	&=\rest{\frac{d}{dt}}_{t=0}\begin{bmatrix}
+		(x^i_j+t\xi^i_j)^{-\frac{1}{2}}
+	\end{bmatrix}\\
+	&=\begin{bmatrix}
+		-\frac{1}{2}(x^i_j)^{-\frac{3}{2}}\xi^i_j
+	\end{bmatrix}\\
+	&=-\frac{1}{2}x^{\odot-\frac{3}{2}}\odot\xi\\
+	&=-\frac{1}{2}\odot_{x^{\odot-\frac{3}{2}}}(\xi).
+\end{align*}
+
+After writing $f$ as the composition
+$$f(x)=R_{\vec{1}^T}\circ h(\V[x]+\vec{\epsilon}),$$
+we now compute
+\begin{align*}
+	df_x(\xi)&=R_{\vec{1}^T}\circ dh_{\sigma^2+\vec{\epsilon}}\circ d\V_x(\xi)\\
+	&=-\frac{1}{n}R_{\vec{1}^T}\circ\odot_{(\sigma^2+\vec{\epsilon})^{\odot-\frac{3}{2}}}\circ R_{\vec{1}}\circ\odot_{x-\mu\vec{1}^T}(\xi)\\
+	&=-\frac{1}{n}(\sigma^2+\vec{\epsilon})^{\odot-\frac{3}{2}}\vec{1}^T\odot(x-\mu\vec{1}^T)\odot\xi\vec{1}
+\end{align*}
+
+Finally, recalling that we defined
+$$N(x)=f(x)\odot g(x),$$
+and so we have that
+\begin{align*}
+	dN_x(\xi)&=g(x)\odot df_x(\xi)+f(x)\odot dg_x(\xi)\\
+	&=-\frac{1}{n}\odot_{x-\mu\vec{1}^T}R_{\vec{1}^T}\circ\odot_{(\sigma^2+\vec{\epsilon})^{\odot-\frac{3}{2}}}\circ R_{\vec{1}}\circ\odot_{x-\mu\vec{1}^T}(\xi)\\
+	&\qquad +(\sigma^2+\vec{\epsilon})^{\odot-\frac{1}{2}}\vec{1}^T\odot \left(\id-\frac{1}{n}R_{\vec{1}^T}\circ R_{\vec{1}}\right)(\xi).
+\end{align*}
+
+
+To simplify the expression for implementation in python, we make the auxiliary definitions (which only depend on the forward propagating computations)
+$$y:=N(x),$$
+and
+$$\theta:=(\sigma^2+\vec{\epsilon})^{\odot-\frac{1}{2}}.$$
+Then our computation reduces to
+\begin{align*}
+	dN_x(\xi)&=-\frac{1}{n}(x-\mu\vec{1}^T)\odot
+\end{align*}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\begin{align*}
+	dN_x(\xi)&=-\frac{1}{n}\eta\circ R_{\vec{1}^T}\circ\Theta\circ R_{\vec{1}}\circ\eta(\xi)+\theta\circ\left(\id-\frac{1}{n}R_{\vec{1}^T}\circ R_{\vec{1}}\right)(\xi)\\
+	&=\left[-\frac{1}{n}\eta\circ R_{\vec{1}^T}\circ\Theta\circ R_{\vec{1}}\circ\eta+\theta-\frac{1}{n}\theta\circ R_{\vec{1}^T}\circ R_{\vec{1}}\right](\xi).
+\end{align*}
+Then for $\zeta\in T_{N(x)}\R^{m\times n}$, we have the reverse differential
+\begin{align*}
+	\ip{rN_x(\zeta),\xi}_F&=\ip{\zeta,dN_x(\xi)}_F\\
+	&=\ip{\left[-\frac{1}{n}\eta\circ R_{\vec{1}^T}\circ \Theta\circ R_{\vec{1}}\circ\eta+\theta-\frac{1}{n}R_{\vec{1}^T}\circ R_{\vec{1}}\circ\theta\right](\zeta),\xi}_F.
+\end{align*}
+
+
+
+
+
+
+
+
+
+
+\subsection{The Normalization Operator v.2}
+
+Suppose $N:(\R^m)^n\to(\R^m)^n$ is given by
+$$N(x_1,...,x_n)=(y_1,...,y_n),$$
+where
+$$y_j=\frac{x_j-\E[x]}{\sqrt{\V[x]+\epsilon}}.$$
+Then for $(x,\xi)\in T(\R^m)^n$, we have that
+$$dN_x(\xi)=\bigoplus_{j=1}^nd_jN_x(\xi_j).$$
+
+For what follows, we fix $x\in(\R^m)^n$, $\alpha,\beta\in\{1,...,n\}$, and let $\xi\in T_{x_\alpha}\R^m$ and consider
+$$d_\alpha y_x(\xi),$$
+where
+$$y:=y_\beta:(\R^m)^n\to\R^m.$$
+To this end, if we let
+$$\mu:=\E[x],\qquad\sigma^2:=\V[x],$$
+and consider $y$ written compositionally as
+$$y:(\R^m)^n\times\R^m\times\R^m\to\R^m,\qquad y(x,\mu,\sigma^2)=(\sigma^2+\vec{\epsilon})^{\odot-\frac{1}{2}}\odot(x_\beta-\mu),$$
+then by the chain rule it follows that
+$$d_\alpha y_x(\xi)=d_\alpha y_{(x,\mu,\sigma^2)}(\xi)+d_\mu y_{(x,\mu,\sigma^2)}\circ d_\alpha\E_x(\xi)+d_{\sigma^2}y_{(x,\mu,\sigma^2)}\circ d_\alpha\V_x(\xi).$$
+Computing these differentials yields
+\begin{align*}
+	d_\alpha y_{(x,\mu,\sigma^2)}(\xi)&=\delta_{\alpha\beta}(\sigma^2+\vec{\epsilon})^{\odot-\frac{1}{2}}\odot\xi\\
+	d_\mu y_{(x,\mu,\sigma^2)}(\xi)&=-(\sigma^2+\vec{\epsilon})^{\odot-\frac{1}{2}}\odot\xi\\
+	d_{\sigma^2}y_{(x,\mu,\sigma^2)}(\xi)&=-\frac{1}{2}(\sigma^2+\vec{\epsilon})^{\odot-\frac{3}{2}}\odot(x_\beta-\mu)\odot\xi\\
+	d_\alpha\E_x(\xi)&=\frac{1}{n}\xi\\
+	d_\alpha\V_x(\xi)&=\frac{2}{n}(x_\alpha-\mu)\odot\xi.
+\end{align*}
+Substituting in these differentials, we see that
+{\scriptsize
+\begin{align*}
+	d_\alpha (y_\beta)_x(\xi)&=\left[\delta_{\alpha\beta}(\sigma^2+\vec{\epsilon})^{\odot-\frac{1}{2}}-\frac{1}{n}(\sigma^2+\vec{\epsilon})^{\odot-\frac{1}{2}}-\frac{1}{n}(\sigma^2+\vec{\epsilon})^{\odot-\frac{3}{2}}\odot(x_\beta-\mu)\odot(x_\alpha-\mu)\right]\odot\xi,
+\end{align*}
+}
+and noting that derivative only acts via the Hadamard-product, we may conclude that the reverse derivative coincides with the usual derivative, i.e.,
+$$r_\alpha(y_\beta)_x\cong d_\alpha(y_\beta)_x,$$
+after the usual identification of tangent spaces.  To simplify this expression, we define the constant (with respect to the tangent space)
+$$\theta=(\sigma^2+\vec{\epsilon})^{\odot-\frac{1}{2}},$$
+which leads us to write
+$$d_\alpha(y_\beta)_x(\xi)=[\delta_{\alpha\beta}\theta-\frac{1}{n}\theta-\frac{1}{n}\theta\odot y_\alpha\odot y_\beta]\odot\xi.$$
+
+
+
+\begin{comment}
+Then after direct-summing over $\alpha$, we conclude that for $(x,\xi)\in T(\R^m)^n$,
+{\scriptsize
+\begin{align*}
+	d(y_\beta)_x(\xi)&=\bigoplus_{\alpha=1}^nd_\alpha(y_\beta)_x(\xi_\alpha)\\
+	&=\bigoplus_{\alpha=1}^n\left[\delta_{\alpha\beta}(\sigma^2+\vec{\epsilon})^{\odot-\frac{1}{2}}-\frac{1}{n}(\sigma^2+\vec{\epsilon})^{\odot-\frac{1}{2}}-\frac{1}{n}(\sigma^2+\vec{\epsilon})^{\odot-\frac{3}{2}}\dot(x_\beta-\mu)\odot(x_\alpha-\mu)\right]\odot\xi_\alpha\\
+	&=\sum_{j=1}^n\delta_{j\beta}(\sigma^2+\vec{\epsilon})^{\odot-\frac{1}{2}}\odot\xi_j-\frac{1}{n}\sum_{j=1}^n(\sigma^2+\vec{\epsilon})^{\odot-\frac{1}{2}}\odot\xi_j\\
+	&\qquad-\frac{1}{n}\sum_{j=1}^n(\sigma^2+\vec{\epsilon})^{\odot-\frac{3}{2}}\odot(x_\beta-\mu)\odot(x_j-\mu)\odot\xi_j\\
+	&=(\sigma^2+\vec{\epsilon})^{\odot-\frac{1}{2}}\odot\xi_\beta-\frac{1}{n}(\sigma^2+\vec{\epsilon})^{\odot-\frac{1}{2}}\odot\sum_{j=1}^n\xi_j\\
+	&\qquad-\frac{1}{n}(\sigma^2+\vec{\epsilon})^{\odot-1}\odot y_\beta\odot\sum_{j=1}^n(x_j-\mu)\odot\xi_j\\
+	&=\theta\odot\xi_\beta-\frac{1}{n}\theta\odot\sum_{j=1}^n\xi_j-\frac{1}{n}\theta^2\odot y_\beta\odot\sum_{j=1}^n(x_j-\mu)\odot\xi_j,
+\end{align*}
+}
+where
+$$\theta=(\sigma^2+\vec{\epsilon})^{\odot-\frac{1}{2}},\qquad\theta^2=\theta^{\odot2}.$$
+
+\end{comment}
+
+
+Moreover, since
+$$d(y_\beta)_x(\xi)=\sum_{\alpha=1}^nd_\alpha(y_\beta)_x(\xi_\alpha),\qquad\xi_\alpha\in T_{x_\alpha}\R^m,$$
+it follows that for $\zeta_\beta\in T_{y_\beta}\R^m$, that
+\begin{align*}
+	\ip{r(y_\beta)_x(\zeta_\beta),\xi}_{(\R^m)^n}&=\ip{\zeta_\beta,d(y_\beta)_x(\xi)}_{T_{y_\beta}\R^m}\\
+	&=\ip{\zeta_\beta,\sum_{\alpha=1}^nd_\alpha(y_\beta)_x(\xi_\alpha)}_{T_{y_\beta}\R^m}\\
+	&=\sum_{\alpha=1}^n\ip{r_\alpha(y_\beta)(\zeta_\beta),\xi_\alpha}_{T_{x_\alpha}\R^m}\\
+	&=\ip{\bigoplus_{\alpha=1}^nr_\alpha(y_\beta)_x(\zeta_\beta),\xi}_{(\R^m)^n},
+\end{align*}
+and hence that
+$$r(y_\beta)_x(\zeta_\beta)=\bigoplus_{\alpha=1}^nr_\alpha(y_\beta)_x(\zeta_\beta).$$
+
+Next, for $(x,\xi)\in T(\R^m)^n$ and $\zeta\in T_y(\R^m)^n$, we have that
+\begin{align*}
+	\ip{rN_x(\zeta),\xi}_{(\R^m)^n}&=\ip{\zeta,dN_x(\xi)}_{(\R^m)^n}\\
+	&=\ip{\zeta,\bigoplus_{\beta=1}^n d(y_\beta)_x(\xi)}_{(\R^m)^n}\\
+	&=\sum_{\beta=1}^n\ip{\zeta_\beta,d(y_\beta)_x(\xi)}_{T_{y_\beta}\R^m}\\
+	&=\sum_{\beta=1}^n\sum_{\alpha=1}^n\ip{\zeta_\beta,d_\alpha(y_\beta)_x(\xi_\alpha)}_{T_{y_\beta}\R^m}\\
+	&=\sum_{\beta=1}^n\sum_{\alpha=1}^n\ip{r_\alpha(y_\beta)_x(\zeta_\beta),\xi_\alpha}_{T_{x_\alpha}\R^m}\\
+	&=\sum_{\beta=1}^n\ip{\bigoplus_{\alpha=1}^nr_\alpha(y_\beta)_x(\zeta_\beta),\xi}_{(\R^m)^n}\\
+	&=\sum_{\beta=1}^n\ip{r(y_\beta)_x(\zeta_\beta),\xi}_{(\R^m)^n}\\
+	&=\ip{\sum_{\beta=1}^nr(y_\beta)_x(\zeta_\beta),\xi}_{(\R^m)^n}.
+\end{align*}
+That is,
+\begin{align*}
+	rN_x(\zeta)&=\sum_{\beta=1}^nr(y_\beta)_x(\zeta_\beta)\\
+	&=\bigoplus_{\alpha=1}^n\left\{\sum_{\beta=1}^nr_\alpha(y_\beta)_x(\zeta_\beta)\right\}\\
+	&=\bigoplus_{\alpha=1}^n\left\{\sum_{\beta=1}^n\left[\delta_{\alpha\beta}\theta\odot\zeta_\beta-\frac{1}{n}\theta\odot\zeta_\beta-\frac{1}{n}\theta\odot y_\alpha\odot y_\beta\odot\zeta_\beta\right]\right\}\\
+	&=\bigoplus_{\alpha=1}^n\left\{\theta\odot\zeta_\alpha-\frac{1}{n}\theta\odot\sum_{\beta=1}^n\zeta_\beta -\frac{1}{n}\theta\odot y_\alpha\odot\sum_{\beta=1}^ny_\beta\odot\zeta_\beta\right\}\\
+	&=\bigoplus_{\alpha=1}^n\underbrace{\left\{\theta\odot(\zeta e_\alpha)-\frac{1}{n}\theta\odot(\zeta\vec{1})-\frac{1}{n}\theta\odot y_\alpha\odot(y\odot\zeta)\vec{1}	\right\}}_{=r_\alpha N_x(\zeta)}.
+\end{align*}
+
+We note here that $rN_x$ is a rank $(2,2)$-tensor, and as such we need to compute its components if we wish to implement this in python.  To this end, let $\{E_i^j\}$ denote the basis for $\R^{m\times n}$, where
+$$(E^j_i)^k_l=\delta^k_i\delta_l^j,$$
+and let $\{\epsilon_j\}$, $\{e_j\}$ denote the standard bases for $\R^m$ and $\R^n$, respectively.  We now compute
+\begin{align*}
+	rN_x(E_i^j)&=\bigoplus_{l=1}^n\left\{\theta\odot(E_i^je_l)-\frac{1}{n}\theta\odot(E_i^j\vec{1})-\frac{1}{n}\theta\odot y_l\odot(y\odot E_i^j)\vec{1}\right\}\\
+	&=\bigoplus_{l=1}^n\left\{\theta^k\delta_i^k\delta_l^j\epsilon_k-\frac{1}{n}\theta^k\delta^k_i\epsilon_k-\frac{1}{n}\theta^ky^k_ly^k_j\delta^k_i\epsilon_k\right\}\\
+	&=\bigoplus_{l=1}^n\theta^k\left\{\delta_i^k\delta_l^j-\frac{1}{n}\delta_i^k(1-y_l^ky_j^k)\right\}\epsilon_k\\
+	&=\theta^k\left[\delta_i^k\delta_l^j-\frac{1}{n}\delta_i^k(1-y_l^ky_j^k)\right]E_k^l\qquad\text{definition of direct sum}\\
+	&=\theta^k[\delta_i^k\delta_l^j-z^k{_{lj}}\delta_i^k]E_k^l,
+\end{align*}
+that is, if $\zeta^i_j$ is a matrix, we yield the matrix
+$$rN_x(\zeta)=\begin{bmatrix}
+	\theta^k[\delta_i^k\delta_l^j-z^k{_{lj}}\delta_i^k]\zeta^i_j
+\end{bmatrix}^k_l,$$
+which is easily implemented in python via numpy's ``einsum'' function.
