@@ -554,6 +554,13 @@ We consider a neural network utilizing batch normalization of the form
 }
 where we have the functions
 \begin{enumerate}
+	\item $$\L:\R^{\lay{n}{2}\times N}\times\R^{\lay{n}{2}\times N}\to\R$$
+	is the given loss function.  If we're working with a binary classification problem, then we have that
+	\begin{align*}
+		\L(y,\hat{y})&=-\frac{1}{N}\sum_{j=1}^n\left\{y_j\log{\hat{y}_j}+(1-y_j)\log(1-\hat{y}_j)\right\}\\
+		&=-\frac{1}{n}\left[\ip{y,\log{y}}_{\R^N}+\ip{1-y,\log(1-\hat{y})}_{\R^N}\right].
+	\end{align*}
+	
 	\item $$\lay{G}{\ell}:\R^{\lay{n}{\ell}\times N}\to\R^{\lay{n}{\ell}\times N}$$
 	is the broadcasting of the activation unit $\lay{g}{\ell}:\R\to\R$.
 	
@@ -608,7 +615,7 @@ We now consider back-propagating through the network via reverse differentiation
 		&\boxed{\lay{\Gamma}{1}}
 		\arrow[l, swap, "r"]
 		\arrow[u, "\hat{r}_1"]
-		&\boxed{\lay{B}{2}}
+		&\boxed{\lay{\psi}{1}}
 		\arrow[l, swap, "r"]
 		\arrow[u, "\tilde{r}_1"]
 		&\boxed{\lay{G}{1}}
@@ -643,7 +650,7 @@ We now consider back-propagating through the network via reverse differentiation
 \end{equation*}
 }
 
-We now need to consider our individual derivatives:
+We consider our individual derivatives:
 \begin{enumerate}
 	\item Suppose $G:\R^{m\times n}\to\R^{m\times n}$ is the broadcasting of $g:\R\to\R$.  Then for any $(x,\xi)\in T\R^{m\times n}$ we have that
 	$$dG_x(\xi)=G'(x)\odot\xi.$$
@@ -729,13 +736,74 @@ We now need to consider our individual derivatives:
 		\end{align*}
 	\end{enumerate}
 	
-	\item As the normalization operator is quite involved, we move its computation to the following section.
+	\item As the normalization operator is quite involved, we move its computation to the appendix, \cref{sec:normOp}.
+	
+	\item For the loss function $\L:\R^N\times\R^N\to\R$ given by
+	$$L(y,\hat{y})=-\frac{1}{N}[\ip{y,\log{\hat{y}}}+\ip{1-y,\log(1-\hat{y})}],$$
+	we fix $y,\hat{y}\in\R^N$ and for $\xi\in T_{\hat{y}}\R^N$, we see that
+	\begin{align*}
+		d\L_{(y,\hat{y})}(\xi)&=-\frac{1}{N}\sum_{j=1}^N\left[\frac{y_j}{\hat{y}_j}-\frac{1-y_j}{1-\hat{y}_j}\right]\xi_j\\
+		&=-\frac{1}{N}\ip{\frac{y}{\hat{y}}-\frac{1-y}{1-\hat{y}},\xi},
+	\end{align*}
+	and hence for $\zeta\in T_{L(y,\hat{y})}\R$, it follows that
+	$$r\L_{(y,\hat{y})}(\zeta)=-\frac{1}{N}\left[\frac{y}{\hat{y}}-\frac{1-y}{1-\hat{y}}\right]\zeta.$$
+	
 \end{enumerate}
 
+We're now ready to compute our various gradients of our cost function.  That is, if we let
+$$\J:\R^{\lay{n}{2}}\times \R^{\lay{n}{2}\times\lay{n}{1}}\times\R^{\lay{n}{1}}\times\R^{\lay{n}{1}}\times\R^{\lay{n}{1}\times\lay{n}{0}}\to\R$$
+is given by
+{\tiny
+\begin{align*}
+	\J(\lay{W}{2},\lay{\gamma}{1},\lay{\beta}{1},\lay{W}{2},\lay{b}{2})&=\L(y,\lay{G}{2}\circ\lay{\psi}{2}(\lay{b}{2},\lay{\phi}{2}(\lay{W}{2},\lay{G}{2}\circ\lay{\psi}{2}(\lay{\beta}{1},\lay{\Gamma}{1}(\lay{\gamma}{1},\lay{N}{1}\circ\lay{\phi}{1}(\lay{W}{1},x))))))
+\end{align*}
+}
+and we compute the reverse differentials for a learning rate $\alpha\in T_{\J}\R$ with the assumption that our second activator function is the sigmoid function.  Indeed,
+
+\begin{align*}
+	r(\L\circ\lay{G}{2})_{v}(\alpha)&=r\lay{G}{2}_v\circ r\L_a(\alpha)\\
+	&=-\frac{\alpha}{N}\lay{G}{2}{'}(v)\odot\left[\frac{y}{a}-\frac{1-y}{1-a}\right]\\
+	&=-\frac{\alpha}{N}a(1-a)\left[\frac{y}{a}-\frac{1-y}{1-a}\right]\\
+	&=-\frac{\alpha}{N}[y(1-a)-a(1-y)]\\
+	&=-\frac{\alpha}{N}[y-a]\\
+	&=\frac{a-y}{N}\alpha.
+\end{align*}
+
+This leads us to
+\begin{align*}
+	\cl{r}_2\J_{\lay{b}{2}}(\alpha)&=\cl{r}_2(\lay{\psi}{2})_{(\lay{b}{2},\lay{u}{2})}\circ r\lay{G}{2}_{\lay{v}{2}}\circ r\L_{(y,\lay{a}{2})}\\
+	&=\frac{\alpha}{N}R_{\vec{1}}(\lay{a}{2}-y)\\
+	&=\frac{\alpha}{N}\sum_{j=1}^N(\lay{a}{2}{_j}-y_j);
+\end{align*}
+
+\begin{align*}
+	r_2\J_{\lay{W}{2}}(\alpha)&=r_2\lay{\phi}{2}_{(\lay{W}{2},\lay{a}{1})}\circ r\lay{\psi}{2}_{(\lay{b}{2},\lay{u}{2})}\left(\frac{\alpha}{N}(\lay{a}{2}-y)\right)\\
+	&=r_2\lay{\phi}{2}_{(\lay{W}{2},\lay{a}{1})}\left(\frac{\alpha}{N}(\lay{a}{2}-y)\right)\\
+	&=\frac{\alpha}{N}(\lay{a}{2}-y)\lay{a}{1}{^T};
+\end{align*}
+
+\begin{align*}
+	\cl{r}_1\J_{\lay{\beta}{1}}(\alpha)&=\cl{r}_1\lay{\psi}{1}_{(\lay{\beta}{1},\lay{\hat{z}}{1})}\circ r\lay{G}{1}_{\lay{\tilde{z}}{1}}\circ r\lay{\phi}{2}_{(\lay{W}{2},\lay{a}{2})}\circ r\lay{\psi}{2}_{(\lay{b}{2},\lay{u}{2}}\circ r(\L\circ\lay{G}{2})_{\lay{v}{2}}(\alpha)\\
+	&=\frac{\alpha}{N}\cl{r}_1\lay{\psi}{1}_{(\lay{\beta}{1},\lay{\hat{z}}{1})}\circ r\lay{G}{1}_{\lay{\tilde{z}}{1}}\circ r\lay{\phi}{2}_{(\lay{W}{2},\lay{a}{2})}(\lay{a}{2}-y)\\
+	&=\frac{\alpha}{N}\cl{r}_1\lay{\psi}{1}_{(\lay{\beta}{1},\lay{\hat{z}}{1})}\circ r\lay{G}{1}_{\lay{\tilde{z}}{1}}\left(\lay{W}{2}{^T}(\lay{a}{2}-y)\right)\\
+	&=\frac{\alpha}{N}\cl{r}_1\lay{\psi}{1}_{(\lay{\beta}{1},\lay{\hat{z}}{1})}\left(\lay{G}{1}{'}(\lay{\tilde{z}}{1})\odot\lay{W}{2}{^T}(\lay{a}{2}-y)\right)\\
+	&=\frac{\alpha}{N}\sum_{j=1}^N\lay{g}{1}{'}(\lay{\tilde{z}}{1}{_j})\odot\lay{W}{2}{^T}(\lay{a}{2}{_j}-y_j);
+\end{align*}
+
+\begin{align*}
+	\hat{r}_1\J_{\lay{\gamma}{1}}(\alpha)&=\frac{\alpha}{N}\hat{r}_1\lay{\Gamma}{1}_{(\lay{\gamma}{1},\lay{z}{1})}\left(\lay{G}{1}{'}(\lay{\tilde{z}}{1})\odot\lay{W}{2}{^T}(\lay{a}{2}-y)\right)\\
+	&=\frac{\alpha}{N}R_{\vec{1}}\left(\lay{z}{1}\odot \left(\lay{G}{1}{'}(\lay{\tilde{z}}{1})\odot\lay{W}{2}{^T}(\lay{a}{2}-y)\right) \right)\\
+	&=\frac{\alpha}{N}\sum_{j=1}^n\lay{z}{1}{_j}\odot\lay{g}{1}{'}(\lay{\tilde{z}}{1}{_j})\odot\lay{W}{2}{^T}(\lay{a}{2}{_j}-y_j); 
+\end{align*}
+and finally,
+\begin{align*}
+	r_1\J_{\lay{W}{1}}(\alpha)&=\frac{\alpha}{N}r_1\lay{\phi}{1}_{(\lay{W}{1},x)}\circ r\lay{N}{1}_{\lay{u}{1}}\circ r\lay{\Gamma}{1}_{(\lay{\gamma}{1},\lay{z}{1})}\left(\lay{G}{1}{'}(\lay{\tilde{z}}{1})\odot\lay{W}{2}{^T}(\lay{a}{2}-y)\right)\\
+	&=\frac{\alpha}{N}r_1\lay{\phi}{1}_{(\lay{W}{1},x)}\circ r\lay{N}{1}_{\lay{u}{1}}\left(\gamma\vec{1}^T\odot\lay{G}{1}{'}(\lay{\tilde{z}}{1})\odot\lay{W}{2}{^T}(\lay{a}{2}-y)\right)\\
+	&=\frac{\alpha}{N}R_{x^T}\circ r\lay{N}{1}_{\lay{u}{1}}\left(\gamma\vec{1}^T\odot\lay{G}{1}{'}(\lay{\tilde{z}}{1})\odot\lay{W}{2}{^T}(\lay{a}{2}-y)\right)\\
+	&=\frac{\alpha}{N}\sum_{j,l=1}^N\sum_{i=1}^{\lay{n}{1}}T_i{^{jk}}{_l}\gamma^i\lay{g}{1}{'}(\lay{\tilde{z}}{1}{^i{_j}})\lay{W}{2}{_i}(\lay{a}{2}{_j}-y_j)x^m_l
+\end{align*}
 
 
-
-\begin{comment}
 	
 
 \subsection{Python Implementation}
@@ -743,6 +811,6 @@ We now need to consider our individual derivatives:
 \TOX{Work in Progress}
 
 
-\end{comment}
+
 
 

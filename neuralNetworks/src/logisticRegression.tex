@@ -69,5 +69,6 @@ $$\partial_b\J(w,b)=\frac{1}{n}\sum_{j=1}^n(a_j-y_j).$$
 
 
 \subsection{Vectorization in Python}
-Here we include the general code to train a model using logistic regression without regularization and without tuning on a cross-validation set.
-\lstinputlisting[lastline=195]{src/py/logRegBasicModel.py}
+Here we include the general code to train a model using logistic regression with $L_2$-regularization.  We also include the \\\texttt{sklearn.linear\_model.LogisticRegression} class to compare.
+
+\lstinputlisting[lastline=324]{src/python/logisticRegression/logisticRegression.py}
