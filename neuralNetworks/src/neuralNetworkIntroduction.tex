@@ -510,7 +510,3 @@ $$\frac{\partial\J}{\partial\lay{W}{1}}=\frac{1}{n}\lay{\delta}{1}x^T=0.$$
 Then we conclude that our parameter $\lay{W}{1}$ remains at $0$ during every iteration which is enough reason to not initialize $\lay{W}{2}$ at $0$.  Similarly, since
 $$\lay{a}{1}=\tanh(\lay{W}{1}x+\lay{b}{1})=\tanh(0)=0,$$
 we reach a similar conclusion about $\lay{W}{1}$ and $\lay{W}{2}$, respectively.
-
-\subsection{Implementation in Python}
-
-\lstinputlisting[lastline=398]{src/python/simpleNeuralNetwork.py}

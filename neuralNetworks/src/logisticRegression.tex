@@ -68,7 +68,13 @@ and
 $$\partial_b\J(w,b)=\frac{1}{n}\sum_{j=1}^n(a_j-y_j).$$
 
 
-\subsection{Vectorization in Python}
-Here we include the general code to train a model using logistic regression with $L_2$-regularization.  We also include the \\\texttt{sklearn.linear\_model.LogisticRegression} class to compare.
+\subsection{Implementation in Python via \texttt{numpy}}
+Here we include the general method of coding a logistic regression model with $L^2$-regularization via the classical \texttt{numpy} library.
 
-\lstinputlisting[lastline=324]{src/python/logisticRegression.py}
+\lstinputlisting[lastline=214]{src/python/logisticRegression/npLogisticRegression.py}
+
+
+\subsection{Implementation in Python via \texttt{sklearn}}
+Here we include the general method of coding a logistic regression model via \texttt{scikit-learn}'s modeling library.
+
+\lstinputlisting[lastline=26]{src/python/logisticRegression/sklearnLogisticRegression.py}

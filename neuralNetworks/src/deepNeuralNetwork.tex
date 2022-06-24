@@ -87,10 +87,19 @@ as desired.
 
 
 
-\subsection{Implementation in Python}
+\subsection{Implementation in Python via \texttt{numpy}}
 We implement a neural network with an arbitrary number of layers and nodes, with the $\relu$ function as the activator on all hidden nodes and the sigmoid function on the output layer for binary classification with the log-loss function.
 
-\includepdf[pages=-]{src/python/notebookToPdf/deepNeuralNetwork.pdf}
+\lstinputlisting[lastline=208]{src/python/deepNeuralNetworks/npDeepNeuralNetwork.py}
+
+
+\subsection{Implementation in Python via \texttt{tensorflow}}
+We implement a neural network using \texttt{tensorflow.keras}.
+
+\lstinputlisting[lastline=66]{src/python/deepNeuralNetworks/tfDeepNeuralNetwork.py}
+
+
+
 
 
 

@@ -162,7 +162,7 @@ class LinearParameters():
         self.dw = np.einsum('ij,kj', din, a_prev)
         assert (self.dw.shape == self.w.shape)
 
-        dout = np.einsum('ij,ik', self.w, din)
+        dout = np.einsum('ij,ik->jk', self.w, din)
         assert (dout.shape == a_prev.shape)
 
         return dout
