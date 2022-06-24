@@ -3,7 +3,7 @@ import copy
 import numpy as np
 from sklearn.utils import shuffle
 
-import utils
+import mlLib.utils as utils
 
 def get_batches(x, y, b):
     """

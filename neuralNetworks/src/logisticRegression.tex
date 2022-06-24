@@ -34,7 +34,7 @@ and finally, since we wish to analyze how our model performs on the entire train
 To compute the gradient of our cost function $\J$, we first write $\J$ as a sum of compositions as follows:  We have the log-loss function considered as a map $\L:(0,1)\times\R\to\R$,
 $$\L(a,y)=-\left[y\log(a)+(1-y)\log(1-a)\right],$$
 we have the sigmoid function $\sigma:\R\to(0,1)$ with $\sigma(z)=a$ and $\sigma'(z)=a(1-a)$, and we have the collection of affine-functionals $\phi_x:\R^m\times\R\to\R$ given by
-$$\phi_x(w,b)=w^Tx+b,$$
+$$\phi_x(w,b)=w^Tx+b,$$/Users/matt/Dropbox/notes/Neural Networks/neuralNetworks/src/python/utils.py
 for which we fix an arbitrary $x\in\R^m$ and write $\phi=\phi_x$, and set $z=\phi(w,b)$.  Finally, we introduce the auxiliary function $\mathcal{L}:\R^m\times\R\to\R$ given by
 $$\mathcal{L}(w,b)=\L(\sigma(\phi(w,b)),y).$$
 Then by the chain rule, we have that
@@ -71,4 +71,4 @@ $$\partial_b\J(w,b)=\frac{1}{n}\sum_{j=1}^n(a_j-y_j).$$
 \subsection{Vectorization in Python}
 Here we include the general code to train a model using logistic regression with $L_2$-regularization.  We also include the \\\texttt{sklearn.linear\_model.LogisticRegression} class to compare.
 
-\lstinputlisting[lastline=324]{src/python/logisticRegression/logisticRegression.py}
+\lstinputlisting[lastline=324]{src/python/logisticRegression.py}

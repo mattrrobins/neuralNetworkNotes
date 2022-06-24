@@ -1,7 +1,7 @@
 import numpy as np
 
-import utils
-import activators
+import mlLib.utils as utils
+import mlLib.npActivators as npActivators
 
 def forward_propagation(x, params, activators):
     """

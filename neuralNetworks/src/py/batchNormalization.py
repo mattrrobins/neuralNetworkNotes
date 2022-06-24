@@ -3,12 +3,12 @@ import copy
 
 import numpy as np
 
-import activators
-from activators import ACTIVATORS
+import mlLib.npActivators as npActivators
+from mlLib.npActivators import ACTIVATORS
 
 class LinearParams():
     def __init__(self, dims, bias=True, seed=1):
-        np.random.seed()
+        np.random.seed(seed)
         self.dims = dims
         self.bias = bias
         self.w = np.random.randn(dims[0], dims[1]) * 0.01
@@ -40,7 +40,6 @@ class LinearParams():
     def update(self, learning_rate=0.01):
         """
         """
-        w = copy.deepcopy(self.w)
         w = self.w - learning_rate * self.dw
         if self.bias:
             b = copy.deepcopy(self.b)
@@ -124,13 +123,13 @@ def apply_activation(z, activator):
     """
     """
     if activator == 'relu':
-        a, dg = activators.relu(z)
+        a, dg = npActivators.relu(z)
     elif activator == 'sigmoid':
-        a, dg = activators.sigmoid(z)
+        a, dg = npActivators.sigmoid(z)
     elif activator == 'tanh':
-        a, dg = activators.tanh(z)
+        a, dg = npActivators.tanh(z)
     elif activator == 'linear':
-        a, dg = activators.linear(z)
+        a, dg = npActivators.linear(z)
 
     assert (a.shape == z.shape)
     assert (dg.shape == z.shape)

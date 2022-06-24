@@ -2,9 +2,9 @@ import copy
 
 import numpy as np
 
-import utils
-import activators
-from activators import ACTIVATORS
+import mlLib.utils as utils
+import mlLib.npActivators as npActivators
+from mlLib.npActivators import ACTIVATORS
 
 
 ## Auxiliary functions for model composition
@@ -57,11 +57,11 @@ def linear_activation_forward(a_prev, w, b, activator):
 
     z = w @ a_prev + b
     if activator == 'relu':
-        a, _ = activators.relu(z)
+        a, _ = npActivators.relu(z)
     elif activator == 'sigmoid':
-        a, _ = activators.sigmoid(z)
+        a, _ = npActivators.sigmoid(z)
     elif activator == 'tanh':
-        a, _ = activators.tanh(z)
+        a, _ = npActivators.tanh(z)
 
     assert(z.shape == a.shape)
     return z, a
@@ -155,11 +155,11 @@ def linear_activation_backward(delta_next, z, w, activator):
     n = delta_next.shape[1]
 
     if activator == 'relu':
-        _, dg = activators.relu(z)
+        _, dg = npActivators.relu(z)
     elif activator == 'sigmoid':
-        _, dg = activators.sigmoid(z)
+        _, dg = npActivators.sigmoid(z)
     elif activator == 'tanh':
-        _, dg = activators.tanh(z)
+        _, dg = npActivators.tanh(z)
 
     da = w.T @ delta_next
     assert(da.shape == (w.shape[1], n))

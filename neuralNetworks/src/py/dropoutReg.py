@@ -1,6 +1,6 @@
 import numpy as np
 
-import utils
+import mlLib.utils as utils
 
 def dropout_matrices(layers, num_examples, keep_prob):
     """

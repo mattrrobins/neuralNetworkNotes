@@ -2,8 +2,8 @@ import copy
 
 import numpy as np
 
-import activators
-from activators import ACTIVATORS
+import mlLib.npActivators as npActivators
+from mlLib.npActivators import ACTIVATORS
 
 # Preliminary functions for our model
 def dim_retrieval(x, y, hidden_sizes):
@@ -91,9 +91,9 @@ def forward_propagation(x, params):
 
     # Auxiliary computations
     z1 = w1 @ x + b1
-    a1, _1 = activators.tanh(z1)
+    a1, _1 = npActivators.tanh(z1)
     z2 = w2 @ a1 + b2
-    a2, _2 = activators.sigmoid(z2)
+    a2, _2 = npActivators.sigmoid(z2)
 
     assert(a1.shape == (w1.shape[0], x.shape[1]))
     assert(a2.shape == (w2.shape[0], a1.shape[1]))
