@@ -6,8 +6,8 @@ We begin with a review of binary classification and logistic regression.  To thi
 $$a=\P(y=1|x).$$
 To this end, let $\sigma:\R\to(0,1)$ denote the sigmoid function, i.e.,
 $$\sigma(z)=\frac{1}{1+e^{-z}},$$
-and let $w\in\R^m$, $b\in\R$, and let
-$$a=\sigma(w^Tx+b).$$
+and let $w\in\R^{1\times m}$, $b\in\R$, and let
+$$a=\sigma(wx+b).$$
 To analyze the accuracy of model, we need a way to compare $y$ and $a$, and ideally this functional comparison can be optimized with respect to $(w,b)$ in such a way to minimize the error.  To this end, we note that
 $$\P(y|x)=a^y(1-a)^{1-y},$$
 or rather
@@ -26,20 +26,20 @@ and finally, since we wish to analyze how our model performs on the entire train
 \begin{align*}
 	\J(w,b)&=\frac{1}{n}\sum_{j=1}^n\L(a_j,y_j)\\
 	&=-\frac{1}{n}\sum_{j=1}^n\left[y_j\log(a_j)+(1-y_j)\log(1-a_j)\right]\\
-	&=-\frac{1}{n}\sum_{j=1}^n\left[y_j\log(\sigma(w^Tx_j+b))+(1-y_j)\log(1-\sigma(w^Tx_j+b))\right].
+	&=-\frac{1}{n}\sum_{j=1}^n\left[y_j\log(\sigma(wx_j+b))+(1-y_j)\log(1-\sigma(wx_j+b))\right].
 \end{align*}
 
 \subsection{The Gradient}
 
 To compute the gradient of our cost function $\J$, we first write $\J$ as a sum of compositions as follows:  We have the log-loss function considered as a map $\L:(0,1)\times\R\to\R$,
 $$\L(a,y)=-\left[y\log(a)+(1-y)\log(1-a)\right],$$
-we have the sigmoid function $\sigma:\R\to(0,1)$ with $\sigma(z)=a$ and $\sigma'(z)=a(1-a)$, and we have the collection of affine-functionals $\phi_x:\R^m\times\R\to\R$ given by
-$$\phi_x(w,b)=w^Tx+b,$$/Users/matt/Dropbox/notes/Neural Networks/neuralNetworks/src/python/utils.py
-for which we fix an arbitrary $x\in\R^m$ and write $\phi=\phi_x$, and set $z=\phi(w,b)$.  Finally, we introduce the auxiliary function $\mathcal{L}:\R^m\times\R\to\R$ given by
+we have the sigmoid function $\sigma:\R\to(0,1)$ with $\sigma(z)=a$ and $\sigma'(z)=a(1-a)$, and we have the collection of affine-functionals $\phi_x:\R^{1\times m}\times\R\to\R$ given by
+$$\phi_x(w,b)=wx+b,$$
+for which we fix an arbitrary $x\in\R^m$ and write $\phi=\phi_x$, and set $z=\phi(w,b)$.  Finally, we introduce the auxiliary function $\mathcal{L}:\R^{1\times m}\times\R\to\R$ given by
 $$\mathcal{L}(w,b)=\L(\sigma(\phi(w,b)),y).$$
 Then by the chain rule, we have that
 \begin{align*}
-	d\mathcal{L}&=d_a\L(a,y)\circ d\sigma(z)\circ d_w\phi(w,b)\\
+	d\mathcal{L}_{(w,b)}&=d_a\L_{(a,y)}\circ d\sigma_z\circ d\phi_{(w,b)}\\
 	&=\left[-\frac{y}{a}+\frac{1-y}{1-a}\right]\cdot a(1-a)\cdot\begin{bmatrix}
 		x^T&1
 	\end{bmatrix}\\
