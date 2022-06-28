@@ -5,19 +5,25 @@ from sklearn.model_selection import train_test_split
 
 import mlLib.npActivators as npActivators
 
-## Classes
+## Shuffle, split and normalize data
 class ProcessData():
-    def __init__(self, x, y, test_percent, *dev_percents, seed =1, shuffle=True, feat_as_col=True):
+    def __init__(self, x, y, test_percent, *dev_percents, seed=1, shuffle=True, feat_as_col=True):
         """
         Parameters:
         -----------
         x : array_like
             x.shape = (examples, features)
         y : array_like
-            y.shape = (examples, label)
-        percents : List[float]
+            y.shape = (examples, labels)
+        test_percent : float
+        dev_pervents : Tuple(floats)
+        seed : int
+            Default = 1
+        shuffle : Boolean
+            Default = True
+        feat_as_col : Boolean
+            Default = True
         
-
         Returns:
         --------
         None
@@ -31,13 +37,9 @@ class ProcessData():
         self.shuffle = shuffle
         self.feat_as_col = feat_as_col
 
-        
-
-
         self.split()
         self.normalize()
         
-
         print(f"x_train.shape: {self.train['x'].shape}")
         print(f"y_train.shape: {self.train['y'].shape}")
         print(f"x_test.shape: {self.test['x'].shape}")
@@ -78,15 +80,14 @@ class ProcessData():
             y_dev = [cv.T for cv in y_dev]
             self.dev = {'x' : x_dev, 'y' : y_dev}
 
-
-    def normalize(self, z=None, eps=1e-8):
+    def normalize(self, z=None, eps=0.0):
         """
         Parameters:
         -----------
         z : array_like
             Default : None - For initialization
         eps : float
-            Default 1e-8 - For stability
+            Default 0.0 - For stability
 
         Returns:
         z_scale : array_like

@@ -2,17 +2,17 @@
 
 \section{Logistic Regression}
 
-We begin with a review of binary classification and logistic regression.  To this end, suppose we have we have training examples $x\in\R^{m\times n}$ with binary labels $y\in\{0,1\}^{1\times n}$.  We desire to train a model which yields an output $a$ which represents
+We begin with a review of binary classification and logistic regression.  To this end, suppose we have we have training examples $x\in\R^{n\times N}$ with binary labels $y\in\{0,1\}^{1\times N}$.  We desire to train a model which yields an output $a$ which represents
 $$a=\P(y=1|x).$$
 To this end, let $\sigma:\R\to(0,1)$ denote the sigmoid function, i.e.,
 $$\sigma(z)=\frac{1}{1+e^{-z}},$$
-and let $w\in\R^{1\times m}$, $b\in\R$, and let
+and let $w\in\R^{1\times n}$, $b\in\R$, and let
 $$a=\sigma(wx+b).$$
-To analyze the accuracy of model, we need a way to compare $y$ and $a$, and ideally this functional comparison can be optimized with respect to $(w,b)$ in such a way to minimize the error.  To this end, we note that
+To analyze the accuracy of model, we need a way to compare $y$ and $a$, and ideally this functional comparison can be optimized with respect to $(w,b)$ in such a way to minimize an error.  To this end, we note that
 $$\P(y|x)=a^y(1-a)^{1-y},$$
 or rather
 $$\P(y=1|x)=a,\qquad\P(y=0|x)=1-a,$$
-so $\P(y|x)$ represents the corrected probability.    Now since we want
+so $\P(y|x)$ represents the \textit{corrected probability}.    Now since we want
 $$a\approx 1\quad\text{when } y=1,$$
 and
 $$a\approx 0\quad\text{when } y=0,$$
@@ -24,48 +24,139 @@ and $0\leq a\leq 1$, any error using differences won't be refined enough to anal
 \end{align*}
 and finally, since we wish to analyze how our model performs on the entire training set, we need to average our log-loss functions to obtain our cost function $\J$ defined by
 \begin{align*}
-	\J(w,b)&=\frac{1}{n}\sum_{j=1}^n\L(a_j,y_j)\\
-	&=-\frac{1}{n}\sum_{j=1}^n\left[y_j\log(a_j)+(1-y_j)\log(1-a_j)\right]\\
-	&=-\frac{1}{n}\sum_{j=1}^n\left[y_j\log(\sigma(wx_j+b))+(1-y_j)\log(1-\sigma(wx_j+b))\right].
+	\J(w,b)&=\frac{1}{N}\sum_{j=1}^N\L(a_j,y_j)\\
+	&=-\frac{1}{N}\sum_{j=1}^N\left[y_j\log(a_j)+(1-y_j)\log(1-a_j)\right]\\
+	&=-\frac{1}{N}\sum_{j=1}^N\left[y_j\log(\sigma(wx_j+b))+(1-y_j)\log(1-\sigma(wx_j+b))\right].
 \end{align*}
 
 \subsection{The Gradient}
 
-To compute the gradient of our cost function $\J$, we first write $\J$ as a sum of compositions as follows:  We have the log-loss function considered as a map $\L:(0,1)\times\R\to\R$,
-$$\L(a,y)=-\left[y\log(a)+(1-y)\log(1-a)\right],$$
-we have the sigmoid function $\sigma:\R\to(0,1)$ with $\sigma(z)=a$ and $\sigma'(z)=a(1-a)$, and we have the collection of affine-functionals $\phi_x:\R^{1\times m}\times\R\to\R$ given by
-$$\phi_x(w,b)=wx+b,$$
-for which we fix an arbitrary $x\in\R^m$ and write $\phi=\phi_x$, and set $z=\phi(w,b)$.  Finally, we introduce the auxiliary function $\mathcal{L}:\R^{1\times m}\times\R\to\R$ given by
-$$\mathcal{L}(w,b)=\L(\sigma(\phi(w,b)),y).$$
-Then by the chain rule, we have that
-\begin{align*}
-	d\mathcal{L}_{(w,b)}&=d_a\L_{(a,y)}\circ d\sigma_z\circ d\phi_{(w,b)}\\
-	&=\left[-\frac{y}{a}+\frac{1-y}{1-a}\right]\cdot a(1-a)\cdot\begin{bmatrix}
-		x^T&1
-	\end{bmatrix}\\
-	&=[-y(1-a)+a(1-y)]\cdot \begin{bmatrix}
-		x^T&1
-	\end{bmatrix}\\
-	&=(a-y)\begin{bmatrix}
-		x^T&1
-	\end{bmatrix}
-\end{align*}\HOX{Composition turns into matrix multiplication in the tangent space.}
+We wish to compute the gradient of our cost function $\J$ with respect to our trainable parameters, $w\in\R^{1\times n}$ and $b\in\R$.  To this end, we define the functions
+$$\phi:\R^{1\times n}\times\R^n\to\R,\qquad \phi(w,x)=wx,$$
+and
+$$\psi:\R\times\R\to\R,\qquad \psi(b,u)=u+b.$$
+Then our logistic regression model for a single example follows the following network layout:
 
-Moreover, for function $f:\R^N\to\R$ in Euclidean space, we have that $\nabla f = (df)^T$, and hence that
-$$\nabla\mathcal{L}(w,b)=(a-y)\begin{bmatrix}
-	x\\
-	1
-\end{bmatrix},$$
-or rather
-$$\partial_w\L(a,y)=(a-y)x,\qquad \partial_b\L(a,y)=a-y.$$
-Finally, since our cost function $\J$ is the sum-log-loss, we have by linearity that
+\begin{equation*}
+	\begin{tikzcd}
+		{}
+		&\R^{1\times n}
+		\arrow[d, swap, "w"]
+		&\R^{}
+		\arrow[d, swap, "b"]
+		&{}
+		&\{0,1\}
+		\arrow[d, swap, "y"]
+		&{}
+		\\
+		\R^n
+		\arrow[r, "x"]
+		&\boxed{\phi}
+		\arrow[r, "u"]
+		&\boxed{\psi}
+		\arrow[r, "z"]
+		&\boxed{\sigma}
+		\arrow[r, "a"]
+		&\boxed{\L}
+		\arrow[r]
+		&\R
+	\end{tikzcd}
+\end{equation*}
+
+Let's now analyze our reverse differentials for this type of composition:
+\begin{equation*}
+	\begin{tikzcd}
+		{}
+		&\R^{1\times n}
+		&\R^{}
+		&{}
+		&\{0,1\}
+		&{}
+		\\
+		\R^n
+		&\boxed{\phi}
+		\arrow[l]
+		\arrow[u, "r_1"]
+		&\boxed{\psi}
+		\arrow[l, "r"]
+		\arrow[u, "\cl{r}_1"]
+		&\boxed{\sigma}
+		\arrow[l, "r"]
+		&\boxed{\L}
+		\arrow[l, "r"]
+		\arrow[u]
+		&\R
+		\arrow[l]
+	\end{tikzcd}
+\end{equation*}
+
+\begin{enumerate}
+	\item $$\phi:\R^{1\times n}\times\R^n\to\R,\qquad u:=\phi(w,x)=wx.$$
+	Then for for any $(w,x)\in\R^{1\times n}\times\R^n$ and any $\eta\in T_w\R^{1\times n}$, we have that
+	\begin{align*}
+		d_1\phi_{(w,x)}(\eta)&=\eta x\\
+		&=R_x(\eta),
+	\end{align*}
+	where $R_x$ is the right-multiplication operator.  It then follows that for any $\zeta\in T_u\R$, that
+	\begin{align*}
+		\ip{r_1\phi_{(w,x)}(\zeta),\eta}_{\R^{1\times n}}&=\ip{\zeta,d_1\phi_{(w,x)}(\eta)}_\R\\
+		&=\ip{\zeta,R_x(\eta)}_\R\\
+		&=\ip{R_{x^T}(\zeta),\eta}_{\R^{1\times n}},
+	\end{align*}
+	and hence that
+	$$r_1\phi_{(w,x)}=R_{x^T}.$$
+	
+	\item $$\psi:\R\times\R\to\R,\qquad z:=\psi(b,u)=u+b.$$
+	Then for any $(b,u)\in\R\times\R$ and any $\xi\in T_u\R$, we have that
+	$$d\psi_{(b,u)}(\xi)=\id_\R(\xi),$$
+	and similarly for any $\eta\in T_b\R$, we have that
+	$$\cl{d}_1\psi_{(b,u)}(\eta)=\id_\R(\eta).$$
+	We then immediately have that
+	$$r\psi_{(b,u)}=\id_\R,$$
+	and
+	$$\cl{r}_1\psi_{(b,u)}=\id_\R.$$
+	
+	\item $$\sigma:\R\to\R,\qquad a:=\sigma(z)=\frac{1}{1+e^{-z}}.$$
+	Then
+	\begin{align*}
+		r\sigma_z&=\frac{e^{-z}}{(1+e^{-z})^2}\\
+		&=\frac{1}{1+e^{-z}}\frac{e^{-z}}{1+e^{-z}}\\
+		&=\sigma(z)\frac{1+e^{-z}-1}{1+e^{-z}}\\
+		&=\sigma(z)(1-\sigma(z))\\
+		&=a(1-a).
+	\end{align*}
+	
+	\item $$\L:\R\times\R\to\R,\qquad \L(a,y)=-[y\log(a)+(1-y)\log(1-a)].$$
+	Then
+	\begin{align*}
+		r\L_{(a,y)}&=-\frac{y}{a}+\frac{1-y}{1-a}
+	\end{align*}
+	
+\end{enumerate}
+
+We now compute the gradients with respect to $w$ and $b$.  To this end,
 \begin{align*}
-	\partial_w\J(w,b)&=\frac{1}{n}\sum_{j=1}^n(a_j-y_j)x_j\\
-	&=\frac{1}{n}((a-y)\cdot x^T)^T\\
-	&=\frac{1}{n}x\cdot(a-y)^T
+	\frac{\partial\J}{\partial w}&=\frac{1}{N}\sum_{j=1}^Nr_1\phi_{w,x_j}\circ r\psi_{(b,u_j)}\circ r\sigma_{z_j}\circ r\L_{(a_j,y_j)}\\
+	&=\frac{1}{N}\sum_{j=1}^NR_{x_j^T}\circ\left[-\frac{y_j}{a_j}+\frac{1-y_j}{1-a_j}\right]\cdot(a_j(1-a_j))\\
+	&=\frac{1}{N}\sum_{j=1}^N(a_j-y_j)x_j^T\\
+	&=\frac{1}{N}(a-y)x^T,
 \end{align*}
 and
-$$\partial_b\J(w,b)=\frac{1}{n}\sum_{j=1}^n(a_j-y_j).$$
+\begin{align*}
+	\frac{\partial\J}{\partial b}&=\frac{1}{N}\sum_{j=1}^N\cl{r}_1\psi_{b,u_j}\circ r\sigma_{z_j}\circ r\L_{(a_j,y_j)}\\
+	&=\frac{1}{N}\sum_{j=1}^N(a_j-y_j)
+\end{align*}
+
+
+
+
+
+
+
+
+
+
+
 
 
 \subsection{Implementation in Python via \texttt{numpy}}
