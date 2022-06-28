@@ -1,66 +1,111 @@
-%$$\lay{z}{1}{^i_j}$$
-%$$\tensor{z}{^{[1]}^i_j}$$
-%$$\tensor{\lay{z}{1}}{^i_j}$$
+
 
 
 \section{Neural Networks: A Single Hidden Layer}
-Suppose we wish to consider the binary classification problem given the training set $(x,y)$ with $x\in\R^{m_0\times n}$ and $y\in\{0,1\}^{1\times n}$.  Usually with logistic regression we have the following type of structure:
-$$[x^1,...,x^{m_0}]\layerfctn{\varphi}[z]\layerfctn{g}[a]\layerfctn{=}\hat{y},$$
-where
-$$z=\varphi(x)=w^Tx+b,$$
-is our affine-linear transformation, and
-$$a=g(z)=\sigma(z)$$
-is our sigmoid function.  Such a structure will be called a \textit{network}, and the $[a]$ is known as the \textit{activation node}.  Logistic regression can be too simplistic of a model for many situations, e.g., if the dataset isn't linearly separable (i.e., there doesn't exist some well-defined decision boundary built from a linear-surface), then logistic regression won't give a high-accuracy model.  To modify this model to handle more complex situations, we introduce a new ``hidden layer'' of nodes with their own (possibly different) activation functions.  That is, we consider a network of the following form:
-\begin{align*}
-	\underbrace{\begin{bmatrix}
-		x^1\\
-		\vdots\\
-		x^{m_0}
-	\end{bmatrix}}_{\text{Layer } 0}&\layerfctn{\lay{\varphi}{1}}\underbrace{\begin{bmatrix}
-		\lay{z}{1}{^1}\\
-		\vdots\\
-		\lay{z}{1}{^{m_1}}
-	\end{bmatrix}\layerfctn{\lay{g}{1}}
-	\begin{bmatrix}
-		\lay{a}{1}{^1}\\
-		\vdots\\
-		\lay{a}{1}{^{m_1}}
-	\end{bmatrix}}_{\text{Layer } 1}\layerfctn{\lay{\varphi}{2}}
-	\underbrace{\begin{bmatrix}
-		\lay{z}{2}
-	\end{bmatrix}\layerfctn{\lay{g}{2}}
-	\begin{bmatrix}
-		\lay{a}{2}
-	\end{bmatrix}}_{\text{Layer } 2}\layerfctn{=}\hat{y},
-\end{align*}
-where
-$$\lay{\varphi}{1}:\R^{m_0}\to\R^{m_1},\qquad \lay{\varphi}{1}(x)=\lay{W}{1}x+\lay{b}{1},$$
-$$\lay{\varphi}{2}:\R^{m_1}\to\R,\qquad \lay{\varphi}{2}(x)=\lay{W}{2}x+\lay{b}{2},$$
-and $\lay{W}{1}\in\R^{m_1\times m_0}, \lay{W}{2}\in\R^{1\times m_1}, \lay{b}{1}\in\R^{m_1}, \lay{b}{2}\in\R$, and $\lay{g}{\ell}$ is a \textit{broadcasted} activator function (e.g., the sigmoid function $\sigma(z)$, or $\tanh(z)$, or $\relu(z)$).  Such a network is called a $2$-layer neural network where $x$ is the input layer (called layer-$0$), $\lay{a}{1}$ is a hidden layer (called layer-$1$), and $\lay{a}{2}$ is the output layer (called layer-$2$).
+Suppose we wish to consider the binary classification problem given the training set $(x,y)$ with $x\in\R^{\lay{n}{0}\times N}$ and $y\in\{0,1\}^{1\times N}$.  Usually with logistic regression we have the following type of structure:
+\begin{equation*}
+	\begin{tikzcd}
+		{}
+		&\R^{1\times\lay{n}{0}}
+		\arrow[d, swap, "w"]
+		&\R^{}
+		\arrow[d, swap, "b"]
+		&{}
+		&\{0,1\}
+		\arrow[d, swap, "y"]
+		&{}
+		\\
+		\R^{\lay{n}{0}}
+		\arrow[r, "x"]
+		&\boxed{\phi}
+		\arrow[r, "u"]
+		&\boxed{\psi}
+		\arrow[r, "z"]
+		&\boxed{\sigma}
+		\arrow[r, "a"]
+		&\boxed{\L}
+		\arrow[r, "\text{loss}"]
+		&\R
+	\end{tikzcd}
+\end{equation*}
+Such a structure will be called a \textit{network}, and the $a$ is known as the \textit{activation node}.  Logistic regression can be too simplistic of a model for many situations, e.g., if the dataset isn't linearly separable (i.e., there doesn't exist some well-defined decision boundary built from a linear-surface), then logistic regression won't give a high-accuracy model.  To modify this model to handle more complex situations, we introduce a new ``hidden layer'' of nodes with their own (possibly different) activation functions.  That is, we consider a network of the following form:
+{\tiny
+\begin{equation*}
+	\begin{tikzcd}
+		{}
+		&\R^{\lay{n}{1}\times\lay{n}{0}}
+		\arrow[d, swap, "\lay{w}{1}"]
+		&\R^{\lay{n}{1}}
+		\arrow[d, swap, "\lay{b}{1}"]
+		&{}
+		&\R^{1\times\lay{n}{1}}
+		\arrow[d, swap, "\lay{w}{2}"]
+		&\R
+		\arrow[d, swap, "\lay{b}{2}"]
+		&{}
+		&\{0,1\}
+		\arrow[d, swap, "y"]
+		&{}
+		\\
+		\R^{\lay{n}{0}}
+		\arrow[r, "\lay{a}{0}:=x"]
+		&\boxed{\lay{\phi}{1}}
+		\arrow[r, "\lay{u}{1}"]
+		&\boxed{\lay{\psi}{1}}
+		\arrow[r, "\lay{z}{1}"]
+		&\boxed{\lay{G}{1}}
+		\arrow[r, "\lay{a}{1}"]
+		&\boxed{\lay{\phi}{2}}
+		\arrow[r, "\lay{u}{2}"]
+		&\boxed{\lay{\psi}{2}}
+		\arrow[r, "\lay{z}{2}"]
+		&\boxed{\lay{G}{2}}
+		\arrow[r, "\lay{a}{2}"]
+		&\boxed{\L}
+		\arrow[r, "\text{loss}"]
+		&\R
+	\end{tikzcd}
+\end{equation*}
+}
+
+In the above diagram, we use $\lay{\cdot}{0}$ to denote everything in layer-$0$, i.e., the input layer; we use $\lay{\cdot}{1}$ to denote everything in layer-$1$, i.e., the hidden layer; and we use $\lay{\cdot}{2}$ to denote everything in layer-$2$, i.e., the output layer.  Moreover, we have the functions (where we suppress the layer-notation)
+\begin{itemize}
+	\item $$\phi:\R^{n\times m}\times\R^m\to\R^n,\qquad u:=\phi(w,a)=wa,$$
+	\item $$\psi:\R^n\times\R^n\to\R^n,\qquad z:=\psi(b,u)=u+b,$$
+	\item $$G:\R^n\to\R^n,\qquad a:=G(z),$$
+	where $G$ is the broadcasting of something activation function $g:\R\to\R$.
+\end{itemize}
+
 
 \begin{defn}
-	Suppose $g:\R\to\R$ is any function.  Then we say $G:\R^{m}\to\R^{m}$ is the \textbf{broadcast} of $g$ from $\R$ to $\R^m$ if
+	Suppose $g:\R\to\R$ is any function.  Then we say $G:\R^n\to\R^n$ is the \textbf{broadcast} of $g$ from $\R$ to $\R^n$ if
 	\begin{align*}
 		G(v)&=G(v^ie_i)\\
 		&=g(v^i)e_i,
 	\end{align*}
-	where $v\in\R^{m}$ and $\{e_i:1\leq i\leq m\}$ is the standard basis for $\R^{m}$.  In practice, we will write $g=G$ for a broadcasted function, and let the context determine the meaning of $g$.
+	where $v\in\R^{n}$ and $\{e_i:1\leq i\leq n\}$ is the standard basis for $\R^n$.  In practice, we will sometimes write $g=G$ for a broadcasted function, and let the context determine the meaning of $g$.
 \end{defn}
 
 \begin{lem}\label{lem: broadcastingDifferential}
-	Suppose $g:\R\to\R$ is any smooth function and $G:\R^m\to\R^m$ is the broadcasting of $g$ from $\R$ to $\R^m$.  Then the differential $dG_z:T_z\R^m\to T_{G(z)}\R^m$ is given by
-	$$dG_z(v)=[g'(z^i)]\odot [v^i],$$
+	Suppose $g:\R\to\R$ is any smooth function and $G:\R^n\to\R^n$ is the broadcasting of $g$ from $\R$ to $\R^n$.  Then the differential $dG_z:T_z\R^n\to T_{G(z)}\R^n$ is given by
+	$$dG_z(\xi)=[g'(z^i)]\odot [\xi^i],$$
 	where $\odot$ is the Hadamard product (also know as component-wise multiplication), and has matrix-representation in $\R^{m\times m}$ given by
 	$$[dG_z]^i_j =\delta^i_j g'(z^i).$$
+	We use the notation
+	$$G'(z):=[g'(z^i)]\in\R^n,$$
+	and thus may write
+	$$dG_z(v)=G'(z)\odot \xi.$$
+	Furthermore, we have that for $\zeta\in T_{G(z)}\R^n$,
+	$$rG_z(\zeta)=G'(z)\odot\zeta.$$
 \end{lem}
 
 \begin{proof}
 	We calculate
 	\begin{align*}
-		dG_z(v)&=\rest{\frac{d}{dt}}_{t=0}G(z+tv)\\
-		&=\rest{\frac{d}{dt}}_{t=0}(g(z^i+tv^i))\\
-		&=(g'(z^i)v^i)\\
-		&=[g'(z^i)]\odot[v^i],
+		dG_z(\xi)&=\rest{\frac{d}{dt}}_{t=0}G(z+t\xi)\\
+		&=\rest{\frac{d}{dt}}_{t=0}(g(z^i+t\xi^i))\\
+		&=(g'(z^i)\xi^i)\\
+		&=[g'(z^i)]\odot[\xi^i],
 	\end{align*}
 	and letting $e_1,...e_m$ denote the usual basis for $T_z\R^m$ (identified with $\R^m$), we see that
 	\begin{align*}
@@ -68,157 +113,415 @@ and $\lay{W}{1}\in\R^{m_1\times m_0}, \lay{W}{2}\in\R^{1\times m_1}, \lay{b}{1}\
 		&=g'(z^j)e_j,
 	\end{align*}
 	from which conclude that $dG_z$ is diagonal with $(j,j)$-th entry $g'(z^j)$ as desired.
+	
+	Furthermore, for $\zeta\in T_{G(z)}\R^n$, we have that
+	\begin{align*}
+		\ip{rG_z(\zeta),\xi}_{\R^n}&=\ip{\zeta,dG_z(\xi)}_{\R^n}\\
+		&=\ip{\zeta,G'(z)\odot\xi}_{\R^n}\\
+		&=\ip{G'(z)\odot\zeta,\xi}_{\R^n},
+	\end{align*}
+	and the result follows.
 \end{proof}
 
-Returning to our network, let us lay out all of these functions explicitly (in the Smooth Category) as to facilitate our later computations for our cost function and our gradients.
-To this end:
+Returning to our network, we see call the full composition of network functions resulting in $\lay{a}{2}$, the \textit{forward propagation}.  That is, given an example $x\in\R^{\lay{n}{0}}$, we have that
+$$\lay{a}{2}=\lay{G}{2}(\lay{\psi}{2}(\lay{b}{2},\lay{\phi}{2}(\lay{w}{2},\lay{G}{1}(\lay{\psi}{1}(\lay{b}{1},\lay{\phi}{1}(\lay{w}{1},x)))))).$$
+
+
+
+\subsection{Activation Functions}
+There are mainly only a handful of activating functions we consider for our non-linearity conditions (but many more built from these that follow).
+
+\subsubsection{The Sigmoid Function}
+We have the sigmoid function $\sigma(z)$ given by
+$$\sigma:\R\to(0,1),\qquad \sigma(z)=\frac{1}{1+e^{-z}}.$$
+We note that since
 \begin{align*}
-	&\lay{\varphi}{1}:\R^{m_0}\to\R^{m_1},\qquad &d\lay{\varphi}{1}:T\R^{m_0}\to T\R^{m_1},\\
-	&\lay{z}{1}=\lay{\varphi}{1}(x)=\lay{W}{1}x+\lay{b}{1},&d\lay{\varphi}{1}_x(v)=\lay{W}{1}v;
+	1-\sigma(z)&=1-\frac{1}{1+e^{-z}}\\
+	&=\frac{e^{-z}}{1+e^{-z}}
+\end{align*}
+\begin{align*}
+	\sigma'(z)&=\frac{e^{-z}}{(1+e^{-z})^2}\\
+	&=\frac{1}{1+e^{-z}}\cdot\frac{e^{-z}}{1+e^{-z}}\\
+	&=\sigma(z)(1-\sigma(z))
 \end{align*}
 
+
+
+\subsubsection{The Hyperbolic Tangent Function}
+We have the hyperbolic tangent function $\tanh(z)$ given by
+$$\tanh:\R\to(-1,1),\qquad\tanh(z)=\frac{e^z-e^{-z}}{e^z+e^{-z}}.$$
+We then calculate
 \begin{align*}
-	&\lay{g}{1}:\R^{m_1}\to\R^{m_1},\qquad &
-	d\lay{g}{1}:T\R^{m_1}\to T\R^{m_1},\\
-	&\lay{a}{1}=\lay{g}{1}(\lay{z}{1}),\qquad
-	&\frac{\partial\lay{a}{1}{^\mu}}{\partial \lay{z}{1}{^\nu}}=\delta^\mu_\nu\lay{g}{1}{'}(\lay{z}{1}{^\mu});
+	\tanh'(z)&=\frac{(e^z+e^{-z})(e^z+e^{-z})-(e^z-e^{-z})(e^z-e^{-z})}{(e^z+e^{-z})^2}\\
+	&=\frac{(e^z+e^{-z})^2}{(e^z+e^{-z})^2}-\frac{e^z-e^{-z})^2}{(e^z+e^{-z})^2}\\
+	&=1-\tanh^2(z).
 \end{align*}
 
+Furthermore, we note that
+$$\frac{1}{2}\left(\tanh\left(\frac{z}{2}\right)+1\right)=\sigma(z).$$
+Indeed,
 \begin{align*}
-&\lay{\varphi}{2}:\R^{m_1}\to\R^{m_2},\qquad
-&d\lay{\varphi}{2}:T\R^{m_1}\to T\R^{m_2},\\
-&\lay{z}{2}=\lay{\varphi}{2}(\lay{a}{1})=\lay{W}{2}\lay{a}{1}+\lay{b}{2},\qquad &d\lay{\varphi}{2}_{\lay{a}{2}}(v)=\lay{W}{2}v;
+	1+\tanh{\frac{z}{2}}&=1+\frac{e^{\frac{z}{2}}-e^{-\frac{z}{2}}}{e^{\frac{z}{2}}+e^{-\frac{z}{2}}}\\
+	&=\frac{e^{\frac{z}{2}}+e^{-\frac{z}{2}}+e^{\frac{z}{2}}-e^{-\frac{z}{2}}}{e^{\frac{z}{2}}+e^{-\frac{z}{2}}}\\
+	&=2\frac{e^{\frac{z}{2}}}{e^{\frac{z}{2}}+e^{-\frac{z}{2}}}\\
+	&=2\frac{1}{1+e^{-z}}\\
+	&=2\sigma(z),
 \end{align*}
+as desired.
 
+
+\subsubsection{The Rectified Linear Unit Function}
+We have the leaky-ReLU function $\relu(z;\beta)$ given by
+$$\relu:\R\to\R,\qquad \relu(z;\beta)=\max\{\beta z, z\},$$
+for some $\beta>0$ (typically chosen very small).
+
+We have the rectified linear unit function $\relu(z)$ given by setting $\beta=0$ in the leaky-ReLu function, i.e.,
+$$\relu:\R\to[0,\infty),\qquad\relu(z)=\relu(z;\beta=0)=\max\{0,z\}.$$
+We then calculate
 \begin{align*}
-	&\lay{g}{2}:\R^{m_2}\to\R^{m_2},\qquad
-	&d\lay{g}{2}:T\R^{m_2}\to T\R^{m_2},\\
-	&\lay{a}{2}=\lay{g}{2}(\lay{z}{2}),\qquad
-	&\frac{\partial\lay{a}{2}{^\mu}}{\partial \lay{z}{2}{^\nu}}=\delta^\mu_\nu\lay{g}{2}{'}(\lay{z}{2}{^\mu}).
+	\relu'(z;\beta)&=\begin{cases}
+		\beta&z<0\\
+		1&z\geq0
+	\end{cases}\\
+	&=\beta\chi_{(-\infty,0)}(z)+\chi_{[0,\infty)}(z),
 \end{align*}
-That is, given an input $x\in\R^{m_0}$, we get a predicted value $\hat{y}\in\R^{m_2}$ of the form
-$$\hat{y}=\lay{g}{2}\circ\lay{\varphi}{2}\circ\lay{g}{1}\circ\lay{\varphi}{1}(x).$$
-This compositional function is known as \textit{forward propagation}.
+where
+$$\chi_A(z)=\begin{cases}
+	1&z\in A\\
+	0&z\notin A
+\end{cases},$$
+is the indicator function.
+
+
+\subsubsection{The Softmax Function}
+We finally have the softmax function $\softmax(z)$ given by
+$$\softmax:\R^m\to\R^m,\qquad \softmax(z)=\frac{1}{\sum_{j=1}^me^{z^j}}\begin{pmatrix}
+	e^{z^1}\\
+	e^{z^2}\\
+	\vdots\\
+	e^{z^m}
+\end{pmatrix},$$
+which we typically use this function on the outer-layer to obtain a probability distribution over our predicted labels when dealing with multi-class regression.  Let
+$$S^i=x^i\circ\softmax(z),$$
+denote the $i$-th component of $\softmax(z)$, and so we calculate
+\begin{align*}
+	\frac{\partial S^i}{\partial z^j}&=\frac{\partial}{\partial z^j}\left[\left(\sum_{k=1}^me^{z^k}\right)^{-1}e^{z^i}\right]\\
+	&=-\left(\sum_{k=1}^me^{z^k}\right)^{-2}\left(\sum_{k=1}^me^{z^k}\delta_j^k\right)e^{z^i}+\left(\sum_{k=1}^me^{z^k}\right)^{-1}e^{z^i}\delta^i_j\\
+	&=-\left(\sum_{k=1}^me^{z^k}\right)^{-2}e^{z^j}e^{z^i}+S^i\delta^i_j\\
+	&=-S^jS^i+S^i\delta^i_j\\
+	&=S^i(\delta^i_j-S^j).
+\end{align*}
+That is, as a map $dS_z:T_z\R^m\to T_{S(z)}\R^m$, we have that
+$$dS_z=[S^i(\delta^i_j-S_j)]^i_j,$$
+and we make note that $dS_z$ is symmetric (i.e., it's also the reverse differential).
+
+
+
+\subsection{Backward Propagation}
+
+We consider a neural network of the form
+{\tiny
+\begin{equation*}
+	\begin{tikzcd}
+		{}
+		&\R^{\lay{n}{1}\times\lay{n}{0}}
+		\arrow[d, swap, "\lay{w}{1}"]
+		&\R^{\lay{n}{1}}
+		\arrow[d, swap, "\lay{b}{1}"]
+		&{}
+		&\R^{\lay{n}{2}\times\lay{n}{1}}
+		\arrow[d, swap, "\lay{w}{2}"]
+		&\R^{\lay{n}{2}}
+		\arrow[d, swap, "\lay{b}{2}"]
+		&{}
+		&\R^{\lay{n}{2}}
+		\arrow[d, swap, "y"]
+		&{}
+		\\
+		\R^{\lay{n}{0}}
+		\arrow[r, "\lay{a}{0}:=x"]
+		&\boxed{\lay{\phi}{1}}
+		\arrow[r, "\lay{u}{1}"]
+		&\boxed{\lay{\psi}{1}}
+		\arrow[r, "\lay{z}{1}"]
+		&\boxed{\lay{G}{1}}
+		\arrow[r, "\lay{a}{1}"]
+		&\boxed{\lay{\phi}{2}}
+		\arrow[r, "\lay{u}{2}"]
+		&\boxed{\lay{\psi}{2}}
+		\arrow[r, "\lay{z}{2}"]
+		&\boxed{\lay{G}{2}}
+		\arrow[r, "\lay{a}{2}"]
+		&\boxed{\L}
+		\arrow[r, "\text{loss}"]
+		&\R
+	\end{tikzcd}
+\end{equation*}
+}
+
+where we have the functions:
+\begin{enumerate}
+	\item $$\lay{G}{\ell}:\R^{\lay{n}{\ell}}\to\R^{\lay{n}{\ell}}$$
+is the broadcasting of the activation unit $\lay{g}{\ell}:\R\to\R$.
+	\item $$\lay{\phi}{\ell}:\R^{\lay{n}{\ell}\times\lay{n}{\ell-1}}\times\R^{\lay{n}{\ell-1}}\to\R^{\lay{n}{\ell}}$$
+	is given by
+	$$\lay{\phi}{\ell}(w,x)=wx.$$
+	\item $$\lay{\psi}{\ell}:\R^{\lay{n}{\ell}}\times\R^{\lay{n}{\ell}}\to\R^{\lay{n}{\ell}}$$
+	is given by
+	$$\lay{\psi}{\ell}(b,x)=x+b.$$
+	\item $$\L:\R^{\lay{n}{2}}\times\R^{\lay{n}{2}}\to\R$$
+	is the given loss-function.
+\end{enumerate}
+
+
+We now consider back-propagating through the neural network via ``reverse exterior differentiation''.  We represent our various reverse derivatives via the following diagram:
+
+{\tiny
+\begin{equation*}
+	\begin{tikzcd}
+		{}
+		&\R^{\lay{n}{1}\times\lay{n}{0}}
+		&\R^{\lay{n}{1}}
+		&{}
+		&\R^{\lay{n}{2}\times\lay{n}{1}}
+		&\R^{\lay{n}{2}}
+		&{}
+		&\R^{\lay{n}{2}}
+		\arrow[d]
+		&{}
+		\\
+		\R^{\lay{n}{0}}
+		&\boxed{\lay{\phi}{1}}
+		\arrow[l, swap, "r"]
+		\arrow[u, "r_1"]
+		&\boxed{\lay{\psi}{1}}
+		\arrow[l, swap, "r"]
+		\arrow[u, "\cl{r}_1"]
+		&\boxed{\lay{G}{1}}
+		\arrow[l, swap, "r"]
+		&\boxed{\lay{\phi}{2}}
+		\arrow[l, swap, "r"]
+		\arrow[u, "r_2"]
+		&\boxed{\lay{\psi}{2}}
+		\arrow[l, swap, "r"]
+		\arrow[u, "\cl{r}_2"]
+		&\boxed{\lay{G}{2}}
+		\arrow[l, swap, "r"]
+		&\boxed{\L}
+		\arrow[l, swap, "r"]
+		&\R
+		\arrow[l]
+	\end{tikzcd}
+\end{equation*}
+}
+
+First, we need to consider our individual derivatives:
+\begin{enumerate}
+	\item Suppose $G:\R^n\to\R^n$ is the broadcasting of $g:\R\to\R$.  Then for $(x,\xi)\in T\R^n$, we have that
+	\begin{align*}
+		dG_x(\xi)&=G'(x)\odot\xi\\
+		&=\diag(G'(x))\cdot\xi
+	\end{align*}
+	and for any $\zeta\in T_{G(x)}\R^n$, the reverse derivative is given by
+	\begin{align*}
+		rG_x(\zeta)&=G'(x)\odot\zeta\\
+		&=\diag(G'(x))\cdot\zeta.
+	\end{align*}
+	
+	\item Suppose $\phi:\R^{m\times n}\times\R^n\to\R^m$ is given by $$\phi(w,x)=wx.$$
+	Then we have two differentials to consider:
+	\begin{enumerate}
+		\item For any $(w,x)\in\R^{m\times n}\times\R^n$ and any $\xi\in T_x\R^n$, we have that
+		\begin{align*}
+			d\phi_{(w,x)}(\xi)&=w\xi\\
+			&=L_w(\xi);
+		\end{align*}
+		and for any $\zeta\in T_{\phi(w,x)}\R^m$, we have the reverse derivative
+		\begin{align*}
+			r\phi_{(w,x)}(\zeta)&=w^T\zeta\\
+			&=L_{w^T}(\zeta);
+		\end{align*}
+		where $L_A(B)=AB$, i.e., left-multiplication by $A$.
+		
+		\item For any $(w,x)\in\R^{m\times n}\times\R^n$ and any $\eta\in T_w\R^{m\times n}$ we have that
+		\begin{align*}
+			d_1\phi_{(w,x)}(\eta)&=\eta x\\
+			&=R_x(\eta);
+		\end{align*}
+		and for any $\zeta\in T_{\phi(w,x)}\R^m$, we have the reverse derivative
+		\begin{align*}
+		r_1\phi_{(w,x)}(\zeta)&=\zeta x^T\\
+		&=R_{x^T}(\zeta);	
+		\end{align*}
+		where $R_A(B)=BA$, i.e, right-multiplication by $A$.
+
+	\end{enumerate}
+	
+	\item Suppose $\psi:\R^n\times\R^n\to\R^n$ is given by
+	$$\psi(b,x)=x+b.$$
+	Then we again have two (identical) differentials to consider:
+	\begin{enumerate}
+		\item For any $(x,b)\in\R^n\times\R^n$ and any $\xi\in T_x\R^n$, we have that
+		$$d\psi_{(b,x)}(\xi)=\xi;$$
+		and for any $\zeta\in T_{\psi(b,x)}\R^n$, we have the reverse derivative
+		$$r\psi_{(b,x)}(\zeta)=\zeta.$$
+		
+		\item For any $(x,b)\in\R^n\times\R^n$ and any $\eta\in T_b\R^n$, we have that
+		$$d_1\psi_{(b,x)}(\eta)=\eta;$$
+		and for any $\zeta\in T_{(\psi(b,x)}\R^n$, we have the reverse derivative
+		$$\cl{r}_1\psi_{(b,x)}(\zeta)=\zeta.$$
+	\end{enumerate}
+\end{enumerate}
+
+\TOX{
+Include the following two results in the Reverse Differential appendix once created.	
+}
+
+\begin{prop}
+	Suppose we have the compositional diagram
+	\begin{equation*}
+		\begin{tikzcd}
+			\R^n
+			\arrow[r, "f"]
+			&\R^m
+			\arrow[r, "g"]
+			&\R^k
+			\arrow[r, "h"]
+			&\R^l
+		\end{tikzcd}
+	\end{equation*}
+	and we let $F=h\circ g\circ f:\R^n\to\R^l.$
+	Then for any $x\in\R^n$ and any $\zeta\in T_{F(x)}\R^l$, the reverse derivative satisfies
+	$$rF_x(\zeta)=rf_x\circ rg_{f(x)}\circ rh_{g(f(x)}(\zeta).$$
+\end{prop}
+
+\begin{proof}
+For any $\xi\in T_x\R^n$ and any $\zeta\in T_{F(x)}\R^l$, we have by definition
+\begin{align*}
+	\ip{rF_x(\zeta),\xi}_{\R^n}&=\ip{\zeta,dF_x(\xi)}_{\R^l}\\
+	&=\ip{\zeta,dh_{g(f(x))}\circ dg_{f(x)}\circ df_x(\xi)}_{\R^l}\\
+	&=\ip{rh_{g(f(x))}(\zeta),dg_{f(x)}\circ df_x(\xi)}_{\R^k}\\
+	&=\ip{rg_{f(x)}\circ rh_{g(f(x))}(\zeta),df_x(\xi)}_{\R^m}\\
+	&=\ip{rf_x\circ rg_{f(x)}\circ rh_{g(f(x))}(\zeta),\xi}_{\R^n}
+\end{align*}	
+as desired.
+\end{proof}
+
+\begin{lem}
+	Suppose $f:\R^{n\times m}\to\R^k$, and for $P\in\R^{n\times m}$, let $R=rf_P$.  Then $R\in\R^k{_n}{^m}$ is rank $(1,2)$-tensor written in coordinates as
+	$$R=R_i{^\mu}{_\nu}\frac{\partial}{\partial X^\mu_\nu}\otimes dx^i,$$
+	and the components is given by
+	$$R_i{^\mu}{_\nu}=\frac{\partial f^i}{\partial X^\nu_\mu}$$
+\end{lem}
+
+\begin{proof}
+	Considering the basis vectors $\frac{\partial}{\partial X^\nu_\mu}\in T_P\R^{n\times m}$ and $\frac{\partial}{\partial x^i}\in T_{f(P)}\R^k$ we have that
+	\begin{align*}
+		R_i{^\mu}{_\nu}&=\ip{R\left(\frac{\partial}{\partial x^i}\right), \frac{\partial}{\partial X^\nu_\mu}}_F\\
+		&=\ip{\frac{\partial}{\partial x^i},df_P\left(\frac{\partial}{\partial X^\nu_\mu}\right)}_{\R^k}\\
+		&=\ip{\frac{\partial}{\partial x^i},\frac{\partial f^\alpha}{\partial X^\nu_\mu}\frac{\partial}{\partial x^\alpha}}_{\R^k}\\
+		&=\delta_{i\alpha}\frac{\partial f^\alpha}{\partial X^\nu_\mu},
+	\end{align*}
+	as desired.
+\end{proof}
+
+
+
+
+Returning to our neural network, for each point $(x_j,y_j)$ in our training set, we first let
+$$F_j:=\L\circ\lay{G}{2}\circ\lay{\psi}{2}\circ\lay{\phi}{2}\circ\lay{G}{1}\circ\lay{\psi}{1}\circ\lay{\phi}{1},$$
+and we have our cost function
+$$\J:=\frac{1}{N}\sum_{j=1}^NF_j.$$
+
+We use the following notation for our inputs and outputs of our respective functions:
+\begin{itemize}
+	\item $$\lay{\phi}{\ell}:(\lay{w}{\ell},\lay{a}{\ell-1}{_j})\mapsto \lay{u}{\ell}{_j},$$
+	\item $$\lay{\psi}{\ell}:(\lay{b}{\ell},\lay{u}{\ell}{_j})\mapsto\lay{z}{\ell}{_j},$$
+	\item $$\lay{G}{\ell}:\lay{z}{\ell}{_j}\mapsto\lay{a}{\ell}{_j}.$$
+\end{itemize}
+
+Let $p=(\lay{w}{1},\lay{b}{1},\lay{w}{2},\lay{b}{2})$ is a point in our parameter space.  Suppose we wish to apply gradient descent with learning rate $\alpha\in T_{\J(p)}\R$, we would define our parameter updates via
+\begin{align*}
+	\lay{w}{1}&:=\lay{w}{1}-r_1\J_p(\alpha)\\
+	\lay{b}{1}&:=\lay{b}{1}-\cl{r}_1\J_p(\alpha)\\
+	\lay{w}{2}&:=\lay{w}{2}-r_2\J_p(\alpha)\\
+	\lay{b}{2}&:=\lay{b}{2}-\cl{r}_2\J_p(\alpha).
+\end{align*}
+Moreover, by linearity (and independence of our training data), we see that
+$$r\J_p=\frac{1}{N}\sum_{j=1}^Nr(F_j)_p,$$
+so we need only calculate the various reverse derivatives of $F_j$.
+
+To this end, we suppress the index $j$ when we're working with the compositional function $F$.  We calculate the reverse derivatives in the order traversed in our back-propagating path along the network.
+
+\begin{enumerate}
+	\item $\cl{r}_2\J_p$:
+	\begin{align*}
+		\cl{r}_2F_p&=\cl{r}_2(\L\circ\lay{G}{2}\circ\lay{\psi}{2})_p\\
+		&=\cl{r}_2\lay{\psi}{2}_p\circ r\lay{G}{2}_{\lay{z}{2}}\circ r\L_{\lay{a}{2}}\\
+		&=\id\circ r\lay{G}{2}_{\lay{z}{2}}\circ r\L_{\lay{a}{2}}\\
+		&=r\lay{G}{2}_{\lay{z}{2}}\circ r\L_{\lay{a}{2}},
+	\end{align*}
+	and hence
+	\begin{align*}
+		\cl{r}_2\J_p&=\frac{1}{N}\sum_{j=1}^Nr\lay{G}{2}_{\lay{z}{2}{_j}}\cdot r\L_{\lay{a}{2}{_j}}
+	\end{align*}
+	
+	\item $r_2\J_p$:
+	\begin{align*}
+		r_2F_p&=r_2(\L\circ\lay{G}{2}\circ\lay{\psi}{2}\circ\lay{\phi}{2})_p\\
+		&=r_2\lay{\phi}{2}_p\circ r\lay{\psi}{2}_{\lay{u}{2}}\circ r\lay{G}{2}_{\lay{z}{2}}\circ r\L_{\lay{a}{2}}\\
+		&=R_{\lay{a}{1}{^T}}\circ\id\circ r\lay{G}{2}_{\lay{z}{2}}\circ r\L_{\lay{a}{2}}\\
+		&=R_{\lay{a}{1}{^T}}\circ r\lay{G}{2}_{\lay{z}{2}}\circ r\L_{\lay{a}{2}},
+	\end{align*}
+	and hence
+	$$r_2\J_p=\frac{1}{N}\sum_{j=1}^NR_{\lay{a}{1}{^T}{_j}}\circ r\lay{G}{2}_{\lay{z}{2}{_j}}\cdot r\L_{\lay{a}{2}{_j}}.$$
+	Notice that this is not just a sum after matrix multiplication since we have composition with an operator, namely, $R_{\lay{a}{1}{^T}{_j}}$.  However, since the learning rate $\alpha\in T_{\J(p)}\R\cong\R$, which may pass through the aforementioned linear composition, we conclude that
+	\begin{align*}
+		r_2\J_p&=\frac{1}{N}\sum_{j=1}^NR_{\lay{a}{1}{^T}{_j}}\circ r\lay{G}{2}_{\lay{z}{2}{_j}}\cdot r\L_{\lay{a}{2}{_j}}\\
+		&=\frac{1}{N}\sum_{j=1}^Nr\lay{G}{2}_{\lay{z}{2}{_j}}\cdot r\L_{\lay{a}{2}{_j}}\lay{a}{1}{^T}{_j}.
+	\end{align*}
+	
+	\item $\cl{r}_1\J_p$:
+	\begin{align*}
+		\cl{r}_1F_p&=\cl{r}_1(\L\circ\lay{G}{2}\circ\lay{\psi}{2}\circ\lay{\phi}{2}\circ\lay{G}{1}\circ\lay{\psi}{1})_p\\
+		&=\cl{r}_1\lay{\psi}{1}_p\circ r\lay{G}{1}_{\lay{z}{1}}\circ r\lay{\phi}{2}_{\lay{a}{1}}\circ r\lay{\psi}{2}_{\lay{u}{2}}\circ r\lay{G}{2}_{\lay{z}{2}}\circ r\L_{\lay{a}{2}}\\
+		&=\id\circ r\lay{G}{1}_{\lay{z}{1}}\circ L_{\lay{w}{2}{^T}}\circ\id\circ r\lay{G}{2}_{\lay{z}{2}}\circ r\L_{\lay{a}{2}}\\
+		&=r\lay{G}{1}_{\lay{z}{1}}\circ L_{\lay{w}{2}{^T}}\circ r\lay{G}{2}_{\lay{z}{2}}\circ r\L_{\lay{a}{2}},
+	\end{align*}
+	and hence
+	\begin{align*}
+		\cl{r}_1\J_p&=\frac{1}{N}\sum_{j=1}^Nr\lay{G}{1}_{\lay{z}{1}{_j}}\cdot\lay{w}{2}{^T}\cdot r\lay{G}{2}_{\lay{z}{2}{_j}}\cdot r\L_{\lay{a}{2}{_j}}.
+	\end{align*}
+	
+	\item $r_1\J_p$:
+	\begin{align*}
+		r_1F_p&=r_1(\L\circ\lay{G}{2}\circ\lay{\psi}{2}\circ\lay{\phi}{2}\circ\lay{G}{1}\circ\lay{\psi}{1}\circ\lay{\phi}{1})_p\\
+		&=r_1\lay{\phi}{1}_p\circ r\lay{\psi}{1}_{\lay{u}{1}}\circ r\lay{G}{1}_{\lay{z}{1}}\circ r\lay{\phi}{2}_{\lay{a}{1}}\circ r\lay{\psi}{2}_{\lay{u}{2}}\circ r\lay{G}{2}_{\lay{z}{2}}\circ r\L_{\lay{a}{2}}\\
+		&=R_{x^T}\circ\id\circ r\lay{G}{1}_{\lay{z}{1}}\circ L_{\lay{w}{2}{^T}}\circ\id\circ r\lay{G}{2}_{\lay{z}{2}}\circ r\L_{\lay{a}{2}}\\
+		&=R_{x^T}\circ r\lay{G}{1}_{\lay{z}{1}}\circ L_{\lay{w}{2}{^T}}\circ r\lay{G}{2}_{\lay{z}{2}}\circ r\L_{\lay{a}{2}},
+	\end{align*}
+	and hence
+	\begin{align*}
+		r_1\J_p&=\frac{1}{N}\sum_{j=1}^NR_{x_j^T}\circ r\lay{G}{1}_{\lay{z}{1}{_j}}\cdot\lay{w}{2}{^T}\cdot r\lay{G}{2}_{\lay{z}{2}{_j}}\cdot r\L_{\lay{a}{2}{_j}}\\
+		&=\frac{1}{N}\sum_{j=1}^Nr\lay{G}{1}_{\lay{z}{1}{_j}}\cdot\lay{w}{2}{^T}\cdot r\lay{G}{2}_{\lay{z}{2}{_j}}\cdot r\L_{\lay{a}{2}{_j}}\cdot x_j^T
+	\end{align*}
+\end{enumerate}
+
+
+
+
+
+
+
+
+
 
 \begin{comment}
-Since we wish to optimize our model with respect to our parameter $\lay{W}{\ell}$ and $\lay{b}{\ell}$,  we consider a generic loss function $\L:\R\times\R\to\R$, $\L(\hat{y},y)$, and by acknowledging the potential abuse of notation, we assume $y$ is fixed, and consider the aforementioned as a function of a single-variable
-$$\L_y:\R\to\R, \qquad \L_y(\hat{y})=\L(\hat{y},y).$$
-We now define the compositional function
-$$F:\R^{m_0}\to\R,\qquad F(x)=\L_y\circ\lay{g}{2}\circ\lay{\varphi}{2}\circ\lay{g}{1}\circ\lay{\varphi}{1}(x).$$
 
 
-As we mentioned before, we wish to optimize with respect to our parameters, but our above composition doesn't make this dependence explicit for computations.  To this end, we first previously considered the generic affine-linear transformation
-$$\varphi:\R^m\to\R^k,\qquad\varphi(x)=Wx+b,$$
-with $W\in\R^{k\times m}, b\in\R^k$.  We now change our point-of-view and consider the related
-$$\phi:\R^{k\times m}\times\R^k\to\R^k,\qquad \phi(W, b)=Wx+b,$$
-for some fixed $x\in\R^m$.  Then we see that
-$$d\phi:T\R^{k\times m}\times T\R^k\to T\R^k,$$
-\begin{align*}
-	d\phi_{(W,b)}(V,v)&=\rest{\frac{d}{dt}}_{t=0}\phi(W+tV, b+tv)\\
-	&=\rest{\frac{d}{dt}}_{t=0}(W+tV)x+(b+tv)\\
-	&=Vx+v.
-\end{align*}
-This leads to the further decomposition of the form
-$$\phi(W,b)=\psi(W)+\id_{\R^k}(b),$$
-where $\id_{\R^k}:\R^k\to\R^k$ is the identity function, and $\psi:\R^{k\times m}\to\R^k$ is given by
-$$\psi(W)=Wx.$$
-Then by the above computation, we have that
-$$d\psi_W(V)=Vx.$$
-Moreover, suppose
-$$\{E_1^1,E_1^2,...,E_1^m,E_2^1,E_2^2,...,E_2^m,...,E_k^1,E_k^2,...,E_k^m\}$$
-is an ordering of the standard basis $\{E_\alpha^\beta\}$ for $\R^{k\times m}$ with
-$$[E_\alpha^\beta]^i_j=\delta^i_\alpha\delta_j^\beta,$$ and
-$$V=V^i_jE_i^j,$$
-then $d\psi_W\in\R^{k\times mk}$ with matrix-representation
-$$d\psi_W=\begin{bmatrix}
-	x^T&0&0&\cdots &0\\
-	0&x^T&0&\cdots &0\\
-	0&0&x^T&\cdots &0\\
-	\vdots &\vdots &\ddots &\ddots &\vdots\\
-	0&0&0&\cdots &x^T
-\end{bmatrix},$$
-where each $0$ represents $0\in\R^{1\times m}$, and
-\begin{align*}
-	d\psi_W(V)&=\begin{bmatrix}
-	x^T&0&0&\cdots &0\\
-	0&x^T&0&\cdots &0\\
-	0&0&x^T&\cdots &0\\
-	\vdots &\vdots &\ddots &\ddots &\vdots\\
-	0&0&0&\cdots &x^T
-\end{bmatrix}\begin{bmatrix}
-	V_1^1\\
-	V_2^1\\
-	\vdots\\
-	V_m^1\\
-	\vdots\\
-	V_1^k\\
-	V_2^k\\
-	\vdots\\
-	V_m^k
-\end{bmatrix}\\
-&=\begin{bmatrix}
-	x^T(V^1)^T\\
-	x^T(V^2)^T\\
-	\vdots\\
-	x^T(V^k)^T
-\end{bmatrix}.
-\end{align*}
-Finally, since for any smooth $f:\R^m\to\R^n$, we have that
+\subsection{Backward Propagation}\label{sec:basicBackPropDerivation}
 
-
-
-
-
-
-Taking this further, we now consider the map
-$$\Phi:\R^{k\times m}\times\R^k\times\R^m\to\R^k,\qquad \Phi(W, b, x)=Wx+b,$$
-and then computing our differential for
-$$d\Phi:T\R^{k\times m}\times T\R^k\times T\R^m\to T\R^k,$$
-yields
-\begin{align*}
-	d\Phi_{(W,b,x)}(V,v,p)&=\rest{\frac{d}{dt}}_{t=0}\Phi(W+tV, b+tv, x+tp)\\
-	&=\rest{\frac{d}{dt}}_{t=0}\left((W+tV)(x+tp)+(b+tv)\right)\\
-	&=\rest{\frac{d}{dt}}_{t=0}\left(Wx+tVx+tWv+t^2Vp+b+tv\right)\\
-	&=Vx+v+Wp\\
-	&=d\phi_{(W,b)}(V,v)+d\varphi_x(p)
-\end{align*}
-This function $\Phi$ is what we want in our compositional-function, and so we redefine $F$ as
-\small
-\begin{align*}
-	F(\lay{W}{2},\lay{b}{2},\lay{W}{1},\lay{b}{1},x)&=\L_y\circ\lay{g}{2}\circ\lay{\Phi}{2}\circ(\lay{W}{2},\lay{b}{2},\lay{g}{1}\circ\lay{\Phi}{1}\circ(\lay{W}{1},\lay{b}{1},x))
-\end{align*}
-\normalsize
-Taking the exterior derivative, and noting the composition turns into matrix multiplication on the tangent space, we get
-\small
-\begin{align*}
-	d&F_{(\lay{W}{2},\lay{b}{2},\lay{W}{1},\lay{b}{1},x)}(U,u,V,v,p)\\
-	&=d(\L_y)_{\lay{a}{2}}\cdot d\lay{g}{2}_{\lay{z}{2}}\cdot d\lay{\Phi}{2}_{(\lay{W}{2},\lay{b}{2},\lay{a}{1})}\cdot (U, u, d\lay{g}{1}_{\lay{z}{1}}\cdot d\lay{\Phi}{1}_{(\lay{W}{1},\lay{b}{1},x)}(V,v,p))\\
-	&=d(\L_y)_{\lay{a}{2}}\cdot d\lay{g}{2}_{\lay{z}{2}}\cdot(d\lay{\phi}{2}_{(\lay{W}{2},\lay{b}{2})}(U,u)+d\lay{\varphi}{2}_{\lay{a}{1}}\cdot d\lay{g}{1}_{\lay{z}{1}}\cdot(d\lay{\phi}{1}_{(\lay{W}{1},\lay{b}{1})}(V,v)+d\lay{\varphi}{1}_x(p)))\\
-	&=d(\L_y)_{\lay{a}{2}}\cdot d\lay{g}{2}_{\lay{z}{2}}\cdot d\lay{\phi}{2}_{(\lay{W}{2},\lay{b}{2},\{\lay{a}{1}\})}(U,u)\\
-	&\qquad +d(\L_y)_{\lay{a}{2}}\cdot d\lay{g}{2}_{\lay{z}{2}}\cdot d\lay{\varphi}{2}_{\lay{a}{1},\{\lay{W}{2},\lay{b}{2}\}}\cdot d\lay{g}{1}_{\lay{z}{1}}\cdot d\lay{\phi}{1}_{(\lay{W}{1},\lay{b}{1}),\{x\}}(V,v)\\
-	&\qquad+d(\L_y)_{\lay{a}{2}}\cdot d\lay{g}{2}_{\lay{z}{2}}\cdot d\lay{\varphi}{2}_{\lay{a}{1},\{\lay{W}{2},\lay{b}{2}\}}\cdot d\lay{g}{1}_{\lay{z}{1}}\cdot d\lay{\varphi}{1}_{x,\{\lay{W}{1},\lay{b}{1}\}}(p)\\
-	&=:\lay{dF}{2}+\lay{dF}{1}+\lay{dF}{0},
-\end{align*}
-\normalsize
-where $\lay{dF}{2}$ represents the differential with respect to the parameters going from layer-$1$ to layer-$2$, $\lay{dF}{1}$ represents the differential with respect to the parameters going from layer-$0$ to layer-$1$, and $\lay{dF}{0}$ represents the differential with respect to $x$.
-
-Recalling that the gradient is the transpose of the exterior derivative in Euclidean space, we then conclude that
-\begin{align*}
-	\nabla F&=(dF)^T\\
-	&=\left(\lay{dF}{2}+\lay{dF}{1}+\lay{dF}{0}\right)^T\\
-	&=\nabla\lay{F}{2}+\nabla\lay{F}{1}+\nabla\lay{F}{0},
-\end{align*}
-and respectively,
-\begin{align*}
-	\nabla\lay{F}{2}&=\left(d(\L_y)_{\lay{a}{2}}\cdot d\lay{g}{2}_{\lay{z}{2}}\cdot d\lay{\phi}{2}_{(\lay{W}{2},\lay{b}{2},\{\lay{a}{1}\})}\right)^T
-\end{align*}
-
-
-\end{comment}
-
-\subsection{Backward Propagation}\label{sec:backPropDerivation}
-
-Since we wish to optimize our model with respect to our parameter $\lay{W}{\ell}$ and $\lay{b}{\ell}$,  we consider a generic loss function $\L:\R^{m_2}\times\R^{m_2}\to\R$, $\L(\hat{y},y)$, and by acknowledging the potential abuse of notation, we assume $y$ is fixed, and consider the aforementioned as a function of a single-variable
+Since we wish to optimize our model with respect to our parameter $\lay{w}{\ell}$ and $\lay{b}{\ell}$,  we consider a generic loss function $\L:\R\times\R\to\R$, $\L(\lay{a}{2},y)$, and by acknowledging the potential abuse of notation, we assume $y$ is fixed, and consider the aforementioned as a function of a single-variable
 $$\L_y:\R^{m_2}\to\R, \qquad \L_y(\hat{y})=\L(\hat{y},y).$$
 We also define the function
 $$\Phi(A,u,\xi)=A\xi+u,$$
@@ -335,111 +638,6 @@ and hence that
 \end{align*}
 
 
-\subsection{Activation Functions}
-There are mainly only a handful of activating functions we consider for our non-linearity conditions.
-
-\subsubsection{The Sigmoid Function}
-We have the sigmoid function $\sigma(z)$ given by
-$$\sigma:\R\to(0,1),\qquad \sigma(z)=\frac{1}{1+e^{-z}}.$$
-We note that since
-\begin{align*}
-	1-\sigma(z)&=1-\frac{1}{1+e^{-z}}\\
-	&=\frac{e^{-z}}{1+e^{-z}}
-\end{align*}
-\begin{align*}
-	\sigma'(z)&=\frac{e^{-z}}{(1+e^{-z})^2}\\
-	&=\frac{1}{1+e^{-z}}\cdot\frac{e^{-z}}{1+e^{-z}}\\
-	&=\sigma(z)(1-\sigma(z))
-\end{align*}
-
-Moreover, suppose that $g:\R^m\to\R^m$ is the broadcasting of $\sigma$ from $\R$ to $\R^m$, then for $z=(z^1,...,z^m)\in\R^m$, we have that
-$$g(z)=(\sigma(z^i)),$$
-and $dg_z:T_z\R^m\to T_{g(z)}\R^m$ given by
-\begin{align*}
-	dg_z(v)&=\rest{\frac{d}{dt}}_{t=0}g(z+tv)\\
-	&=\rest{\frac{d}{dt}}_{t=0}(\sigma(z^i+tv^i))\\
-	&=(\sigma'(z^i)v^i)\\
-	&=(\sigma(z^i)(1-\sigma(z^i))v^i)\\
-	&=g(z)\odot(1-g(z))\odot v,
-\end{align*}
-where $\odot$ represents the Hadamard product (or component-wise multiplication); or rather, as as a matrix in $\R^{m\times m}$,
-$$[dg_z]^\mu_\nu=\delta^\mu_\nu\sigma(z^\mu)(1-\sigma(z^\mu)).$$
-
-
-\subsubsection{The Hyperbolic Tangent Function}
-We have the hyperbolic tangent function $\tanh(z)$ given by
-$$\tanh:\R\to(-1,1),\qquad\tanh(z)=\frac{e^z-e^{-z}}{e^z+e^{-z}}.$$
-We then calculate
-\begin{align*}
-	\tanh'(z)&=\frac{(e^z+e^{-z})(e^z+e^{-z})-(e^z-e^{-z})(e^z-e^{-z})}{(e^z+e^{-z})^2}\\
-	&=\frac{(e^z+e^{-z})^2}{(e^z+e^{-z})^2}-\frac{e^z-e^{-z})^2}{(e^z+e^{-z})^2}\\
-	&=1-\tanh^2(z).
-\end{align*}
-
-Suppose $g:\R^m\to\R^m$ is the broadcasting of $\tanh$ from $\R$ to $\R^m$, then for $z=(z^1,...,z^m)\in\R^m$, we have that
-$$g(z)=(\tanh(z^i)),$$
-and $dg_z:T_z\R^m\to T_{g(z)}\R^m$ given by
-\begin{align*}
-	dg_z(v)&=[\tanh'(z^i)]\odot[v^i]\\
-	&=[1-\tanh^2(z^i)]\odot[v^i]\\
-	&=\delta^i_j(1-\tanh^2(z^i))v^j.
-\end{align*}
-
-
-\subsubsection{The Rectified Linear Unit Function}
-We have the leaky-ReLU function $\relu(z;\beta)$ given by
-$$\relu:\R\to\R,\qquad \relu(z;\beta)=\max\{\beta z, z\},$$
-for some $\beta>0$ (typically chosen very small).
-
-We have the rectified linear unit function $\relu(z)$ given by setting $\beta=0$ in the leaky-ReLu function, i.e.,
-$$\relu:\R\to[0,\infty),\qquad\relu(z)=\relu(z;\beta=0)=\max\{0,z\}.$$
-We then calculate
-\begin{align*}
-	\relu'(z;\beta)&=\begin{cases}
-		\beta&z<0\\
-		1&z\geq0
-	\end{cases}\\
-	&=\beta\chi_{(-\infty,0)}(z)+\chi_{[0,\infty)}(z),
-\end{align*}
-where
-$$\chi_A(z)=\begin{cases}
-	1&z\in A\\
-	0&z\notin A
-\end{cases},$$
-is the indicator function.
-
-Suppose $g:\R^m\to\R^m$ is the broadcasting of $\relu$ from $\R$ to $\R^m$.   Then for $z=(z^1,...,z^m)\in\R^m$, we have that
-$$g(z)=\relu(z^i;\beta),$$
-and $dg_z:T_z\R^m\to T_{g(z)}\R^m$ given by
-\begin{align*}
-	dg_z(v)&=[\relu'(z^i;\beta)]\odot[v^i]\\
-	&=\delta^i_j(\beta\chi_{(-\infty,0)}(z^i)+\chi_{[0,\infty)}(z^i))v^j.
-\end{align*}
-
-
-\subsubsection{The Softmax Function}
-We finally have the softmax function $\softmax(z)$ given by
-$$\softmax:\R^m\to\R^m,\qquad \softmax(z)=\frac{1}{\sum_{j=1}^me^{z^j}}\begin{pmatrix}
-	e^{z^1}\\
-	e^{z^2}\\
-	\vdots\\
-	e^{z^m}
-\end{pmatrix},$$
-which we typically use on our outer-layer to obtain a probability distribution over our predicted labels.  Let
-$$S^i=x^i\circ\softmax(z),$$
-denote the $i$-th component of $\softmax(z)$, and so we calculate
-\begin{align*}
-	\frac{\partial S^i}{\partial z^j}&=\frac{\partial}{\partial z^j}\left[\left(\sum_{k=1}^me^{z^k}\right)^{-1}e^{z^i}\right]\\
-	&=-\left(\sum_{k=1}^me^{z^k}\right)^{-2}\left(\sum_{k=1}^me^{z^k}\delta_j^k\right)e^{z^i}+\left(\sum_{k=1}^me^{z^k}\right)^{-1}e^{z^i}\delta^i_j\\
-	&=-\left(\sum_{k=1}^me^{z^k}\right)^{-2}e^{z^j}e^{z^i}+S^i\delta^i_j\\
-	&=-S^jS^i+S^i\delta^i_j\\
-	&=S^i(\delta^i_j-S^j).
-\end{align*}
-That is, as a map $dS_z:T_z\R^m\to T_{S(z)}\R^m$, we have that
-$$dS_z=[S^i(\delta^i_j-S_j)]^i_j,$$
-and we make note that $dS_z$ is symmetric.
-
-
 
 
 
@@ -510,3 +708,4 @@ $$\frac{\partial\J}{\partial\lay{W}{1}}=\frac{1}{n}\lay{\delta}{1}x^T=0.$$
 Then we conclude that our parameter $\lay{W}{1}$ remains at $0$ during every iteration which is enough reason to not initialize $\lay{W}{2}$ at $0$.  Similarly, since
 $$\lay{a}{1}=\tanh(\lay{W}{1}x+\lay{b}{1})=\tanh(0)=0,$$
 we reach a similar conclusion about $\lay{W}{1}$ and $\lay{W}{2}$, respectively.
+%\end{comment}

@@ -4,63 +4,145 @@
 \section{Deep Neural Networks}
 
 In this section we discuss a general ``deep'' neural network, which consist of $L$ layers.  That is, we have a network of the form:
-\begin{align*}
-	&\underbrace{\begin{bmatrix}
-		x^1\\
-		\vdots\\
-		x^{m_0}
-		\end{bmatrix}}_{\text{Layer } 0}
-	\layerfctn{\lay{\varphi}{1}}\underbrace{\begin{bmatrix}
-			\lay{z}{1}{^1}\\
-			\vdots\\
-			\lay{z}{1}{^{m_1}}
-			\end{bmatrix}\layerfctn{\lay{g}{1}}
-			\begin{bmatrix}
-			\lay{a}{1}{^1}\\
-			\vdots\\
-			\lay{a}{1}{^{m_1}}
-			\end{bmatrix}}_{\text{Layer } 1}\layerfctn{\lay{\varphi}{2}}
-	\underbrace{\begin{bmatrix}
-		\lay{z}{2}{^1}\\
-		\vdots\\
-		\lay{z}{2}{^{m_2}}
-		\end{bmatrix}\layerfctn{\lay{g}{2}}
-		\begin{bmatrix}
-			\lay{a}{2}{^1}\\
-			\vdots\\
-			\lay{a}{2}{^{m_2}}
-		\end{bmatrix}}_{\text{Layer } 2}\layerfctn{\lay{\varphi}{3}}\cdots\\
-	&\cdots\layerfctn{\lay{\varphi}{L-1}}
-	\underbrace{\begin{bmatrix}
-		\lay{z}{L-1}{^1}\\
-		\vdots\\
-		\lay{z}{L-1}{^{m_{L-1}}}
-	\end{bmatrix}\layerfctn{\lay{g}{L-1}}\begin{bmatrix}
-		\lay{a}{L-1}{^1}\\
-		\vdots\\
-		\lay{a}{L-1}{^{m_{L-1}}}
-	\end{bmatrix}}_{\text{Layer }L-1}\layerfctn{\lay{\varphi}{L}}\underbrace{\begin{bmatrix}
-		\lay{z}{L}{^1}\\
-		\vdots\\
-		\lay{z}{L}{^{m_L}}
-	\end{bmatrix}\layerfctn{\lay{g}{L}}\begin{bmatrix}
-		\lay{a}{L}{^1}\\
-		\vdots\\
-		\lay{a}{L}{^{m_L}}
-	\end{bmatrix}}_{\text{Layer }L}\layerfctn{=}\begin{bmatrix}
-		\hat{y}^1\\
-		\vdots\\
-		\hat{y}^{m_L}
-	\end{bmatrix},
-\end{align*}
-where
-$$m_\ell :=\text{ the number of nodes in layer-$\ell$},$$
-$$\lay{\varphi}{\ell}:\R^{m_{\ell-1}}\to\R^{m_\ell},\qquad \lay{\varphi}{\ell}(\xi)=\lay{W}{\ell}\xi+\lay{b}{\ell},\qquad \lay{W}{\ell}\in\R^{m_\ell\times m_{\ell-1}},b\in\R^{m_\ell},$$
-and
-$$\lay{g}{\ell}:\R^{m_\ell}\to\R^{m_\ell},$$
-is a broadcasted activation function determined by the layer-$\ell$.
 
-As with a shallow network, our functional composition to obtain $\lay{a}{L}$ is known as forward propagation.
+
+{\tiny
+\begin{equation*}
+	\begin{tikzcd}
+		{}
+		&\R^{\lay{n}{1}\times\lay{n}{0}}
+		\arrow[d, swap, "\lay{w}{1}"]
+		&\R^{\lay{n}{1}}
+		\arrow[d, swap, "\lay{b}{1}"]
+		&{}
+		&\R^{\lay{n}{2}\times\lay{n}{1}}
+		\arrow[d, swap, "\lay{w}{2}"]
+		&\R^{\lay{n}{2}}
+		\arrow[d, swap, "\lay{b}{2}"]
+		\\
+		\R^{\lay{n}{0}}
+		\arrow[r, "\lay{a}{0}:=x"]
+		&\boxed{\lay{\phi}{1}}
+		\arrow[r, "\lay{u}{1}"]
+		&\boxed{\lay{\psi}{1}}
+		\arrow[r, "\lay{z}{1}"]
+		&\boxed{\lay{G}{1}}
+		\arrow[r, "\lay{a}{1}"]
+		&\boxed{\lay{\phi}{2}}
+		\arrow[r, "\lay{u}{2}"]
+		&\boxed{\lay{\psi}{2}}
+		\arrow[r, "\lay{z}{2}"]
+		&\cdots\\
+		\cdots
+		\arrow[r, swap, "\lay{z}{L-1}"]
+		&\boxed{\lay{G}{L-1}}
+		\arrow[r, swap, "\lay{a}{L-1}"]
+		&\boxed{\lay{\phi}{L}}
+		\arrow[r, swap, "\lay{u}{L}"]
+		&\boxed{\lay{\psi}{L}}
+		\arrow[r, swap, "\lay{z}{L}"]
+		&\boxed{\lay{G}{L}}
+		\arrow[r, swap, "\lay{a}{L}"]
+		&\boxed{\L}
+		\arrow[r, swap, "\text{loss}"]
+		&\R
+		\\
+		{}
+		&{}
+		&\R^{\lay{n}{L}\times\lay{n}{L-1}}
+		\arrow[u, swap, "\lay{w}{L}"]
+		&\R^{\lay{n}{L}}
+		\arrow[u, swap, "\lay{b}{L}"]
+		&{}
+		&\R^{\lay{n}{L}}
+		\arrow[u, swap, "y"]
+		&{}
+	\end{tikzcd}
+\end{equation*}
+}
+
+
+In general nothing fundamentally changes when adding more layers to a network.  We may have different activator functions for each layer, but the general outline of computing forward propagation via composition, and then apply gradient descent by using reverse differentiation to ``backtrack'' through the network.  Here we give a more general outline for computing our desired gradients.
+
+To this end, we reverse our network to use reverse differentiation:
+
+{\tiny
+\begin{equation*}
+	\begin{tikzcd}
+		{}
+		&\R^{\lay{n}{1}\times\lay{n}{0}}
+		&\R^{\lay{n}{1}}
+		&{}
+		&\R^{\lay{n}{2}\times\lay{n}{1}}
+		&\R^{\lay{n}{2}}
+		\\
+		\R^{\lay{n}{0}}
+		&\boxed{\lay{\phi}{1}}
+		\arrow[u, "r_1"]
+		\arrow[l, swap, "r"]
+		&\boxed{\lay{\psi}{1}}
+		\arrow[u, "\cl{r}_1"]
+		\arrow[l, swap, "r"]
+		&\boxed{\lay{G}{1}}
+		\arrow[l, swap, "r"]
+		&\boxed{\lay{\phi}{2}}
+		\arrow[u,  "r_2"]
+		\arrow[l, swap, "r"]
+		&\boxed{\lay{\psi}{2}}
+		\arrow[u, "\cl{r}_2"]
+		\arrow[l, swap, "r"]
+		&\cdots
+		\arrow[l, swap, "r"]\\
+		\cdots
+		&\boxed{\lay{G}{L-1}}
+		\arrow[l, "r"]
+		&\boxed{\lay{\phi}{L}}
+		\arrow[d, "r_L"]
+		\arrow[l, "r"]
+		&\boxed{\lay{\psi}{L}}
+		\arrow[d, "\cl{r}_L"]
+		\arrow[l, "r"]
+		&\boxed{\lay{G}{L}}
+		\arrow[l, "r"]
+		&\boxed{\L}
+		\arrow[l, "r"]
+		&\R
+		\arrow[l]
+		\\
+		{}
+		&{}
+		&\R^{\lay{n}{L}\times\lay{n}{L-1}}
+		&\R^{\lay{n}{L}}
+		&{}
+		&\R^{\lay{n}{L}}
+		\arrow[u, swap, "y"]
+		&{}
+	\end{tikzcd}
+\end{equation*}
+}
+
+We note that we essentially have four fundamental reverse differentials to calculate:
+\begin{align*}
+	&r_\ell\J_{(\lay{w}{\ell},\lay{a}{\ell-1})},\\
+	&\cl{r}_\ell\J_{(\lay{b}{\ell},\lay{u}{\ell})}.\\
+	&r\J_{(\lay{w}{\ell},\lay{a}{\ell-1}},\\
+	&r\J_{(\lay{b}{\ell},\lay{u}{\ell})},
+\end{align*}
+where the former two are our actual gradients we use for gradient descent, and the latter two are facilitating computations to lead to the next layer down the network.
+
+Moreover, once we've chosen our loss function $\L$, its derivative calculation is done once and it's known.  Similarly, once we've chosen our activating functions $\lay{G}{\ell}$, their differentials are known via \cref{lem: broadcastingDifferential}.
+
+
+
+
+\begin{comment}
+	
+
+
+
+
+
+
 
 \subsection{Backward Propagation}
 As the general derivation for backpropagation can be easily (if not tediously) generalized from \cref{sec:backPropDerivation} using induction, we give the general outline for computational purposes.
@@ -87,6 +169,12 @@ as desired.
 
 
 
+
+
+
+%% Python Implementations
+
+
 \subsection{Implementation in Python via \texttt{numpy}}
 We implement a neural network with an arbitrary number of layers and nodes, with the $\relu$ function as the activator on all hidden nodes and the sigmoid function on the output layer for binary classification with the log-loss function.
 
@@ -103,295 +191,6 @@ We implement a neural network using \texttt{tensorflow.keras}.
 
 
 
-
-
-
-
-
-\subsection{Better Backpropagation}
-
-We consider a neural network of the form
-{\tiny
-\begin{equation*}
-	\begin{tikzcd}
-		{}
-		&\R^{\lay{n}{1}\times\lay{n}{0}}
-		\arrow[d]
-		&\R^{\lay{n}{1}}
-		\arrow[d]
-		&{}
-		&\R^{\lay{n}{2}\times\lay{n}{1}}
-		\arrow[d]
-		&\R^{\lay{n}{2}}
-		\arrow[d]
-		&{}
-		&\R^{\lay{n}{2}}
-		\arrow[d]
-		&{}
-		\\
-		\R^{\lay{n}{0}}
-		\arrow[r]
-		&\boxed{\lay{\phi}{1}}
-		\arrow[r]
-		&\boxed{\lay{\psi}{1}}
-		\arrow[r]
-		&\boxed{\lay{G}{1}}
-		\arrow[r]
-		&\boxed{\lay{\phi}{2}}
-		\arrow[r]
-		&\boxed{\lay{\psi}{2}}
-		\arrow[r]
-		&\boxed{\lay{G}{2}}
-		\arrow[r]
-		&\boxed{\L}
-		\arrow[r]
-		&\R
-	\end{tikzcd}
-\end{equation*}
-}
-
-where we have the functions:
-\begin{enumerate}
-	\item $$\lay{G}{\ell}:\R^{\lay{n}{\ell}}\to\R^{\lay{n}{\ell}}$$
-is the broadcasting of the activation unit $\lay{g}{\ell}:\R\to\R$.
-	\item $$\lay{\phi}{\ell}:\R^{\lay{n}{\ell}\times\lay{n}{\ell-1}}\times\R^{\lay{n}{\ell-1}}\to\R^{\lay{n}{\ell}}$$
-	is given by
-	$$\lay{\phi}{\ell}(W,x)=Wx.$$
-	\item $$\lay{\psi}{\ell}:\R^{\lay{n}{\ell}}\times\R^{\lay{n}{\ell}}\to\R^{\lay{n}{\ell}}$$
-	is given by
-	$$\lay{\psi}{\ell}(b,x)=x+b.$$
-	\item $$\L:\R^{\lay{n}{2}}\times\R^{\lay{n}{2}}\to\R$$
-	is the given loss-function.
-\end{enumerate}
-
-
-We now consider back-propagating through the neural network via ``reverse exterior differentiation''.  We represent our various reverse derivatives via the following diagram:
-
-{\tiny
-\begin{equation*}
-	\begin{tikzcd}
-		{}
-		&\R^{\lay{n}{1}\times\lay{n}{0}}
-		&\R^{\lay{n}{1}}
-		&{}
-		&\R^{\lay{n}{2}\times\lay{n}{1}}
-		&\R^{\lay{n}{2}}
-		&{}
-		&\R^{\lay{n}{2}}
-		\arrow[d]
-		&{}
-		\\
-		\R^{\lay{n}{0}}
-		&\boxed{\lay{\phi}{1}}
-		\arrow[l, swap, "r"]
-		\arrow[u, "r_1"]
-		&\boxed{\lay{\psi}{1}}
-		\arrow[l, swap, "r"]
-		\arrow[u, "\cl{r}_1"]
-		&\boxed{\lay{G}{1}}
-		\arrow[l, swap, "r"]
-		&\boxed{\lay{\phi}{2}}
-		\arrow[l, swap, "r"]
-		\arrow[u, "r_2"]
-		&\boxed{\lay{\psi}{2}}
-		\arrow[l, swap, "r"]
-		\arrow[u, "\cl{r}_2"]
-		&\boxed{\lay{G}{2}}
-		\arrow[l, swap, "r"]
-		&\boxed{\L}
-		\arrow[l, swap, "r"]
-		&\R
-		\arrow[l]
-	\end{tikzcd}
-\end{equation*}
-}
-
-First, we need to consider our individual derivatives:
-\begin{enumerate}
-	\item Suppose $G:\R^n\to\R^n$ is the broadcasting of $g:\R\to\R$.  Then for $(x,\xi)\in T\R^n$, we have that
-	\begin{align*}
-		dG_x(\xi)&=G'(x)\odot\xi\\
-		&=\diag(G'(x))\cdot\xi
-	\end{align*}
-	and for any $\zeta\in T_{G(x)}\R^n$, the reverse derivative is given by
-	\begin{align*}
-		rG_x(\zeta)&=G'(x)\odot\zeta\\
-		&=\diag(G'(x))\cdot\zeta.
-	\end{align*}
-	
-	\item Suppose $\phi:\R^{m\times n}\times\R^n\to\R^m$ is given by $$\phi(A,x)=Ax.$$
-	Then we have two differentials to consider:
-	\begin{enumerate}
-		\item For any $(A,x)\in\R^{m\times n}\times\R^n$ and any $\xi\in T_x\R^n$, we have that
-		\begin{align*}
-			d\phi_{(A,x)}(\xi)&=A\xi\\
-			&=L_A(\xi);
-		\end{align*}
-		and for any $\zeta\in T_{\phi(A,x)}\R^m$, we have the reverse derivative
-		\begin{align*}
-			r\phi_{(A,x)}(\zeta)&=A^T\zeta\\
-			&=L_{A^T}(\zeta);
-		\end{align*}
-		where $L_A(B)=AB$, i.e., left-multiplication by $A$.
-		
-		\item For any $(A,x)\in\R^{m\times n}\times\R^n$ and any $Z\in T_A\R^{m\times n}$ we have that
-		\begin{align*}
-			d_1\phi_{(A,x)}(Z)&=Zx\\
-			&=R_x(Z);
-		\end{align*}
-		and for any $\zeta\in T_{\phi(A,x)}\R^m$, we have the reverse derivative
-		\begin{align*}
-		r_1\phi_{(A,x)}(\zeta)&=\zeta x^T\\
-		&=R_{x^T}(\zeta);	
-		\end{align*}
-		where $R_A(B)=BA$, i.e, right-multiplication by $A$.
-
-	\end{enumerate}
-	
-	\item Suppose $\psi:\R^n\times\R^n\to\R^n$ is given by
-	$$\psi(b,x)=x+b.$$
-	Then we again have two (identical) differentials to consider:
-	\begin{enumerate}
-		\item For any $(x,b)\in\R^n\times\R^n$ and any $\xi\in T_x\R^n$, we have that
-		$$d\psi_{(b,x)}(\xi)=\xi;$$
-		and for any $\zeta\in T_{\psi(b,x)}\R^n$, we have the reverse derivative
-		$$r\psi_{(b,x)}(\zeta)=\zeta.$$
-		
-		\item For any $(x,b)\in\R^n\times\R^n$ and any $\eta\in T_b\R^n$, we have that
-		$$d_1\psi_{(b,x)}(\eta)=\eta;$$
-		and for any $\zeta\in T_{(\psi(b,x)}\R^n$, we have the reverse derivative
-		$$\cl{r}_1\psi_{(b,x)}(\zeta)=\zeta.$$
-	\end{enumerate}
-\end{enumerate}
-
-
-\begin{prop}
-	Suppose we have the compositional diagram
-	\begin{equation*}
-		\begin{tikzcd}
-			\R^n
-			\arrow[r, "f"]
-			&\R^m
-			\arrow[r, "g"]
-			&\R^k
-			\arrow[r, "h"]
-			&\R^l
-		\end{tikzcd}
-	\end{equation*}
-	and we let $F=h\circ g\circ f:\R^n\to\R^l.$
-	Then for any $x\in\R^n$ and any $\zeta\in T_{F(x)}\R^l$, the reverse derivative satisfies
-	$$rF_x(\zeta)=rf_x\circ rg_{f(x)}\circ rh_{g(f(x)}(\zeta).$$
-\end{prop}
-
-\begin{proof}
-For any $\xi\in T_x\R^n$ and any $\zeta\in T_{F(x)}\R^l$, we have by definition
-\begin{align*}
-	\ip{rF_x(\zeta),\xi}_{\R^n}&=\ip{\zeta,dF_x(\xi)}_{\R^l}\\
-	&=\ip{\zeta,dh_{g(f(x))}\circ dg_{f(x)}\circ df_x(\xi)}_{\R^l}\\
-	&=\ip{rh_{g(f(x))}(\zeta),dg_{f(x)}\circ df_x(\xi)}_{\R^k}\\
-	&=\ip{rg_{f(x)}\circ rh_{g(f(x))}(\zeta),df_x(\xi)}_{\R^m}\\
-	&=\ip{rf_x\circ rg_{f(x)}\circ rh_{g(f(x))}(\zeta),\xi}_{\R^n}
-\end{align*}	
-as desired.
-\end{proof}
-
-\begin{lem}
-	Suppose $f:\R^{n\times m}\to\R^k$, and for $P\in\R^{n\times m}$, let $R=rf_P$.  Then $R\in\R^k{_n}{^m}$ is rank $(1,2)$-tensor written in coordinates as
-	$$R=R_i{^\mu}{_\nu}\frac{\partial}{\partial X^\mu_\nu}\otimes dx^i,$$
-	and the components is given by
-	$$R_i{^\mu}{_\nu}=\frac{\partial f^i}{\partial X^\nu_\mu}$$
-\end{lem}
-
-\begin{proof}
-	Considering the basis vectors $\frac{\partial}{\partial X^\nu_\mu}\in T_P\R^{n\times m}$ and $\frac{\partial}{\partial x^i}\in T_{f(P)}\R^k$ we have that
-	\begin{align*}
-		R_i{^\mu}{_\nu}&=\ip{R\left(\frac{\partial}{\partial x^i}\right), \frac{\partial}{\partial X^\nu_\mu}}_F\\
-		&=\ip{\frac{\partial}{\partial x^i},df_P\left(\frac{\partial}{\partial X^\nu_\mu}\right)}_{\R^k}\\
-		&=\ip{\frac{\partial}{\partial x^i},\frac{\partial f^\alpha}{\partial X^\nu_\mu}\frac{\partial}{\partial x^\alpha}}_{\R^k}\\
-		&=\delta_{i\alpha}\frac{\partial f^\alpha}{\partial X^\nu_\mu},
-	\end{align*}
-	as desired.
-\end{proof}
-
-
-
-Returning to our neural network, for each point $(x_j,y_j)$ in our training set, we first let
-$$F_j:=\L\circ\lay{G}{2}\circ\lay{\psi}{2}\circ\lay{\phi}{2}\circ\lay{G}{1}\circ\lay{\psi}{1}\circ\lay{\phi}{1},$$
-and we have our cost function
-$$\J:=\frac{1}{N}\sum_{j=1}^NF_j.$$
-
-We use the following notation for our inputs and outputs of our respective functions:
-\begin{itemize}
-	\item $$\lay{\phi}{\ell}:(\lay{W}{\ell},\lay{a}{\ell-1}{_j})\mapsto \lay{u}{\ell}{_j},$$
-	\item $$\lay{\psi}{\ell}:(\lay{b}{\ell},\lay{u}{\ell}{_j})\mapsto\lay{v}{\ell}{_j},$$
-	\item $$\lay{G}{\ell}:\lay{v}{\ell}{_j}\mapsto\lay{a}{\ell}{_j}.$$
-\end{itemize}
-
-Let $p=(\lay{W}{1},\lay{b}{1},\lay{W}{2},\lay{b}{2})$ is a point in our parameter space.  Suppose we wish to apply gradient descent with learning rate $\alpha\in T_{\J(p)}\R$, we would define our parameter updates via
-\begin{align*}
-	\lay{W}{1}&:=\lay{W}{1}-r_1\J_p(\alpha)\\
-	\lay{b}{1}&:=\lay{b}{1}-\cl{r}_1\J_p(\alpha)\\
-	\lay{W}{2}&:=\lay{W}{2}-r_2\J_p(\alpha)\\
-	\lay{b}{2}&:=\lay{b}{2}-\cl{r}_2\J_p(\alpha).
-\end{align*}
-Moreover, by linearity (and independence of our training data), we see that
-$$r\J_p=\frac{1}{N}\sum_{j=1}^Nr(F_j)_p,$$
-so we need only calculate the various reverse derivatives of $F_j$.
-
-To this end, we suppress the index $j$ when we're working with the compositional function $F$.  We calculate the reverse derivatives in the order traversed in our back-propagating path along the network.
-
-\begin{enumerate}
-	\item $\cl{r}_2\J_p$:
-	\begin{align*}
-		\cl{r}_2F_p&=\cl{r}_2(\L\circ\lay{G}{2}\circ\lay{\psi}{2})_p\\
-		&=\cl{r}_2\lay{\psi}{2}_p\circ r\lay{G}{2}_{\lay{v}{2}}\circ r\L_{\lay{a}{2}}\\
-		&=\id\circ r\lay{G}{2}_{\lay{v}{2}}\circ r\L_{\lay{a}{2}}\\
-		&=r\lay{G}{2}_{\lay{v}{2}}\circ r\L_{\lay{a}{2}},
-	\end{align*}
-	and hence
-	\begin{align*}
-		\cl{r}_2\J_p&=\frac{1}{N}\sum_{j=1}^Nr\lay{G}{2}_{\lay{v}{2}{_j}}\cdot r\L_{\lay{a}{2}{_j}}
-	\end{align*}
-	
-	\item $r_2\J_p$:
-	\begin{align*}
-		r_2F_p&=r_2(\L\circ\lay{G}{2}\circ\lay{\psi}{2}\circ\lay{\phi}{2})_p\\
-		&=r_2\lay{\phi}{2}_p\circ r\lay{\psi}{2}_{\lay{u}{2}}\circ r\lay{G}{2}_{\lay{v}{2}}\circ r\L_{\lay{a}{2}}\\
-		&=R_{\lay{a}{1}{^T}}\circ\id\circ r\lay{G}{2}_{\lay{v}{2}}\circ r\L_{\lay{a}{2}}\\
-		&=R_{\lay{a}{1}{^T}}\circ r\lay{G}{2}_{\lay{v}{2}}\circ r\L_{\lay{a}{2}},
-	\end{align*}
-	and hence
-	$$r_2\J_p=\frac{1}{N}\sum_{j=1}^NR_{\lay{a}{1}{^T}{_j}}\circ r\lay{G}{2}_{\lay{v}{2}{_j}}\cdot r\L_{\lay{a}{2}{_j}}.$$
-	Notice that this is not just a sum after matrix multiplication since we have composition with an operator, namely, $R_{\lay{a}{1}{^T}{_j}}$.  However, since the learning rate $\alpha\in T_{\J(p)}\R\cong\R$, which may pass through the aforementioned linear composition, we conclude that
-	\begin{align*}
-		r_2\J_p&=\frac{1}{N}\sum_{j=1}^NR_{\lay{a}{1}{^T}{_j}}\circ r\lay{G}{2}_{\lay{v}{2}{_j}}\cdot r\L_{\lay{a}{2}{_j}}\\
-		&=\frac{1}{N}\sum_{j=1}^Nr\lay{G}{2}_{\lay{v}{2}{_j}}\cdot r\L_{\lay{a}{2}{_j}}\lay{a}{1}{^T}{_j}.
-	\end{align*}
-	
-	\item $\cl{r}_1\J_p$:
-	\begin{align*}
-		\cl{r}_1F_p&=\cl{r}_1(\L\circ\lay{G}{2}\circ\lay{\psi}{2}\circ\lay{\phi}{2}\circ\lay{G}{1}\circ\lay{\psi}{1})_p\\
-		&=\cl{r}_1\lay{\psi}{1}_p\circ r\lay{G}{1}_{\lay{v}{1}}\circ r\lay{\phi}{2}_{\lay{a}{1}}\circ r\lay{\psi}{2}_{\lay{u}{2}}\circ r\lay{G}{2}_{\lay{v}{2}}\circ r\L_{\lay{a}{2}}\\
-		&=\id\circ r\lay{G}{1}_{\lay{v}{1}}\circ L_{\lay{W}{2}{^T}}\circ\id\circ r\lay{G}{2}_{\lay{v}{2}}\circ r\L_{\lay{a}{2}}\\
-		&=r\lay{G}{1}_{\lay{v}{1}}\circ L_{\lay{W}{2}{^T}}\circ r\lay{G}{2}_{\lay{v}{2}}\circ r\L_{\lay{a}{2}},
-	\end{align*}
-	and hence
-	\begin{align*}
-		\cl{r}_1\J_p&=\frac{1}{N}\sum_{j=1}^Nr\lay{G}{1}_{\lay{v}{1}{_j}}\cdot\lay{W}{2}{^T}\cdot r\lay{G}{2}_{\lay{v}{2}{_j}}\cdot r\L_{\lay{a}{2}{_j}}.
-	\end{align*}
-	
-	\item $r_1\J_p$:
-	\begin{align*}
-		r_1F_p&=r_1(\L\circ\lay{G}{2}\circ\lay{\psi}{2}\circ\lay{\phi}{2}\circ\lay{G}{1}\circ\lay{\psi}{1}\circ\lay{\phi}{1})_p\\
-		&=r_1\lay{\phi}{1}_p\circ r\lay{\psi}{1}_{\lay{u}{1}}\circ r\lay{G}{1}_{\lay{v}{1}}\circ r\lay{\phi}{2}_{\lay{a}{1}}\circ r\lay{\psi}{2}_{\lay{u}{2}}\circ r\lay{G}{2}_{\lay{v}{2}}\circ r\L_{\lay{a}{2}}\\
-		&=R_{x^T}\circ\id\circ r\lay{G}{1}_{\lay{v}{1}}\circ L_{\lay{W}{2}{^T}}\circ\id\circ r\lay{G}{2}_{\lay{v}{2}}\circ r\L_{\lay{a}{2}}\\
-		&=R_{x^T}\circ r\lay{G}{1}_{\lay{v}{1}}\circ L_{\lay{W}{2}{^T}}\circ r\lay{G}{2}_{\lay{v}{2}}\circ r\L_{\lay{a}{2}},
-	\end{align*}
-	and hence
-	\begin{align*}
-		r_1\J_p&=\frac{1}{N}\sum_{j=1}^NR_{x^T}\circ r\lay{G}{1}_{\lay{v}{1}}\cdot\lay{W}{2}{^T}\cdot r\lay{G}{2}_{\lay{v}{2}}\cdot r\L_{\lay{a}{2}}\\
-		&=\frac{1}{N}\sum_{j=1}^Nr\lay{G}{1}_{\lay{v}{1}}\cdot\lay{W}{2}{^T}\cdot r\lay{G}{2}_{\lay{v}{2}}\cdot r\L_{\lay{a}{2}}\cdot x^T
-	\end{align*}
-\end{enumerate}
+\end{comment}
 
 
