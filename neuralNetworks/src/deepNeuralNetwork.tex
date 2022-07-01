@@ -121,16 +121,60 @@ To this end, we reverse our network to use reverse differentiation:
 \end{equation*}
 }
 
-We note that we essentially have four fundamental reverse differentials to calculate:
-\begin{align*}
-	&r_\ell\J_{(\lay{w}{\ell},\lay{a}{\ell-1})},\\
-	&\cl{r}_\ell\J_{(\lay{b}{\ell},\lay{u}{\ell})}.\\
-	&r\J_{(\lay{w}{\ell},\lay{a}{\ell-1}},\\
-	&r\J_{(\lay{b}{\ell},\lay{u}{\ell})},
-\end{align*}
-where the former two are our actual gradients we use for gradient descent, and the latter two are facilitating computations to lead to the next layer down the network.
+We compute differentials recursively as follows:
+\begin{enumerate}
+	\item Define $\lay{\delta}{L}{_j}\in\R^{\lay{n}{L}}$ by
+	\begin{align*}
+		\lay{\delta}{L}{_j}&:=r(\L\circ\lay{G}{L})_{\lay{z}{L}{_j}}\\
+		&=r\lay{G}{L}_{\lay{z}{L}{_j}}\circ r\L_{(\lay{a}{L}{_j},y_j)}\\
+		&=\lay{G}{L}{'}(\lay{z}{L}{_j})\odot r\L_{(\lay{a}{L}{_j},y_j)}.
+	\end{align*}
+	
+	\item Compute
+	\begin{align*}
+		\frac{\partial\J}{\partial\lay{b}{L}}&=\frac{1}{N}\sum_{j=1}^N\lay{\delta}{L}{_j},
+	\end{align*}
+	and
+	\begin{align*}
+		\frac{\partial\J}{\partial\lay{w}{L}}&=\frac{1}{N}\sum_{j=1}^N\lay{\delta}{L}{_j}\lay{a}{L-1}{^T}{_j}\\
+		&=\frac{1}{N}\lay{\delta}{L}\lay{a}{L-1}{^T}.
+	\end{align*}
+	
+	\item Define $\lay{\delta}{L-1}{_j}\in\R^{\lay{n}{L-1}}$ by
+	\begin{align*}
+		\lay{\delta}{L-1}{_j}&:=r(\L\circ\lay{G}{L}\circ\lay{\psi}{L}\circ\lay{\phi}{L}\circ\lay{G}{L-1})_{\lay{z}{L-1}{_j}}\\
+		&=r\lay{G}{L-1}_{\lay{z}{L-1}{_j}}\circ r\lay{\phi}{L}_{(\lay{w}{L},\lay{a}{L-1}{_j})}\circ r\lay{\psi}{L}_{(\lay{b}{L},\lay{u}{L}{_j})}\circ r\lay{G}{L}_{\lay{z}{L}_j}\circ r\L_{(\lay{a}{L}{_j},y_j)}\\
+		&=\lay{G}{L-1}{'}({\lay{z}{L-1}{_j}})\odot\lay{w}{L}{^T}\cdot\lay{\delta}{L}{_j}.
+	\end{align*}
+	
+	\item Compute
+	\begin{align*}
+		\frac{\partial\J}{\partial\lay{b}{L-1}}&=\frac{1}{N}\sum_{j=1}^N\lay{\delta}{L-1}{_j}
+	\end{align*}
+	and
+	\begin{align*}
+		\frac{\partial\J}{\partial\lay{w}{L-1}}&=\frac{1}{N}\sum_{j=1}^N\lay{\delta}{L-1}{_j}\lay{a}{L-2}{^T}{_j}\\
+		&=\frac{1}{N}\lay{\delta}{L-1}\lay{a}{L-2}{^T}.
+	\end{align*}
+	
+	\item Given $\lay{\delta}{\ell+1}{_j}\in\R^{\lay{n}{\ell+1}}$, define $\lay{\delta}{\ell}{_j}\in\R^{\lay{n}{\ell}}$ by
+	\begin{align*}
+		\lay{\delta}{\ell}{_j}:=\lay{G}{\ell}{'}(\lay{z}{\ell}{_j})\odot\lay{w}{\ell+1}{^T}\lay{\delta}{\ell+1}{_j}.
+	\end{align*}
+	
+	\item Compute
+	\begin{align*}
+		\frac{\partial\J}{\partial\lay{b}{\ell}}&=\frac{1}{N}\sum_{j=1}^N\lay{\delta}{\ell}{_j}
+	\end{align*}
+	and
+	\begin{align*}
+		\frac{\partial\J}{\partial\lay{w}{\ell}}&=\frac{1}{N}\sum_{j=1}^N\lay{\delta}{\ell}{_j}\lay{a}{\ell-1}{^T}{_j}\\
+		&=\frac{1}{N}\lay{\delta}{\ell}\lay{a}{\ell-1}{^T},
+	\end{align*}
+	with the caveat that if $\ell=1$, $\lay{a}{0}:=x$, and we've completed the recursion.
+\end{enumerate}
 
-Moreover, once we've chosen our loss function $\L$, its derivative calculation is done once and it's known.  Similarly, once we've chosen our activating functions $\lay{G}{\ell}$, their differentials are known via \cref{lem: broadcastingDifferential}.
+
 
 
 
@@ -169,6 +213,7 @@ as desired.
 
 
 
+\end{comment}
 
 
 
@@ -191,6 +236,5 @@ We implement a neural network using \texttt{tensorflow.keras}.
 
 
 
-\end{comment}
 
 

@@ -1,0 +1,147 @@
+
+
+
+\section{The Reverse Differential}
+
+In order to apply gradient descent to our trainable parameters, we obviously have a need to compute various gradients of the cost function which is essentially a large functional composition.  Computing intermediate gradients along this computation doesn't make sense mathematically as stated.  However, the usual exterior derivative works very well in this context.  However, since we would like to vectorize this process, the exterior derivative falls short for our implementation purposes.  This leads us to a related form of differentiation, namely, the reverse derivative.  We give here an exposition of the reverse differential when restricted to the category of smooth function on Euclidean space $\cat{Sm}$, and only remark that these notions may be extended to other categories.  C.f.,  \cite{barendregt1988introduction}, \cite{blute2009cartesian}, \cite{cockett2019reverse}, \cite{cruttwell2022categorical}, \cite{fong2019backprop}, \cite{gavranovic2019compositional},  \cite{mac2013categories}, \cite{mak2020differential}, \cite{selinger2010survey}, \cite{shiebler2021category}, \cite{wengert1964simple}.
+
+\begin{defn}
+	Suppose $f:\R^n\to\R^m$ is smooth.  Then at $x\in\R^n$, the differential of $f$ at $x$, denoted $df_x$, is the linear map
+	$$df_x:T_x\R^n\to T_{f(x)}\R^m$$
+	such that for any $\xi\in T_x\R^n$, and any smooth $g:\R^m\to\R$ we have that
+	\begin{align*}
+		df_x(\xi)[g]=\xi[g\circ f].
+	\end{align*}
+\end{defn}
+
+We remark that the underlying structure of $\cat{Sm}$ that will allow us to define the reverse differential is that each Euclidean space comes equipped with the Euclidean inner product $\ip{\cdot,\cdot}_{\R^n}$, and in particular, so does its tangent spaces.
+
+\begin{defn}
+	Suppose $f:\R^n\to\R^m$ is smooth.  That at $x\in\R^n$, the reverse differential of $f$ at $x$, denoted $rf_x$, is the linear map
+	$$rf_x:T_{f(x)}\R^m\to T_x\R^n$$
+	such that for any $\xi\in T_x\R^n$ and any $\zeta\in T_{f(x)}\R^m$, the following equality holds
+	$$\ip{rf_x(\zeta),\xi}_{\R^n}=\ip{\zeta,df_x(\xi)}_{\R^m}.$$
+	
+	The reverse derivative is the formal adjoint of the exterior derivative at a point.
+\end{defn}
+
+During a typical case of backwards propagation, we will encounter spaces of matrices $\R^{m\times n}$ as a domain or a range.  As such, we need to push our definition of reverse differential to this setting.  We make use of the canonical isometry between Euclidean spaces and the space of matrices when endowed with the Frobenius inner product.
+
+\begin{lem}
+	Let $(x^l)$ and $(X^i_j)$ denote the coordinates on $\R^{mn}$ and $\R^{m\times n}$, respectively.  Define the function $\psi:\R^{mn}\to\R^{m\times n}$ by
+	$$\psi(x^1,...,x^{mn})=\begin{bmatrix}
+		x^{0+1}&\cdots &x^{0+n}\\
+		x^{n+1}&\cdots &x^{n+n}\\
+		x^{2n+1}&\cdots &x^{2n+n}\\
+		\vdots &\ddots&\vdots\\
+		x^{(m-1)n+1}&\cdots &x^{(m-1)n+n}
+	\end{bmatrix}.$$
+	Then $\psi$ is an an isometry, and we have the Jacobian representation $J\psi_p$ given by
+	$$\tensor{(J\psi_p)}{_l^i_j}=\frac{\partial\psi^i_j}{\partial x^l}.$$
+\end{lem}
+
+\begin{proof}
+	The fact that $\psi$ is a homeomorphism is clear. Fix $p\in\R^{mn}$ with $P=\psi(p)$.  Since,
+	\begin{align*}
+		\frac{\partial X^i_j}{\partial x^\alpha}&=\begin{cases}
+			1&\text{ if }\alpha=n(i-1)+j,\\
+			0&\text{ else.,}
+		\end{cases}
+	\end{align*}
+	we arrive at a pushforward of the form
+	\begin{align*}
+		d\psi&=\sum_{i=1}^m\sum_{j=1}^n\sum_{\alpha=1}^{mn}\frac{\partial X^i_j}{\partial x^\alpha}dx^\alpha\otimes\frac{\partial}{\partial X^i_j}
+	\end{align*}
+
+	Thus for $\xi\in T_p\R^{mn}$,
+	$$\xi=\xi^\rho\rest{\partial_{x^\rho}}_p,$$
+	we see that
+	\begin{align*}
+		d\psi_p(\xi)&=\frac{\partial X^i_j}{\partial x^\alpha}\rest{dx^\alpha}_p\otimes\rest{\partial_{X^i_j}}_P(\xi^\rho\rest{\partial_{x^\rho}}_p)\\
+		&=\xi^\rho\frac{\partial X^i_j}{\partial x^\alpha}\rest{dx^\alpha}_p(\rest{\partial_{x^\rho}}_p)\rest{\partial_{X^i_j}}_P\\
+		&=\xi^\rho\frac{\partial X^i_j}{\partial x^\alpha}\delta^\alpha_\rho\rest{\partial_{X^i_j}}_P\\
+		&=\xi^\alpha\frac{\partial X^i_j}{\partial x^\alpha}\rest{\partial_{X^i_j}}_P\\
+		&=\sum_{i=1}^m\sum_{j=1}^n\xi^{n(i-1)+j}\rest{\partial_{X^i_j}}_P.
+	\end{align*}
+	This is obviously bijective on the tangent space, and since $p\in\R^{mn}$ was arbitrary, we may conclude that $\psi$ is an immersive homeomorphism and thus a diffeomorphism.
+	
+	Finally, for such a $\xi=\xi^\rho\rest{\partial_{x^\rho}}_p$, we see that
+	\begin{align*}
+		\ip{d\psi_p(\xi),d\psi_p(\xi)}_F&=\sum_{i=1}^m\sum_{j=1}^n(\xi^{n(i-1)+j})^2\\
+		&=\sum_{\rho=1}^{mn}(\xi^\rho)^2\\
+		&=\ip{\xi,\xi}_{R^{mn}},
+	\end{align*}
+	as desired.
+\end{proof}
+
+We further remark that for any $p\in\R^{mn}$, that
+$$r\phi_p=d\phi^{-1}_p.$$
+Indeed, let $\xi\in T_p\R^{mn}$
+
+Suppose $f:\R^{m\times n}\to\R^{k\times l}$ is smooth, and let $\psi:\R^{mn}\to\R^{m\times n}$ and $\phi:\R^{kl}\to\R^{k\times l}$ denote the aforementioned isometry applied to the matrix-domain and range.  Fix $P\in\R^{m\times n}$ and let $p:=\psi^{-1}(P)\in\R^{mn}$.  Let $X\in T_P\R^{m\times n}$ and $Z\in T_{f(P)}\R^{k\times l}$.  Then we consider,
+\begin{align*}
+	\ip{rf_P(Z),X}_{\R^{m\times n}}&=\ip{Z, df_P(X)}_{\R^{k\times l}}\\
+	&=\ip{d\phi^{-1}_{f(P)}(Z),d\phi^{-1}_{f(P)}\circ df_P(X)}_{\R^{kl}}
+\end{align*}
+
+\begin{defn}\label{def:reverseDifferential}
+	Suppose $(M,g)$ and $(N,h)$ are finite-dimensional, inner product spaces.  Suppose $f:M\to N$ is smooth, and for $p\in M$, the reverse differential of $f$ at $p$, denoted $rf_p$, is the unique linear map
+	$$rf_p:T_{f(p)}N\to T_pM$$
+	such that for any $\xi\in T_pM$ and any $\zeta\in T_{f(p)}N$, the following equality holds
+	$$g(rf_p(\zeta),\xi)=h(\zeta,df_p(\xi)).$$
+\end{defn}
+
+\begin{thm}
+	\cref{def:reverseDifferential} is well-defined.
+\end{thm}
+
+
+\begin{prop}
+	Suppose we have the compositional diagram
+	\begin{equation*}
+		\begin{tikzcd}
+			(M,g)
+			\arrow[r, "\phi"]
+			&(N, h)
+			\arrow[r, "\psi"]
+			&(Q,k)
+		\end{tikzcd}
+	\end{equation*}
+	and we let $f:=\psi\circ\phi:(M,g)\to(Q,k).$
+	Then for any $p\in M$, the reverse derivative satisfies
+	$$rf_p=r\phi_p\circ r\psi_{\phi(p)}.$$
+\end{prop}
+
+\begin{proof}
+Fix $p\in M$, and let $\xi\in T_pM$ and $\zeta\in T_{f(p)}Q$.  Then we have that
+\begin{align*}
+	g(rf_p(\zeta),\xi)&=k(\zeta,df_p(\xi))\\
+	&=k(\zeta,d\psi_{\phi(p)}\circ d\phi_p(\xi))\\
+	&=h(r\psi_{\phi(p)}(\zeta),d\phi_p(\xi))\\
+	&=g(r\phi_p\circ r\psi_{\phi(p)}(\zeta),\xi),
+\end{align*}
+as desired.
+\end{proof}
+
+\begin{lem}
+	Suppose $f:\R^{n\times m}\to\R^k$, and for $P\in\R^{n\times m}$, let $R=rf_P$.  Then $R\in\R^k{_n}{^m}$ is rank $(1,2)$-tensor written in coordinates as
+	$$R=R_i{^\mu}{_\nu}\frac{\partial}{\partial X^\mu_\nu}\otimes dx^i,$$
+	and the components is given by
+	$$R_i{^\mu}{_\nu}=\frac{\partial f^i}{\partial X^\nu_\mu}$$
+\end{lem}
+
+\begin{proof}
+	Considering the basis vectors $\frac{\partial}{\partial X^\nu_\mu}\in T_P\R^{n\times m}$ and $\frac{\partial}{\partial x^i}\in T_{f(P)}\R^k$ we have that
+	\begin{align*}
+		R_i{^\mu}{_\nu}&=\ip{R\left(\frac{\partial}{\partial x^i}\right), \frac{\partial}{\partial X^\nu_\mu}}_F\\
+		&=\ip{\frac{\partial}{\partial x^i},df_P\left(\frac{\partial}{\partial X^\nu_\mu}\right)}_{\R^k}\\
+		&=\ip{\frac{\partial}{\partial x^i},\frac{\partial f^\alpha}{\partial X^\nu_\mu}\frac{\partial}{\partial x^\alpha}}_{\R^k}\\
+		&=\delta_{i\alpha}\frac{\partial f^\alpha}{\partial X^\nu_\mu},
+	\end{align*}
+	as desired.
+\end{proof}
+
+
+
+
+

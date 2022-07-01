@@ -73,7 +73,7 @@ In the above diagram, we use $\lay{\cdot}{0}$ to denote everything in layer-$0$,
 	\item $$\phi:\R^{n\times m}\times\R^m\to\R^n,\qquad u:=\phi(w,a)=wa,$$
 	\item $$\psi:\R^n\times\R^n\to\R^n,\qquad z:=\psi(b,u)=u+b,$$
 	\item $$G:\R^n\to\R^n,\qquad a:=G(z),$$
-	where $G$ is the broadcasting of something activation function $g:\R\to\R$.
+	where $G$ is the broadcasting of some activating function $g:\R\to\R$.
 \end{itemize}
 
 
@@ -373,57 +373,6 @@ First, we need to consider our individual derivatives:
 	\end{enumerate}
 \end{enumerate}
 
-\TOX{
-Include the following two results in the Reverse Differential appendix once created.	
-}
-
-\begin{prop}
-	Suppose we have the compositional diagram
-	\begin{equation*}
-		\begin{tikzcd}
-			\R^n
-			\arrow[r, "f"]
-			&\R^m
-			\arrow[r, "g"]
-			&\R^k
-			\arrow[r, "h"]
-			&\R^l
-		\end{tikzcd}
-	\end{equation*}
-	and we let $F=h\circ g\circ f:\R^n\to\R^l.$
-	Then for any $x\in\R^n$ and any $\zeta\in T_{F(x)}\R^l$, the reverse derivative satisfies
-	$$rF_x(\zeta)=rf_x\circ rg_{f(x)}\circ rh_{g(f(x)}(\zeta).$$
-\end{prop}
-
-\begin{proof}
-For any $\xi\in T_x\R^n$ and any $\zeta\in T_{F(x)}\R^l$, we have by definition
-\begin{align*}
-	\ip{rF_x(\zeta),\xi}_{\R^n}&=\ip{\zeta,dF_x(\xi)}_{\R^l}\\
-	&=\ip{\zeta,dh_{g(f(x))}\circ dg_{f(x)}\circ df_x(\xi)}_{\R^l}\\
-	&=\ip{rh_{g(f(x))}(\zeta),dg_{f(x)}\circ df_x(\xi)}_{\R^k}\\
-	&=\ip{rg_{f(x)}\circ rh_{g(f(x))}(\zeta),df_x(\xi)}_{\R^m}\\
-	&=\ip{rf_x\circ rg_{f(x)}\circ rh_{g(f(x))}(\zeta),\xi}_{\R^n}
-\end{align*}	
-as desired.
-\end{proof}
-
-\begin{lem}
-	Suppose $f:\R^{n\times m}\to\R^k$, and for $P\in\R^{n\times m}$, let $R=rf_P$.  Then $R\in\R^k{_n}{^m}$ is rank $(1,2)$-tensor written in coordinates as
-	$$R=R_i{^\mu}{_\nu}\frac{\partial}{\partial X^\mu_\nu}\otimes dx^i,$$
-	and the components is given by
-	$$R_i{^\mu}{_\nu}=\frac{\partial f^i}{\partial X^\nu_\mu}$$
-\end{lem}
-
-\begin{proof}
-	Considering the basis vectors $\frac{\partial}{\partial X^\nu_\mu}\in T_P\R^{n\times m}$ and $\frac{\partial}{\partial x^i}\in T_{f(P)}\R^k$ we have that
-	\begin{align*}
-		R_i{^\mu}{_\nu}&=\ip{R\left(\frac{\partial}{\partial x^i}\right), \frac{\partial}{\partial X^\nu_\mu}}_F\\
-		&=\ip{\frac{\partial}{\partial x^i},df_P\left(\frac{\partial}{\partial X^\nu_\mu}\right)}_{\R^k}\\
-		&=\ip{\frac{\partial}{\partial x^i},\frac{\partial f^\alpha}{\partial X^\nu_\mu}\frac{\partial}{\partial x^\alpha}}_{\R^k}\\
-		&=\delta_{i\alpha}\frac{\partial f^\alpha}{\partial X^\nu_\mu},
-	\end{align*}
-	as desired.
-\end{proof}
 
 
 
