@@ -6,7 +6,7 @@
 We first remark, that by our use of gradient descent, there are few outlier cases which may occur.  Namely our gradients may explode or vanish.  One way to attempt to fix such a situation to impose a normalization on our weights depending on our activation functions.
 \begin{itemize}
 	\item If $\lay{g}{\ell}=\relu$, then we wish to impose the requirement that
-		$$\E[(\lay{W}{\ell}{^2})]=\frac{1}{m_{\ell-1}}.$$
+		$$\E[(\lay{w}{\ell}{^2})]=\frac{1}{\lay{n}{\ell-1}}.$$
 \end{itemize}
 
 
@@ -29,6 +29,18 @@ Then we may check that our gradient computation $\nabla f(x)$ is correct by chec
 $$\frac{\norm{F(x,\epsilon)-\nabla f(x)}_2}{\norm{F(x,\epsilon)}_2+\norm{\nabla f(x)}_2}\approx 0.$$
 
 \subsection{Python Implementation}
+
+\TOX{
+Reformat this section for the reverse differential of varying sizes once the Reverse Differential section is completed.  There should be several cases included:
+\begin{itemize}
+	\item $f:\R\to\R$
+	\item $f:\R^n\to\R$ and maybe $g:\R\to\R^n$
+	\item $f:\R^n\to\R^m$
+	\item $f:\R^{m\times n}\to\R$ and maybe $g:\R\to\R^{m\times n}$
+	\item $f:\R^{m\times n}\to\R^k$ and maybe $g:\R^k\to\R^{m\times n}$
+	\item $f:\R^{m\times n}\to\R^{k\times l}$
+\end{itemize}
+}
 
 \lstinputlisting[firstline=55,lastline=97]{src/py/miscSnippets.py}
 

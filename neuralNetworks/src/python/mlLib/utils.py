@@ -5,9 +5,11 @@ from sklearn.model_selection import train_test_split
 
 import mlLib.npActivators as npActivators
 
-## Shuffle, split and normalize data
+## Classes
+
+## Shuffle, split and normalize full dataset
 class ProcessData():
-    def __init__(self, x, y, test_percent, *dev_percents, seed=1, shuffle=True, feat_as_col=True):
+    def __init__(self, x, y, test_percent, dev_percent=0.0, seed=101, shuffle=True, feat_as_col=True):
         """
         Parameters:
         -----------
@@ -31,8 +33,7 @@ class ProcessData():
         self.x = x
         self.y = y
         self.test_percent = test_percent
-        self.dev_percent = list(dev_percents)
-        self.k_fold = len(self.dev_percent)
+        self.dev_percent = dev_percent
         self.seed = seed
         self.shuffle = shuffle
         self.feat_as_col = feat_as_col
@@ -44,9 +45,9 @@ class ProcessData():
         print(f"y_train.shape: {self.train['y'].shape}")
         print(f"x_test.shape: {self.test['x'].shape}")
         print(f"y_test.shape: {self.test['y'].shape}")
-        for k in range(self.k_fold):
-            print(f"x_dev[{k}].shape: {self.dev['x'][k].shape}")
-            print(f"y_dev[{k}].shape: {self.dev['y'][k].shape}")
+        if self.dev_percent > 0.0:
+            print(f"x_dev.shape: {self.dev['x'].shape}")
+            print(f"y_dev.shape: {self.dev['y'].shape}")
 
     def split(self):
         """
@@ -60,25 +61,17 @@ class ProcessData():
         """
         x_aux, x_test, y_aux, y_test = train_test_split(self.x, self.y, test_size=self.test_percent, random_state=self.seed, shuffle=self.shuffle)
         left_over = 1 - self.test_percent
-        x_dev = []
-        y_dev = []
-        for perc in self.dev_percent:
-            aux_perc = perc / left_over
-            x_aux, x_d, y_aux, y_d = train_test_split(x_aux, y_aux, test_size=aux_perc, random_state=self.seed)
-            x_dev.append(x_d)
-            y_dev.append(y_d)
-            left_over -= perc
+        aux_perc = self.dev_percent / left_over
+        x_train, x_dev, y_train, y_dev = train_test_split(x_aux, y_aux, test_size=aux_perc, random_state=self.seed)
         
         if self.feat_as_col:
-            self.train = {'x' : x_aux, 'y' : y_aux}
+            self.train = {'x' : x_train, 'y' : y_train}
             self.test = {'x' : x_test, 'y' : y_test}
             self.dev = {'x' : x_dev, 'y' : y_dev}
         else:
-            self.train = {'x' : x_aux.T, 'y' : y_aux.T}
+            self.train = {'x' : x_train.T, 'y' : y_train.T}
             self.test = {'x' : x_test.T, 'y' : y_test.T}
-            x_dev = [cv.T for cv in x_dev]
-            y_dev = [cv.T for cv in y_dev]
-            self.dev = {'x' : x_dev, 'y' : y_dev}
+            self.dev = {'x' : x_dev.T, 'y' : y_dev.T}
 
     def normalize(self, z=None, eps=0.0):
         """
@@ -100,15 +93,63 @@ class ProcessData():
             self.theta = 1 / np.sqrt(self.var + eps)
             self.train['x'] = self.theta * (x - self.mu)
             self.test['x'] = self.theta * (self.test['x'] - self.mu)
-            for k in range(self.k_fold):
-                self.dev['x'][k] = self.theta * (self.dev['x'][k] - self.mu)
+            self.dev['x'] = self.theta * (self.dev['x'] - self.mu)
 
         else:
             z_scale = self.theta * (z - self.mu)
             return z_scale
 
+## Shuffle and create mini-batches during training
+class ShuffleBatchData():
+    def __init__(self, data, batch_size, seed=10101):
+        """
+        Parameters:
+        -----------
+        data : Dict[array_like]
+            data['x'] : array_like
+            data['y'] : array_like
+        batch_size : int
+        seed : int
+            Default: 10101
+
+        Returns:
+        None
+        """
+        self.data = data
+        self.batch_size = batch_size
+        self.seed = seed
+        self.idx = np.arange(data['x'].shape[1])
+        self.__N = data['x'].shape[1]
+
+        np.random.seed(seed)
+    
+    def get_batches(self):
+        """
+        Parameters:
+        -----------
+        None
+
+        Returns:
+        --------
+        None
+        """
+        np.random.shuffle(self.idx)
+        x_shuffled = self.data['x'][:, self.idx]
+        y_shuffled = self.data['y'][:, self.idx]
+
+        B = int(np.ceil(self.__N / self.batch_size))
+
+        batches = []
+        for i in range(B):
+            x_aux = x_shuffled[:, (self.batch_size * i):(self.batch_size * (i + 1))]
+            y_aux = y_shuffled[:, (self.batch_size * i):(self.batch_size * (i + 1))]
+            batches.append({'x' : x_aux, 'y' : y_aux})
+
+        return batches
+
+## Initializing, utilizing and updating the weight and bias parameters
 class LinearParameters():
-    def __init__(self, dims, bias=True, seed=1):
+    def __init__(self, dims, bias=True, seed=1011):
         """
         Parameters:
         -----------
@@ -187,7 +228,11 @@ class LinearParameters():
             self.b = b
 
 
+###################################################
+
 ## Functions
+
+## Applying the activator function after an affine-linear transformation
 def apply_activation(z, activator):
     """
     Parameters:

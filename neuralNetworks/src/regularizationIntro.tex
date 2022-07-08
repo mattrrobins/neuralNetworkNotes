@@ -40,49 +40,60 @@ A typical tuning via regularization would be similar to the following outline:
 \end{enumerate}
 
 
-\subsection{Python Implementation}
-\lstinputlisting[lastline=197]{src/py/l2RegNetwork.py}
+
+
 
 
 \subsection{(Inverted) Dropout Regularization}
-For illustrative purposes, suppose we have a $3$-layer neural network of the following form:
-\begin{align*}
-	&\underbrace{\begin{bmatrix}
-		x^1\\
-		\vdots\\
-		x^{m_0}
-		\end{bmatrix}}_{\text{Layer } 0}
-	\layerfctn{\lay{\varphi}{1}}\underbrace{\begin{bmatrix}
-		\lay{z}{1}{^1}\\
-		\vdots\\
-		\lay{z}{1}{^{m_1}}
-	\end{bmatrix}\layerfctn{\lay{g}{1}}
-	\begin{bmatrix}
-		\lay{a}{1}{^1}\\
-		\vdots\\
-		\lay{a}{1}{^{m_1}}
-	\end{bmatrix}}_{\text{Layer } 1}\layerfctn{\lay{\varphi}{2}}
-	\underbrace{\begin{bmatrix}
-		\lay{z}{2}{^1}\\
-		\vdots\\
-		\lay{z}{2}{^{m_2}}
-	\end{bmatrix}\layerfctn{\lay{g}{2}}
-	\begin{bmatrix}
-		\lay{a}{2}{^1}\\
-		\vdots\\
-		\lay{a}{2}{^{m_2}}
-	\end{bmatrix}}_{\text{Layer } 2}\layerfctn{\lay{\varphi}{3}}\text{output},
-\end{align*}
+For illustrative purposes, suppose we have a $2$-layer neural network of the following form:
+{\tiny
+\begin{equation*}
+	\begin{tikzcd}
+		{}
+		&\R^{\lay{n}{1}\times\lay{n}{0}}
+		\arrow[d, swap, "\lay{w}{1}"]
+		&\R^{\lay{n}{1}}
+		\arrow[d, swap, "\lay{b}{1}"]
+		&{}
+		&\R^{1\times\lay{n}{1}}
+		\arrow[d, swap, "\lay{w}{2}"]
+		&\R
+		\arrow[d, swap, "\lay{b}{2}"]
+		&{}
+		&\{0,1\}
+		\arrow[d, swap, "y"]
+		&{}
+		\\
+		\R^{\lay{n}{0}}
+		\arrow[r, "\lay{a}{0}:=x"]
+		&\boxed{\lay{\phi}{1}}
+		\arrow[r, "\lay{u}{1}"]
+		&\boxed{\lay{\psi}{1}}
+		\arrow[r, "\lay{z}{1}"]
+		&\boxed{\lay{G}{1}}
+		\arrow[r, "\lay{a}{1}"]
+		&\boxed{\lay{\phi}{2}}
+		\arrow[r, "\lay{u}{2}"]
+		&\boxed{\lay{\psi}{2}}
+		\arrow[r, "\lay{z}{2}"]
+		&\boxed{\lay{G}{2}}
+		\arrow[r, "\lay{a}{2}"]
+		&\boxed{\L}
+		\arrow[r, "\text{loss}"]
+		&\R
+	\end{tikzcd}
+\end{equation*}
+}
 Let $Q_0, Q_1, Q_2$ denote the collection of all nodes in Layers $0,1,2$, respectively.  Let $p_0, p_1, p_2\in[0,1]$, and define a probability distribution $\P_\ell$ on $Q_\ell$ by
 $$\P_\ell(q=1)=p_\ell,\qquad \P_\ell(q=0)=1-p_\ell,$$
 where $q=1$ represents the node existing in layer-$\ell$, and $q=0$ represents the dropping of the node from layer-$\ell$.  That is we're effectively reducing the number of nodes throughout the network, thus simplifying the network and reducing the amount of influence of any single feature or node on the entire model.  That is, we would implement a methodology similar to the following:
 \begin{enumerate}[i.]
-	\item For each layer $\ell$ and each training example $x_j$ define the ``dropout vector'' $\lay{D}{\ell}{_j}$ by
+	\item For each iteration, each layer $\ell$ and each training example $x_j$ define the ``dropout vector'' $\lay{D}{\ell}{_j}$ by
 	\begin{align*}
 		\lay{D}{\ell}{_j}&=\begin{bmatrix}
 			d^1_j\\
 			\vdots\\
-			d^{m_\ell}_j
+			d^{\lay{n}{\ell}}_j
 		\end{bmatrix},
 	\end{align*}
 	where
@@ -100,7 +111,7 @@ where $q=1$ represents the node existing in layer-$\ell$, and $q=0$ represents t
 \subsubsection{Python Implementation}
 We see here the use of inverted dropout regularization in a general neural network.
 
-\lstinputlisting[firstline=1,lastline=208]{src/py/dropoutReg.py}
+\lstinputlisting[firstline=1,lastline=238]{src/python/regularization/npDropoutRegularization.py}
 
 
 

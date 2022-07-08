@@ -5,31 +5,31 @@
 
 So far in our implementation of gradient descent, we use the entire training set for every iteration of gradient descent.  This method is called \textit{batch gradient descent}.  Gradient descent has many downfalls.  Indeed, since we're typically working in a \textit{very} high dimensional space, the majority of the critical points for our cost function are actually saddle points (these can be thought of as plateaus of the loss-manifold).  These pitfalls (amongst others) are what we wish to overcome.  To this end, we first consider a modification of batch gradient descent by partitioning the training set into smaller ``mini-batches'' and using each mini-batch recursively throughout the iterative process.  
 
-That is, suppose we have training set $\X$ with $|\X|=n$, where $n$ is very large (e.g., $n=5000000$).  We fix a batch size $b$ (e.g., $b=5000$), and partition $\X$ into (e.g., $1000$ distinct) mini-batches
-$$\left\{\X^k:1\leq k\leq \left\lceil\frac{n}{b}\right\rceil\right\},\qquad\X=\bigcup_{k=1}^{\left\lceil\frac{n}{b}\right\rceil}\X^k,$$
-where $\left\lceil\frac{n}{b}\right\rceil$ denote the ceiling function.  If we shuffle $\X$ and partition during each epoch (i.e., each iteration) so our loss-manifold changes during each batch iteration within each epoch, we can then perform gradient descent in the following manner:
+That is, suppose we have training set $\X$ with $|\X|=N$, where $N$ is very large (e.g., $N=5000000$).  We fix a batch size $b$ (e.g., $b=5000$), and partition $\X$ into (e.g., $1000$ distinct) mini-batches
+$$\left\{\X^k:1\leq k\leq \left\lceil\frac{N}{b}\right\rceil\right\},\qquad\X=\bigcup_{k=1}^{\left\lceil\frac{N}{b}\right\rceil}\X^k,$$
+where $\lceil\cdot\rceil$ denote the ceiling function.  If we shuffle $\X$ and partition during each epoch (i.e., each iteration) so our loss-manifold changes during each batch iteration within each epoch, we can then perform gradient descent in the following manner:
 \begin{enumerate}[1.]
 	\item For $0\leq i<\texttt{num\_iters}$:
 		\begin{enumerate}[a.]
-			\item Let $B=\left\lceil\frac{n}{b}\right\rceil$, and generate batches $\{\X^k\}$.
+			\item Let $B=\left\lceil\frac{N}{b}\right\rceil$, and generate batches $\{\X^k\}$.
 			\item For $1\leq k\leq B$:
 			\begin{enumerate}[i.]
 				\item Perform forward propagation on $\X^k$:
 				\begin{align*}
 					\lay{a}{0}&=x(\X^k)\\
-					\lay{z}{\ell}&=\lay{W}{\ell}\lay{a}{\ell-1}+\lay{b}{\ell}\\
+					\lay{z}{\ell}&=\lay{w}{\ell}\lay{a}{\ell-1}+\lay{b}{\ell}\\
 					\lay{a}{\ell}&=\lay{g}{\ell}(\lay{z}{\ell})
 				\end{align*}
 				\item Evaluate the cost $\J^k$ on $\X^k$:
-				$$\J^k(W,b)=\frac{1}{|\X^k|}\sum_{(x,y)\in\X^k}\L(\hat{y},y)+\frac{\lambda}{2|\X^k|}\sum_{\ell=1}^L\norm{\lay{W}{\ell}}_F^2.$$
+				$$\J^k(w,b)=\frac{1}{|\X^k|}\sum_{(x,y)\in\X^k}\L(\lay{a}{L},y)+\frac{\lambda}{2|\X^k|}\sum_{\ell=1}^L\norm{\lay{w}{\ell}}_F^2.$$
 				\item Perform backward propagation on $\X^k$:
 				\begin{align*}
-					\frac{\partial\J^k}{\partial\lay{W}{\ell}}&=\frac{1}{|\X^k|}\lay{\delta}{\ell}\lay{a}{\ell - 1}{^T}+\frac{\lambda}{|\X^k|}\lay{W}{\ell}\\
+					\frac{\partial\J^k}{\partial\lay{w}{\ell}}&=\frac{1}{|\X^k|}\lay{\delta}{\ell}\lay{a}{\ell - 1}{^T}+\frac{\lambda}{|\X^k|}\lay{w}{\ell}\\
 					\frac{\partial\J^k}{\partial\lay{b}{\ell}}&=\frac{1}{|\X^k|}\sum_{\rho\sim\X^k}\lay{\delta}{\ell}{_\rho}
 				\end{align*}
 				\item Perform gradient descent:
 				\begin{align*}
-					\lay{W}{\ell}&:=\lay{W}{\ell}-\alpha \frac{\partial\J^k}{\partial\lay{W}{\ell}}\\
+					\lay{w}{\ell}&:=\lay{w}{\ell}-\alpha \frac{\partial\J^k}{\partial\lay{w}{\ell}}\\
 					\lay{b}{\ell}&:=\lay{b}{\ell}-\alpha \frac{\partial\J^k}{\partial\lay{b}{\ell}}
 				\end{align*}
 			\end{enumerate}
@@ -47,6 +47,13 @@ We make several remarks about mini-batch gradient descent:
 		for some $p\in\{6,7,8,9,10\}$ (usually $p<10$).
 	\item Choose a batch size $b$ that ensures your computer's CPU/GPU can hold a dataset of that size.
 \end{itemize}
+
+
+
+\subsubsection{Python Implementation via \texttt{numpy}}
+We show here our implementation of dropout and $L^2$-regularization utilizing mini-batch gradient descent in \texttt{numpy}.
+
+\lstinputlisting[firstline=1,lastline=298]{src/python/gradientDescent/npMiniBatchGradientDescent.py}
 
 
 \subsection{Weighted Averages}
