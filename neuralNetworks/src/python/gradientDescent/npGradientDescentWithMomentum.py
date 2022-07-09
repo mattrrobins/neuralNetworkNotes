@@ -28,7 +28,7 @@ class Momentum():
             if self.bias[l]:
                 self.b[l] = np.zeros(param.b.shape)
 
-    def update(self, params, learning_rate=0.01):
+    def update(self, params, learning_rate=0.01, update_params=True):
         """
         Parameters:
         -----------
@@ -37,6 +37,8 @@ class Momentum():
             params[l].db : array_like
         learning_rate : float
             Default: 0.01
+        update_params : Boolean
+            Default: True
 
         Returns:
         None
@@ -44,13 +46,15 @@ class Momentum():
         for l, param in params.items():
             vw = self.beta1 * self.w[l] + (1 - self.beta1) * param.dw
             self.w[l] = vw
-            w = param.w - learning_rate * self.w[l]
-            param.w = w
+            if update_params:
+                w = param.w - learning_rate * self.w[l]
+                param.w = w
             if self.bias[l]:
                 vb = self.beta1 * self.b[l] + (1 - self.beta1) * param.db
                 self.b[l] = vb
-                b = param.b - learning_rate * self.b[l]
-                param.b = b
+                if update_params:
+                    b = param.b - learning_rate * self.b[l]
+                    param.b = b
 
 class NeuralNetwork():
     def __init__(self, config):

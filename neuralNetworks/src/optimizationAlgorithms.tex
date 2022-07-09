@@ -217,7 +217,7 @@ Here we implement the RMS Propagation algorithm using the \texttt{numpy} library
 
 We first note that with the momentum algorithm utilizing the EMA as it does, that it is an algorithm of the first moment (i.e., the mean of the gradients).  Similarly, with RMSProp utilizing the square of the gradient as it does, we say it is an algorithm of the second moment (i.e., the uncentered variance of the gradients).  Our goal it utilize both gradient descent with momentum and RMSProp simultaneously to optimize our parameters.  This combination of algorithms is called the \textit{Adam algorithm} and is implemented as follows:
 \begin{enumerate}
-	\item Initialize our parameters $\iter{W}{0}$ and $\iter{b}{0}$.  Initialize $\iter{V_W}{0}=\iter{V_b}{0}=0$ and $\iter{S_W}{0}=\iter{S_b}{0}=0$.  Fix our constants of momenta $\beta_1,\beta_2\in[0,1)$ and let $\epsilon>0$ be sufficiently small.
+	\item Initialize our parameters $\iter{w}{0}$ and $\iter{b}{0}$.  Initialize $\iter{v_w}{0}=\iter{v_b}{0}=0$ and $\iter{s_w}{0}=\iter{s_b}{0}=0$.  Fix our constants of momenta $\beta_1,\beta_2\in[0,1)$ and let $\epsilon>0$ be sufficiently small.
 	\item For $0\leq i <\texttt{num\_iters}$:
 	\begin{enumerate}[a.]
 		\item Let $B=\left\lceil\frac{n}{b}\right\rceil$, and generate batches $\{\X^k\}$
@@ -226,28 +226,28 @@ We first note that with the momentum algorithm utilizing the EMA as it does, tha
 			\item Apply forward propagation on $\X^k$.
 			\item Compute the cost $\J$ on $\X^k$.
 			\item Apply backward propagation on $\X^k$ to obtain
-			$$\iter{\frac{\partial\J}{\partial W}}{t},\qquad \iter{\frac{\partial\J}{\partial b}}{t}.$$
+			$$\iter{\frac{\partial\J}{\partial w}}{t},\qquad \iter{\frac{\partial\J}{\partial b}}{t}.$$
 			\item Define
 			\begin{align*}
-				\iter{V_W}{t}&=\beta_1\iter{V_W}{t-1}+(1-\beta_1)\iter{\frac{\partial\J}{\partial W}}{t},\\
-				\iter{V_b}{t}&=\beta_1\iter{V_b}{t-1}+(1-\beta_1)\iter{\frac{\partial\J}{\partial b}}{t},
+				\iter{v_w}{t}&=\beta_1\iter{v_w}{t-1}+(1-\beta_1)\iter{\frac{\partial\J}{\partial w}}{t},\\
+				\iter{v_b}{t}&=\beta_1\iter{v_b}{t-1}+(1-\beta_1)\iter{\frac{\partial\J}{\partial b}}{t},
 			\end{align*}
 			and define
 			\begin{align*}
-				\iter{S_W}{t}&=\beta_2\iter{S_W}{t-1}+(1-\beta_2)\left(\iter{\frac{\partial\J}{\partial W}}{t}\right)^2,\\
-				\iter{S_b}{t}&=\beta_2\iter{S_b}{t-1}+(1-\beta_2)\left(\iter{\frac{\partial\J}{\partial b}}{t}\right)^2.
+				\iter{s_w}{t}&=\beta_2\iter{s_w}{t-1}+(1-\beta_2)\left(\iter{\frac{\partial\J}{\partial w}}{t}\right)^2,\\
+				\iter{s_b}{t}&=\beta_2\iter{s_b}{t-1}+(1-\beta_2)\left(\iter{\frac{\partial\J}{\partial b}}{t}\right)^2.
 			\end{align*}
 			\item Utilize bias correction via:
 			\begin{align*}
-				\iter{\hat{V}_W}{t}&=\frac{\iter{V_W}{t}}{1-\beta_1^t}\\
-				\iter{\hat{V}_b}{t}&=\frac{\iter{V_b}{t}}{1-\beta_1^t}\\
-				\iter{\hat{S}_W}{t}&=\frac{\iter{S_W}{t}}{1-\beta_2^t}\\
-				\iter{\hat{S}_b}{t}&=\frac{\iter{S_b}{t}}{1-\beta_2^t}
+				\iter{\hat{v}_w}{t}&=\frac{\iter{v_w}{t}}{1-\beta_1^t}\\
+				\iter{\hat{v}_b}{t}&=\frac{\iter{v_b}{t}}{1-\beta_1^t}\\
+				\iter{\hat{s}_w}{t}&=\frac{\iter{s_w}{t}}{1-\beta_2^t}\\
+				\iter{\hat{s}_b}{t}&=\frac{\iter{s_b}{t}}{1-\beta_2^t}
 			\end{align*}
 			\item Update the parameters:
 			\begin{align*}
-				\iter{W}{t}&=\iter{W}{t-1}-\alpha\frac{\iter{\hat{V}_W}{t}}{\sqrt{\iter{\hat{S}_W}{t}}+\epsilon}\\
-				\iter{b}{t}&=\iter{b}{t-1}-\alpha\frac{\iter{\hat{V}_b}{t}}{\sqrt{\iter{\hat{S}_b}{t}}+\epsilon}
+				\iter{w}{t}&=\iter{w}{t-1}-\alpha\frac{\iter{\hat{v}_w}{t}}{\sqrt{\iter{\hat{s}_w}{t}}+\epsilon}\\
+				\iter{b}{t}&=\iter{b}{t-1}-\alpha\frac{\iter{\hat{v}_b}{t}}{\sqrt{\iter{\hat{s}_b}{t}}+\epsilon}
 			\end{align*}
 		\end{enumerate}
 	\end{enumerate}
@@ -261,7 +261,7 @@ $$\beta_1=0.9,\qquad\beta_2=0.999,\qquad\epsilon=10^{-8}.$$
 \subsubsection{Python Implementation via \texttt{numpy}}
 
 
-\lstinputlisting[firstline=1,lastline=307]{src/python/gradientDescent/npAdaptiveMomentEstimation.py}
+\lstinputlisting[firstline=1,lastline=316]{src/python/gradientDescent/npAdaptiveMomentEstimation.py}
 
 
 

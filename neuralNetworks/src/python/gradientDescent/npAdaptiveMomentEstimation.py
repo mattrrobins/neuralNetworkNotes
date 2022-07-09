@@ -2,11 +2,11 @@
 
 import numpy as np
 
-from mlLib.utils import LinearParameters, ShuffleBatchData, apply_activation
+from mlLib.utils import LinearParameters, ShuffleBatchData, Momentum, RMSProp
+from mlLib.utils import apply_activation
 
-
-class RMSProp():
-    def __init__(self, params, bias, beta2=0.9, eps=1e-8):
+class Adam():
+    def __init__(self, params, bias, beta1=0.9, beta2=0.999, eps=1e-8):
         """
         Parameters:
         -----------
@@ -14,51 +14,50 @@ class RMSProp():
             params[l].w : array_like
             params[l].b : array_like
         bias : List[Boolean]
-        beta2 : float
+        beta1 : float
             Default: 0.9
+        beta2 : float
+            Default: 0.999
         eps : float
             Default: 10^{-8}
 
         Returns:
         None
         """
+        self.beta1 = beta1
         self.beta2 = beta2
         self.eps = eps
         self.bias = bias
-        self.w = {}
-        self.b = {}
-        for l, param in params.items():
-            self.w[l] = np.zeros(param.w.shape)
-            if self.bias[l]:
-                self.b[l] = np.zeros(param.b.shape)
 
-    def update(self, params, learning_rate=0.01):
+        self.mom = Momentum(params, self.bias, self.beta1)
+        self.rms_prop = RMSProp(params, self.bias, self.beta2, self.eps)
+
+    def update(self, params, iter, learning_rate=0.01):
         """
         Parameters:
         -----------
         params : Dict[LinearParameters]
             params[l].dw : array_like
             params[l].db : array_like
+        iter : int
         learning_rate : float
             Default: 0.01
 
         Returns:
         None
         """
-        for l, param in params.items():
-            sw = self.beta2 * self.w[l] + (1 - self.beta2) * (param.dw ** 2)
-            self.w[l] = sw
-            w = param.w - learning_rate * \
-                (param.dw / (np.sqrt(self.w[l]) + self.eps))
-            param.w = w
-            if self.bias[l]:
-                sb = self.beta2 * self.b[l] + \
-                    (1 - self.beta2) * (param.db ** 2)
-                self.b[l] = sb
-                b = param.b - learning_rate * \
-                    (param.db / (np.sqrt(self.b[l]) + self.eps))
-                param.b = b
+        self.mom.update(params, learning_rate, False)
+        self.rms_prop.update(params, learning_rate, False)
 
+        # Utilize bias correction
+        for l, param in params.items():
+            vw = self.mom.w[l] / (1 - self.beta1 ** iter)
+            sw = self.rms_prop.w[l] / (1 - self.beta2 ** iter)
+            param.w = param.w - learning_rate * (vw / (np.sqrt(sw) + self.eps))
+            if self.bias[l]:
+                vb = self.mom.b[l] / (1 - self.beta1 ** iter)
+                sb = self.rms_prop.b[l] / (1 - self.beta2 ** iter)
+                param.b = param.b - learning_rate * (vb / (np.sqrt(sb) + self.eps))
 
 class NeuralNetwork():
     def __init__(self, config):
@@ -252,8 +251,8 @@ class NeuralNetwork():
             params[l] = LinearParameters(
                 (self.nodes[l], self.nodes[l - 1]), self.bias[l])
 
-        # Initialize RMSProp
-        rms_prop = RMSProp(params, self.bias)
+        # Initialize Adam
+        adam = Adam(params, self.bias)
 
         # Initialize batching
         batching = ShuffleBatchData(data, self.batch_size)
@@ -261,16 +260,18 @@ class NeuralNetwork():
         costs = []
         for i in range(num_iters):
             batches = batching.get_batches()
-            for batch in batches:
-                x = batch['x']
-                y = batch['y']
+            B = len(batches)
+            for k in range(B):
+                t = i * B + k + 1
+                x = batches[k]['x']
+                y = batches[k]['y']
                 dropout = self.init_dropout(x.shape[1])
                 cache = self.forward_propagation(params, x, dropout)
                 cost = self.cost_function(
                     params, cache['a'][self.L], y, lambda_)
                 costs.append(cost)
                 self.backward_propagation(params, cache, y, dropout)
-                rms_prop.update(params, learning_rate)
+                adam.update(params, t, learning_rate)
 
             if (print_cost_iter != 0) and (i % print_cost_iter == 0):
                 print(f'Cost after iteration {i}: {cost}')
@@ -314,7 +315,6 @@ class NeuralNetwork():
 
         return acc
 
-
 if __name__ == '__main__':
     from pathlib import Path
 
@@ -330,7 +330,7 @@ if __name__ == '__main__':
     data = ProcessData(x, y, 0.15, 0.15, seed=1, feat_as_col=False)
 
     config = {
-        'lp_reg': 0,
+        'lp_reg': 2,
         'batch_size': 2 ** 5,
         'nodes': [10, 32, 8, 1],
         'bias': [False, True, True, True],
@@ -339,7 +339,7 @@ if __name__ == '__main__':
     }
 
     model = NeuralNetwork(config)
-    params = model.fit(data.train, learning_rate=0.1,
+    params = model.fit(data.train, learning_rate=0.001,
                        lambda_=0.1, num_iters=10000, print_cost_iter=1000)
 
     train_acc = model.accuracy(params, data.train)

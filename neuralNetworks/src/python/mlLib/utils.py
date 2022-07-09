@@ -147,6 +147,118 @@ class ShuffleBatchData():
 
         return batches
 
+## Gradient descent with root mean squared propagation
+class RMSProp():
+    def __init__(self, params, bias, beta2=0.9, eps=1e-8):
+        """
+        Parameters:
+        -----------
+        params : Dict[LinearParameters]
+            params[l].w : array_like
+            params[l].b : array_like
+        bias : List[Boolean]
+        beta2 : float
+            Default: 0.9
+        eps : float
+            Default: 10^{-8}
+
+        Returns:
+        None
+        """
+        self.beta2 = beta2
+        self.eps = eps
+        self.bias = bias
+        self.w = {}
+        self.b = {}
+        for l, param in params.items():
+            self.w[l] = np.zeros(param.w.shape)
+            if self.bias[l]:
+                self.b[l] = np.zeros(param.b.shape)
+
+    def update(self, params, learning_rate=0.01, update_params=True):
+        """
+        Parameters:
+        -----------
+        params : Dict[LinearParameters]
+            params[l].dw : array_like
+            params[l].db : array_like
+        learning_rate : float
+            Default: 0.01
+        update_params : Boolean
+            Default: True
+
+        Returns:
+        None
+        """
+        for l, param in params.items():
+            sw = self.beta2 * self.w[l] + (1 - self.beta2) * (param.dw ** 2)
+            self.w[l] = sw
+            if update_params:
+                w = param.w - learning_rate * \
+                    (param.dw / (np.sqrt(self.w[l]) + self.eps))
+                param.w = w
+            if self.bias[l]:
+                sb = self.beta2 * self.b[l] + \
+                    (1 - self.beta2) * (param.db ** 2)
+                self.b[l] = sb
+                if update_params:
+                    b = param.b - learning_rate * \
+                        (param.db / (np.sqrt(self.b[l]) + self.eps))
+                    param.b = b
+
+## Gradient descent with exponentially moving averages
+class Momentum():
+    def __init__(self, params, bias, beta1=0.9):
+        """
+        Parameters:
+        -----------
+        params : Dict[LinearParameters]
+            params[l].w : array_like
+            params[l].b : array_like
+        bias : List[Boolean]
+        beta1 : float
+            Default: 0.9
+
+        Returns:
+        None
+        """
+        self.beta1 = beta1
+        self.bias = bias
+        self.w = {}
+        self.b = {}
+        for l, param in params.items():
+            self.w[l] = np.zeros(param.w.shape)
+            if self.bias[l]:
+                self.b[l] = np.zeros(param.b.shape)
+
+    def update(self, params, learning_rate=0.01, update_params=True):
+        """
+        Parameters:
+        -----------
+        params : Dict[LinearParameters]
+            params[l].dw : array_like
+            params[l].db : array_like
+        learning_rate : float
+            Default: 0.01
+        update_params : Boolean
+            Default: True
+
+        Returns:
+        None
+        """
+        for l, param in params.items():
+            vw = self.beta1 * self.w[l] + (1 - self.beta1) * param.dw
+            self.w[l] = vw
+            if update_params:
+                w = param.w - learning_rate * self.w[l]
+                param.w = w
+            if self.bias[l]:
+                vb = self.beta1 * self.b[l] + (1 - self.beta1) * param.db
+                self.b[l] = vb
+                if update_params:
+                    b = param.b - learning_rate * self.b[l]
+                    param.b = b
+
 ## Initializing, utilizing and updating the weight and bias parameters
 class LinearParameters():
     def __init__(self, dims, bias=True, seed=1011):

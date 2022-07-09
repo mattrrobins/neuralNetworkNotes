@@ -31,7 +31,7 @@ class RMSProp():
             if self.bias[l]:
                 self.b[l] = np.zeros(param.b.shape)
 
-    def update(self, params, learning_rate=0.01):
+    def update(self, params, learning_rate=0.01, update_params=True):
         """
         Parameters:
         -----------
@@ -40,6 +40,8 @@ class RMSProp():
             params[l].db : array_like
         learning_rate : float
             Default: 0.01
+        update_params : Boolean
+            Default: True
 
         Returns:
         None
@@ -47,13 +49,15 @@ class RMSProp():
         for l, param in params.items():
             sw = self.beta2 * self.w[l] + (1 - self.beta2) * (param.dw ** 2)
             self.w[l] = sw
-            w = param.w - learning_rate * (param.dw / (np.sqrt(self.w[l]) + self.eps))
-            param.w = w
+            if update_params:
+                w = param.w - learning_rate * (param.dw / (np.sqrt(self.w[l]) + self.eps))
+                param.w = w
             if self.bias[l]:
                 sb = self.beta2 * self.b[l] + (1 - self.beta2) * (param.db ** 2)
                 self.b[l] = sb
-                b = param.b - learning_rate * (param.db / (np.sqrt(self.b[l]) + self.eps))
-                param.b = b
+                if update_params:
+                    b = param.b - learning_rate * (param.db / (np.sqrt(self.b[l]) + self.eps))
+                    param.b = b
 
 class NeuralNetwork():
     def __init__(self, config):
