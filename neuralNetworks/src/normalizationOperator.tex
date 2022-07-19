@@ -5,53 +5,53 @@
 
 
 
-In this section, we wish to character the (reverse) differential of the normalization operator $N:\R^{m\times n}\to\R^{m\times n}$ given in coordinates by
+In this section, we wish to character the (reverse) differential of the normalization operator $N:\R^{n\times N}\to\R^{n\times N}$ given in coordinates by
 $$N:x^i_j\mapsto \frac{x^i_j-\E[x^i]}{\sqrt{\V[x^i]+\epsilon}}.$$
 First, let's rewrite this without coordinates
 \begin{align*}
 	N(x)&=(\V[x]+\vec{\epsilon})^{\odot-\frac{1}{2}}\vec{1}^T\odot(x-\E[x]\vec{1}^T)\\
 	&=:f(x)\odot g(x).
 \end{align*}
-Now, let's fix $(x,\xi)\in T\R^{m\times n}$, and we immediately see that the Hadamard product obeys the Leibniz Rule with exterior differentiation, i.e.,
+Now, let's fix $(x,\xi)\in T\R^{n\times N}$, and we immediately see that the Hadamard product obeys the Leibniz Rule with exterior differentiation, i.e.,
 $$dN_x(\xi)=g(x)\odot df_x(\xi)+f(x)\odot dg_x(\xi),$$
 so we consider these computations separately.  Moreover, we now need to compute the derivative of the expectation $\E$ and variance $\V$ operators.
 
 \begin{enumerate}
-	\item For the expectation of a random vector, $\E:\R^{m\times n}\to\R^m$, we first rewrite $\E$ as follows
+	\item For the expectation of a random vector, $\E:\R^{n\times N}\to\R^n$, we first rewrite $\E$ as follows
 	\begin{align*}
-		\E[x]&=\sum_{i=1}^m\left(\frac{1}{n}\sum_{j=1}^nx^i_j\right)e_i\\
-		&=\frac{1}{n}x\cdot\vec{1}\\
-		&=\frac{1}{n}R_{\vec{1}}(x)
+		\E[x]&=\sum_{i=1}^n\left(\frac{1}{N}\sum_{j=1}^Nx^i_j\right)e_i\\
+		&=\frac{1}{N}x\cdot\vec{1}\\
+		&=\frac{1}{N}R_{\vec{1}}(x)
 	\end{align*}
-	where $\vec{1}=(1,1,...,1)\in\R^n$.  This is clearly linear, so for $(x,\xi)\in T\R^{m\times n}$, we have that
+	where $\vec{1}=(1,1,...,1)\in\R^N$.  This is clearly linear, so for $(x,\xi)\in T\R^{n\times N}$, we have that
 	\begin{align*}
 		d\E_x(\xi)&=\E[\xi]\\
-		&=\frac{1}{n}R_{\vec{1}}(\xi).
+		&=\frac{1}{N}R_{\vec{1}}(\xi).
 	\end{align*}
-	For a fixed $x\in\R^{m\times n}$, we let $\mu:=\E[x]\in\R^m$ denote the output.
+	For a fixed $x\in\R^{n\times N}$, we let $\mu:=\E[x]\in\R^n$ denote the output.
 	
-	\item For the variance of a random vector, $\V:\R^{m\times n}\to\R^m$, we rewrite $\V$ as follows
+	\item For the variance of a random vector, $\V:\R^{n\times N}\to\R^n$, we rewrite $\V$ as follows
 	\begin{align*}
-		\V[x]&=\sum_{i=1}^m\left(\frac{1}{n}\sum_{j=1}^n(x^i_j-\mu^i)^2\right)e_i\\
+		\V[x]&=\sum_{i=1}^n\left(\frac{1}{N}\sum_{j=1}^N(x^i_j-\mu^i)^2\right)e_i\\
 		&=\E\left[(x-\mu\vec{1}^T)\odot(x-\mu\vec{1}^T)\right]\\
 		&=\E\left[(x-\mu\vec{1}^T)^{\odot2}\right].
 	\end{align*}
 	From the first calculation, we know how to compute the derivative of $\E$, so we focus on the input $(x-\mu\vec{1}^T)^{\odot2}$.  
 	
-	To this end, we define $\psi:\R^{m\times n}\to\R^{m\times n}$ to be the inner-most function given by
+	To this end, we define $\psi:\R^{n\times N}\to\R^{n\times N}$ to be the inner-most function given by
 	\begin{align*}
 		\psi(x)&=x-\E[x]\vec{1}^T\\
-		&=\left(\id_{\R^{m\times n}}-R_{\vec{1}^T}\circ\E\right)(x),
+		&=\left(\id_{\R^{n\times N}}-R_{\vec{1}^T}\circ\E\right)(x),
 	\end{align*}
-	which is clearly linear. Then for $(x,\xi)\in T\R^{m\times n}$ we see that
+	which is clearly linear. Then for $(x,\xi)\in T\R^{n\times N}$ we see that
 	\begin{align*}
-		d\psi_x(\xi)&=\left(\id_{T_x\R^{m\times n}} - \frac{1}{n}R_{\vec{1}^T}\circ R_{\vec{1}}\right)(\xi),
+		d\psi_x(\xi)&=\left(\id_{T_x\R^{n\times N}} - \frac{1}{n}R_{\vec{1}^T}\circ R_{\vec{1}}\right)(\xi),
 	\end{align*}
 	where we used our previous computation for $d\E_x$.
 	
-	Next, define $\phi:\R^{m\times n}\to\R^{m\times n}$ to be the Hadamard-square, i.e.,
+	Next, define $\phi:\R^{n\times N}\to\R^{n\times N}$ to be the Hadamard-square, i.e.,
 	$$\phi(x)=x^{\odot2}=x\odot x.$$
-	  Using our previous remark of the Leibniz Rule in regard to the Hadamard product, we see that for $(x,\xi)\in T\R^{m\times n}$,
+	  Using our previous remark of the Leibniz Rule in regard to the Hadamard product, we see that for $(x,\xi)\in T\R^{n\times N}$,
 	  \begin{align*}
 	  	d\phi_x(\xi)&=x\odot\xi+\xi\odot x\\
 	  	&=2x\odot\xi\\
@@ -60,11 +60,11 @@ so we consider these computations separately.  Moreover, we now need to compute 
 	  
 	  Finally, by the compositional definition of $\V$,
 	  $$\V[x]=\E\circ\phi\circ\psi(x),$$
-	  we compute for any $(x,\xi)\in T\R^{m\times n}$ that
+	  we compute for any $(x,\xi)\in T\R^{n\times N}$ that
 	  \begin{align*}
 	  	d\V_x(\xi)&=d\E_{\phi(\psi(x))}\circ d\phi_{\psi(x)}\circ d\psi_x(\xi)\\
-	  	&=d\E_{\phi(\psi(x))}\circ d\phi_{\psi(x)}\left(\xi-\frac{1}{n}\xi\vec{1}\vec{1}^T\right)\\
-	  	&=d\E_{\phi(\psi(x))}\left(2(x-\mu\vec{1}^T)\odot\left(\xi-\frac{1}{n}\xi\vec{1}\vec{1}^T\right)\right)\\
+	  	&=d\E_{\phi(\psi(x))}\circ d\phi_{\psi(x)}\left(\xi-\frac{1}{N}\xi\vec{1}\vec{1}^T\right)\\
+	  	&=d\E_{\phi(\psi(x))}\left(2(x-\mu\vec{1}^T)\odot\left(\xi-\frac{1}{N}\xi\vec{1}\vec{1}^T\right)\right)\\
 	  	&=\E\left[2(x-\mu\vec{1}^T)\odot\left(\xi-\frac{1}{n}\xi\vec{1}\vec{1}^T\right)\right]\\
 	  	&=\E\left[2(x-\mu\vec{1}^T)\odot\xi\right]-2\E\left[(x-\mu\vec{1}^T)\odot(\E[\xi]\vec{1}^T)\right].
 	  \end{align*}

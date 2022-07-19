@@ -3,7 +3,7 @@
 \section{Batch Normalization}
 \TOX{See \cite{DBLP:journals/corr/IoffeS15}.}
 
-We recall feature-normalization:  Suppose $x\in\R^{m\times n}$ is some training data, and let
+We recall feature-normalization:  Suppose $x\in\R^{n\times N}$ is some training data, and let
 $$\mu=\E[X],\qquad\sigma^2=\E[(X-\mu)^2],$$
 denote the mean and variance of the random-vector representation $X$ of $x$, respectively.  Then we consider the map
 $$x_j\mapsto\frac{x_j-\mu}{\sigma}=:\hat{x}_j,$$
@@ -11,7 +11,7 @@ to be the \textit{normalization} of $x_j$.
 
 This definition is so ``vanilla'', that it should be clear that this can be easily applied to each hidden-layer (we shall not use it on the output layer) of a neural network as well.  However, we first note that there is an ambiguous choice amongst the implementation, namely, do we normalize $\lay{z}{\ell}$ or $\lay{a}{\ell}$, i.e., does normalization occur before or after we compute the activation unit.  It seems more common to apply normalization to $\lay{z}{\ell}$, so that is what we do here without further mention of this choice.
 
-Let $\gamma,\beta\in\R^m$, if we consider the map
+Let $\gamma,\beta\in\R^n$, if we consider the map
 $$\hat{x}_j\mapsto\gamma\odot\hat{x}_j+\beta:=\tilde{x}_j,$$
 we can see fairly trivially that we can recover $x_j$ (thus allowing for identity activation units), indeed, let $\gamma=\sigma$ and $\beta=\mu$, and hence
 \begin{align*}
@@ -35,7 +35,7 @@ and so the new mean would be given by $\beta$.  Similarly,
 	&=\gamma^2\odot1\\
 	&=\gamma^2
 \end{align*}
-and so we see the new variance would be given by $\gamma^2$.  Thus, we see that by composition, the act of normalization can be characterized by the new parameters $\gamma$ and $\beta$, and is mathematically-superfluous to consider both, but for computational considerations and algorithmic stability it shall be beneficial to keep both.  That is, suppose we're training on some batch $\X^k$ and focused on layer-$\ell$, with parameters $\lay{\gamma}{\ell},\lay{\beta}{\ell}\in\R^{m_\ell}$ and some $\epsilon>0$, arbitrarily small and prescribed for numerical stability, we define the \textit{batch-normalization} map $BN_{\lay{\gamma}{\ell},\lay{\beta}{\ell}}:\R^{m_\ell}\to\R^{m_\ell}$ given by the compositional-map
+and so we see the new variance would be given by $\gamma^2$.  Thus, we see that by composition, the act of normalization can be characterized by the new parameters $\gamma$ and $\beta$, and is mathematically-superfluous to consider both, but for computational considerations and algorithmic stability it shall be beneficial to keep both.  That is, suppose we're training on some batch $\X^k$ and focused on layer-$\ell$, with parameters $\lay{\gamma}{\ell},\lay{\beta}{\ell}\in\R^{\lay{n}{\ell}}$ and some $\epsilon>0$, arbitrarily small and prescribed for numerical stability, we define the \textit{batch-normalization} map $BN_{\lay{\gamma}{\ell},\lay{\beta}{\ell}}:\R^{\lay{n}{\ell}}\to\R^{\lay{n}{\ell}}$ given by the compositional-map
 \begin{align*}
 	\lay{z}{\ell}&\mapsto\frac{1}{|\X^k|}\sum_{x\in\X^k}\lay{z}{\ell}=:\lay{\mu}{\ell};\\
 	(\lay{z}{\ell},\lay{\mu}{\ell})&\mapsto\frac{1}{|\X^k|}\sum_{x\in\X^k}(\lay{z}{\ell}-\lay{\mu}{\ell})^2=:\lay{\sigma}{\ell}{^2};\\
@@ -44,41 +44,365 @@ and so we see the new variance would be given by $\gamma^2$.  Thus, we see that 
 \end{align*}
 
 
-Suppose we have an $L$-layer neural network, each layer with $m_\ell$ nodes, and we focus on the $\ell$-th layer specifically to expand:
+Suppose we have an $L$-layer neural network, each layer with $\lay{n}{\ell}$ nodes, and we focus on the $\ell$-th layer specifically to expand:
+
+{\tiny
 \begin{equation*}
-	\cdots\layerfctn{\lay{\varphi}{\ell}}
-	\underbrace{
-		\begin{bmatrix}
-			\lay{z}{1}{^1}\\
-			\vdots\\
-			\lay{z}{1}{^{m_\ell}}
-		\end{bmatrix}
-		\layerfctn{BN_{\lay{\gamma}{\ell},\lay{\beta}{\ell}}}
-		\begin{bmatrix}
-			\lay{\tilde{z}}{\ell}{^1}\\
-			\vdots\\
-			\lay{\tilde{z}}{\ell}{_{m_\ell}}
-		\end{bmatrix}
-		\layerfctn{\lay{g}{\ell}}
-		\begin{bmatrix}
-			\lay{a}{1}{^1}\\
-			\vdots\\
-			\lay{a}{1}{^{m_\ell}}
-		\end{bmatrix}
-		}_{\text{Layer } \ell}
-	\layerfctn{\lay{\varphi}{\ell+1}}\cdots
+	\begin{tikzcd}
+		{}
+		&\R^{\lay{n}{\ell}\times\lay{n}{\ell-1}}
+		\arrow[d, swap, "\lay{w}{\ell}"]
+		&{}
+		&\R^{\lay{n}{\ell}}
+		\arrow[d, swap, "\lay{\gamma}{\ell}"]
+		&\R^{\lay{n}{\ell}}
+		\arrow[d, swap, "\lay{\beta}{\ell}"]
+		&{}
+		\\
+		\cdots
+		\arrow[r, "\lay{a}{\ell-1}"]
+		&\boxed{\lay{\phi}{\ell}}
+		\arrow[r, "\lay{u}{\ell}"]
+		&\boxed{\lay{N}{\ell}}
+		\arrow[r, "\lay{\hat{u}}{\ell}"]
+		&\boxed{\lay{\Gamma}{\ell}}
+		\arrow[r, "\lay{v}{\ell}"]
+		&\boxed{\lay{\psi}{\ell}}
+		\arrow[r, "\lay{z}{\ell}"]
+		&\boxed{\lay{G}{\ell}}
+		\arrow[r, "\lay{a}{\ell}"]
+		&\cdots
+	\end{tikzcd}
 \end{equation*}
-The procedure for forward propagation should be immediately obvious from the closer look at layer-$\ell$. However, we notice that
+}
+
+We note that we've dropped the bias term $\lay{b}{\ell}$ in the above, forward-propagating diagram.  If we had included the term, the composition would result in the following
 \begin{align*}
-	\lay{a}{\ell-1}&\mapsto\lay{\gamma}{\ell}\odot\frac{\lay{W}{\ell}\lay{a}{\ell-1}+\lay{b}{\ell}-\lay{\mu}{\ell}}{\sqrt{\lay{\sigma}{\ell}{^2}+\epsilon}}+\lay{\beta}{\ell}\\
-	&=\frac{\lay{\gamma}{\ell}}{\sqrt{\lay{\sigma}{\ell}{^2}+\epsilon}}(\lay{W}{\ell}\lay{a}{\ell-1}-\lay{\mu}{\ell})+\lay{\beta}{\ell},
+	\lay{a}{\ell-1}&\mapsto\lay{\gamma}{\ell}\odot\frac{\lay{w}{\ell}\lay{a}{\ell-1}+\lay{b}{\ell}-\lay{\mu}{\ell}}{\sqrt{\lay{\sigma}{\ell}{^2}+\epsilon}}+\lay{\beta}{\ell}\\
+	&=\frac{\lay{\gamma}{\ell}}{\sqrt{\lay{\sigma}{\ell}{^2}+\epsilon}}\odot(\lay{w}{\ell}\lay{a}{\ell-1}-\lay{\mu}{\ell})+\lay{\beta}{\ell},
 \end{align*}
-after absorbing the $\lay{b}{\ell}$ into the parameter $\lay{\beta}{\ell}$.  That is, we have $3$ trainable parameters given by $\lay{W}{\ell}\in\R^{m_{\ell}\times m_{\ell-1}}$, $\lay{\gamma}{\ell},\lay{\beta}{\ell}\in\R^{m_\ell}.$
+after absorbing the $\lay{b}{\ell}$ into the parameter $\lay{\beta}{\ell}$.  That is, we have $3$ trainable parameters given by $\lay{w}{\ell}\in\R^{\lay{n}{\ell}\times \lay{n}{\ell-1}}$, $\lay{\gamma}{\ell},\lay{\beta}{\ell}\in\R^{\lay{n}{\ell}}.$
 
 
 
 
 \subsection{Backward Propagation}
+
+We consider $2$-layer, neural network utilizing batch normalization of the form
+{\tiny
+\begin{equation*}
+	\begin{tikzcd}
+		{}
+		&\R^{\lay{n}{1}\times\lay{n}{0}}
+		\arrow[d, swap, "\lay{w}{1}"]
+		&{}
+		&\R^{\lay{n}{1}}
+		\arrow[d, swap, "\lay{\gamma}{1}"]
+		&\R^{\lay{n}{1}}
+		\arrow[d, swap, "\lay{\beta}{1}"]
+		&{}
+		\\
+		\R^{\lay{n}{0}\times N}
+		\arrow[r, "\lay{a}{0}:=x"]
+		&\boxed{\lay{\phi}{1}}
+		\arrow[r, "\lay{u}{1}"]
+		&\boxed{\lay{N}{1}}
+		\arrow[r, "\lay{\hat{u}}{1}"]
+		&\boxed{\lay{\Gamma}{1}}
+		\arrow[r, "\lay{v}{1}"]
+		&\boxed{\lay{\psi}{1}}
+		\arrow[r, "\lay{z}{1}"]
+		&\boxed{\lay{G}{1}}
+		\arrow[r, "\lay{a}{1}"]
+		&\cdots\\
+		{}
+		&\cdots
+		\arrow[r, "\lay{a}{1}"]
+		&\boxed{\lay{\phi}{2}}
+		\arrow[r, "\lay{u}{2}"]
+		&\boxed{\lay{\psi}{2}}
+		\arrow[r, "\lay{z}{2}"]
+		&\boxed{\lay{G}{2}}
+		\arrow[r, "\lay{a}{2}"]
+		&\boxed{\L}
+		\arrow[r, "\text{cost}"]
+		&\R
+		\\
+		{}
+		&{}
+		&\R^{\lay{n}{2}\times\lay{n}{1}}
+		\arrow[u, swap, "\lay{w}{2}"]
+		&\R^{\lay{n}{2}}
+		\arrow[u, swap, "\lay{b}{2}"]
+		&{}
+		&\R^{\lay{n}{2}\times N}
+		\arrow[u, swap, "y"]
+		&{}
+	\end{tikzcd}
+\end{equation*}
+}
+where we have the functions
+\begin{enumerate}
+	\item $$\L:\R^{\lay{n}{2}\times N}\times\R^{\lay{n}{2}\times N}\to\R$$
+	is the given loss function.  If we're working with a binary classification problem, then we have that
+	\begin{align*}
+		\L(y,\hat{y})&=-\frac{1}{N}\sum_{j=1}^n\left\{y_j\log{\hat{y}_j}+(1-y_j)\log(1-\hat{y}_j)\right\}\\
+		&=-\frac{1}{N}\left[\ip{y,\log{y}}_{\R^N}+\ip{1-y,\log(1-\hat{y})}_{\R^N}\right].
+	\end{align*}
+	
+	\item $$\lay{G}{\ell}:\R^{\lay{n}{\ell}\times N}\to\R^{\lay{n}{\ell}\times N}$$
+	is the broadcasting of the activation unit $\lay{g}{\ell}:\R\to\R$.
+	
+	\item $$\lay{\phi}{\ell}:\R^{\lay{n}{\ell}\times\lay{n}{\ell-1}}\times\R^{\lay{n}{\ell-1}\times N}\to\R^{\lay{n}{\ell}\times N}$$
+	is given by
+	$$\lay{\phi}{\ell}(w,x)=wx.$$
+	
+	\item $$\lay{\psi}{\ell}:\R^{\lay{n}{\ell}}\times\R^{\lay{n}{\ell}\times N}\to\R^{\lay{n}{\ell}\times N}$$
+	is given by
+	$$\psi(b,x)=x+b\vec{1}^T,$$
+	where
+	$$\vec{1}^T=\begin{bmatrix}
+		1&1&\cdots&1
+	\end{bmatrix}\in\R^N.$$
+	
+	\item $$\lay{N}{1}:\R^{\lay{n}{1}\times N}\to\R^{\lay{n}{1}\times N}$$
+	is the normalization operator given by
+	$$\lay{N}{1}:x_j\mapsto \frac{x_j-\E[x]}{\sqrt{\V[x]+\epsilon}},$$
+	where $\E$ is the expectation operator of a random vector, i.e.,
+	$$\E[x]=\frac{1}{N}\sum_{j=1}^Nx_j,$$
+	and $\V$ is the variance operator of a random vector, i.e.,
+	$$\V[x]=\E[(x-\E[x]\vec{1}^T)^{\odot2}],$$
+	where $\vec{1}\in\R^N$ and $\odot2$ represents the Hadamard-square.
+	
+	\item $$\lay{\Gamma}{\ell}:\R^{\lay{n}{\ell}}\times\R^{\lay{n}{\ell}\times N}\to\R^{\lay{n}{\ell}\times N}$$
+	is given by
+	$$\Gamma(\gamma, x)=\gamma\vec{1}^T\odot x,$$
+	where
+	$$\vec{1}^T=\begin{bmatrix}
+		1&1&\cdots&1
+	\end{bmatrix}\in\R^N.$$
+\end{enumerate}
+
+We now consider back-propagating through the network via reverse differentiations as in the following diagram:
+
+
+{\tiny
+\begin{equation*}
+	\begin{tikzcd}
+		{}
+		&\R^{\lay{n}{1}\times\lay{n}{0}}
+		&{}
+		&\R^{\lay{n}{1}}
+		&\R^{\lay{n}{1}}
+		&{}
+		\\
+		\R^{\lay{n}{0}\times N}
+		&\boxed{\lay{\phi}{1}}
+		\arrow[l, swap, "r"]
+		\arrow[u, "r_1"]
+		&\boxed{\lay{N}{1}}
+		\arrow[l, swap, "r"]
+		&\boxed{\lay{\Gamma}{1}}
+		\arrow[l, swap, "r"]
+		\arrow[u, "\hat{r}_1"]
+		&\boxed{\lay{\psi}{1}}
+		\arrow[l, swap, "r"]
+		\arrow[u, "\cl{r}_1"]
+		&\boxed{\lay{G}{1}}
+		\arrow[l, swap, "r"]
+		&\cdots
+		\arrow[l, swap, "r"]
+		\\
+		{}
+		&\cdots
+		&\boxed{\lay{\phi}{2}}
+		\arrow[l, swap, "r"]
+		\arrow[d, "r_2"]
+		&\boxed{\lay{\psi}{2}}
+		\arrow[l, swap, "r"]
+		\arrow[d, "\cl{r}_2"]
+		&\boxed{\lay{G}{2}}
+		\arrow[l, swap, "r"]
+		&\boxed{\L}
+		\arrow[l, swap, "r"]
+		&\R
+		\arrow[l]
+		\\
+		{}
+		&{}
+		&\R^{\lay{n}{2}\times\lay{n}{1}}
+		&\R^{\lay{n}{2}}
+		&{}
+		&\R^{\lay{n}{2}\times N}
+		\arrow[u]
+		&{}
+	\end{tikzcd}
+\end{equation*}
+}
+
+We consider our individual derivatives:
+\begin{enumerate}
+	\item Suppose $G:\R^{m\times n}\to\R^{m\times n}$ is the broadcasting of $g:\R\to\R$.  Then for any $(x,\xi)\in T\R^{m\times n}$ we have that
+	$$dG_x(\xi)=G'(x)\odot\xi.$$
+	Then for any $\zeta\in T_{G(x)}\R^{m\times n}$, we have the reverse derivative is given by
+	$$rG_x(\zeta)=G'(x)\odot\zeta.$$
+	
+	\item Suppose $\phi:\R^{m\times n}\times\R^{n\times N}\to\R^{m\times N}$ is given by
+	$$\phi(w,x)=wx.$$
+	Then we have two differential paths to consider:
+	\begin{enumerate}
+		\item For any $(w,x)\in \R^{m\times n}\times \R^{n\times N}$ and any $\xi\in T_x\R^{n\times N}$, we have that
+		\begin{align*}
+			d\phi_{(w,x)}(\xi)&=w\cdot\xi\\
+			&=L_w(\xi),
+		\end{align*}
+		and for any $\zeta\in T_{\phi(w,x)}\R^{m\times N}$, we have the reverse differential
+		\begin{align*}
+			r\phi_{(w,x)}(\zeta)&=w^T\cdot\zeta\\
+			&=L_{w^T}(\zeta).
+		\end{align*}
+		
+		\item For any $(w,x)\in\R^{m\times n}\times \R^{n\times N}$ and any $\eta\in T_w\R^{m\times n}$, we have that
+		\begin{align*}
+			d_1\phi_{(w,x)}(\eta)&=\eta\cdot x\\
+			R_x(\eta),
+		\end{align*}
+		and for any $\zeta\in T_{\phi(w,x)}\R^{m\times N}$, we have the reverse differential
+		\begin{align*}
+			r_1\phi_{(w,x)}(\zeta)&=\zeta\cdot x^T\\
+			&=R_{x^T}(\zeta).
+		\end{align*}
+	\end{enumerate}
+	
+	\item Suppose $\psi:\R^n\times\R^{n\times N}\to\R^{n\times N}$ is given by
+	$$\psi(b,x)=x+b\vec{1}^T,$$
+	where
+	$$\vec{1}^T=\begin{bmatrix}
+		1&1&\cdots&1
+	\end{bmatrix}\in\R^N.$$
+	Then we look at the two differential paths and for any $(b,x)\in\R^n\times\R^{n\times N}$ any any $\xi\in T_x\R^{n\times N}$, $\eta\in T_b\R^n$ and $\zeta\in T_{\psi(b,x)}\R^{n\times N}$:
+	\begin{enumerate}
+		\item In the network direction, we have that
+		\begin{align*}
+			d\psi_{(b,x)}(\xi)=\xi,
+		\end{align*}
+		with reverse differential
+		$$r\psi_{(b,x)}(\zeta)=\zeta.$$
+		
+		\item In the parameter-space direction, we have that
+		\begin{align*}
+			\cl{d}\psi_{(b,x)}(\eta)&=\eta\cdot\vec{1}^T\\
+			&=R_{\vec{1}^T}(\eta),
+		\end{align*}
+		with reverse differential
+		\begin{align*}
+			\cl{r}\psi_{(b,x)}(\zeta)&=\zeta\cdot\vec{1}\\
+			&=R_{\vec{1}}(\zeta).
+		\end{align*}
+	\end{enumerate}
+	
+	\item Suppose $\Gamma:\R^n\times\R^{n\times N}\to\R^{n\times N}$ is given by
+	$$\Gamma(\gamma,x)=\gamma\vec{1}^T\odot x.$$
+	The considering the two paths of differentiation, we have that for any $((\gamma,x), (\eta,\xi))\in T\R^n\oplus T\R^{n\times N}$ and $\zeta\in T_{\Gamma(\gamma,x)}\R^{n\times N}$ that:
+	\begin{enumerate}
+		\item In the network direction, we have that
+		\begin{align*}
+			d\Gamma_{(\gamma,x)}(\xi)&=\gamma\vec{1}^T\odot\xi,
+		\end{align*}
+		with reverse differential
+		\begin{align*}
+			r\Gamma_{(\gamma,x)}(\zeta)&=\gamma\vec{1}^T\odot\zeta.
+		\end{align*}
+		
+		\item In the parameter-space direction, we have that
+		\begin{align*}
+			\hat{d}\Gamma_{(\gamma,x)}(\eta)&=\eta\vec{1}^T\odot x\\
+			&=\odot_x\circ R_{\vec{1}^T}(\eta),
+		\end{align*}
+		with reverse differential
+		\begin{align*}
+			\hat{r}\Gamma_{(\gamma,x)}(\zeta)&=(x\odot\zeta)\cdot\vec{1}\\
+			&=R_{\vec{1}}\circ\odot_x(\zeta).
+		\end{align*}
+	\end{enumerate}
+	
+	\item As the normalization operator is quite involved, we move its computation to the appendix, \cref{sec:normOp}.
+	
+	\item For the loss function $\L:\R^N\times\R^N\to\R$ given by
+	$$\L(y,\hat{y})=-\frac{1}{N}[\ip{y,\log{\hat{y}}}+\ip{1-y,\log(1-\hat{y})}],$$
+	we fix $y,\hat{y}\in\R^N$ and for $\xi\in T_{\hat{y}}\R^N$, we see that
+	\begin{align*}
+		d\L_{(y,\hat{y})}(\xi)&=-\frac{1}{N}\sum_{j=1}^N\left[\frac{y_j}{\hat{y}_j}-\frac{1-y_j}{1-\hat{y}_j}\right]\xi_j\\
+		&=-\frac{1}{N}\ip{\frac{y}{\hat{y}}-\frac{1-y}{1-\hat{y}},\xi},
+	\end{align*}
+	and hence for $\zeta\in T_{\L(y,\hat{y})}\R$, it follows that
+	$$r\L_{(y,\hat{y})}(\zeta)=-\frac{1}{N}\left[\frac{y}{\hat{y}}-\frac{1-y}{1-\hat{y}}\right]\zeta,$$
+	where the division is taken in the Hadamard sense.
+	
+\end{enumerate}
+
+We're now ready to compute our various gradients of our cost function.  That is, if we let
+$$\J:\R^{\lay{n}{2}}\times \R^{\lay{n}{2}\times\lay{n}{1}}\times\R^{\lay{n}{1}}\times\R^{\lay{n}{1}}\times\R^{\lay{n}{1}\times\lay{n}{0}}\to\R$$
+be given by
+{\small
+\begin{align*}
+	\J(p)&=\L(y,\lay{G}{2}\circ\lay{\psi}{2}(\lay{b}{2},\lay{\phi}{2}(\lay{w}{2},\lay{G}{2}\circ\lay{\psi}{2}(\lay{\beta}{1},\lay{\Gamma}{1}(\lay{\gamma}{1},\lay{N}{1}\circ\lay{\phi}{1}(\lay{w}{1},x)))))),
+\end{align*}
+}
+where $p=(\lay{w}{2},\lay{\gamma}{1},\lay{\beta}{1},\lay{w}{2},\lay{b}{2})$ is a point in our parameter-space and we compute the reverse differentials for a learning rate $\alpha\in T_{\J(p)}\R$ with the assumption that our second activator function is the sigmoid function.  Indeed,
+
+\begin{align*}
+	r(\L\circ\lay{G}{2})_{\lay{z}{2}}(\alpha)&=r\lay{G}{2}_{\lay{z}{2}}\circ r\L_{\lay{a}{2}}(\alpha)\\
+	&=-\frac{\alpha}{N}\lay{G}{2}{'}(\lay{z}{2})\odot\left[\frac{y}{\lay{a}{2}}-\frac{1-y}{1-\lay{a}{2}}\right]\\
+	&=-\frac{\alpha}{N}\lay{a}{2}(1-\lay{a}{2})\left[\frac{y}{\lay{a}{2}}-\frac{1-y}{1-\lay{a}{2}}\right]\\
+	&=-\frac{\alpha}{N}[y(1-\lay{a}{2})-\lay{a}{2}(1-y)]\\
+	&=-\frac{\alpha}{N}[y-\lay{a}{2}]\\
+	&=\frac{\alpha}{N}(\lay{a}{2}-y).
+\end{align*}
+
+This leads us to
+\begin{align*}
+	\cl{r}_2\J_p(\alpha)&=\cl{r}_2(\lay{\psi}{2})_{(\lay{b}{2},\lay{u}{2})}\circ r\lay{G}{2}_{\lay{z}{2}}\circ r\L_{(y,\lay{a}{2})}\\
+	&=\frac{\alpha}{N}R_{\vec{1}}(\lay{a}{2}-y)\\
+	&=\frac{\alpha}{N}\sum_{j=1}^N(\lay{a}{2}{_j}-y_j);
+\end{align*}
+
+\begin{align*}
+	r_2\J_p(\alpha)&=r_2\lay{\phi}{2}_{(\lay{w}{2},\lay{a}{1})}\circ r\lay{\psi}{2}_{(\lay{b}{2},\lay{u}{2})}\left(\frac{\alpha}{N}(\lay{a}{2}-y)\right)\\
+	&=r_2\lay{\phi}{2}_{(\lay{w}{2},\lay{a}{1})}\left(\frac{\alpha}{N}(\lay{a}{2}-y)\right)\\
+	&=\frac{\alpha}{N}(\lay{a}{2}-y)\lay{a}{1}{^T};
+\end{align*}
+
+\begin{align*}
+	\cl{r}_1\J_p(\alpha)&=\cl{r}_1\lay{\psi}{1}_{(\lay{\beta}{1},\lay{v}{1})}\circ r\lay{G}{1}_{\lay{z}{1}}\circ r\lay{\phi}{2}_{(\lay{w}{2},\lay{a}{2})}\circ r\lay{\psi}{2}_{(\lay{b}{2},\lay{u}{2}}\circ r(\L\circ\lay{G}{2})_{\lay{z}{2}}(\alpha)\\
+	&=\frac{\alpha}{N}\cl{r}_1\lay{\psi}{1}_{(\lay{\beta}{1},\lay{v}{1})}\circ r\lay{G}{1}_{\lay{z}{1}}\circ r\lay{\phi}{2}_{(\lay{w}{2},\lay{a}{2})}(\lay{a}{2}-y)\\
+	&=\frac{\alpha}{N}\cl{r}_1\lay{\psi}{1}_{(\lay{\beta}{1},\lay{v}{1})}\circ r\lay{G}{1}_{\lay{z}{1}}\left(\lay{w}{2}{^T}(\lay{a}{2}-y)\right)\\
+	&=\frac{\alpha}{N}\cl{r}_1\lay{\psi}{1}_{(\lay{\beta}{1},\lay{v}{1})}\left(\lay{G}{1}{'}(\lay{z}{1})\odot\lay{w}{2}{^T}(\lay{a}{2}-y)\right)\\
+	&=\frac{\alpha}{N}\sum_{j=1}^N\lay{g}{1}{'}(\lay{z}{1}{_j})\odot\lay{w}{2}{^T}(\lay{a}{2}{_j}-y_j);
+\end{align*}
+
+\begin{align*}
+	\hat{r}_1\J_p(\alpha)&=\frac{\alpha}{N}\hat{r}_1\lay{\Gamma}{1}_{(\lay{\gamma}{1},\lay{\hat{u}}{1})}\left(\lay{G}{1}{'}(\lay{z}{1})\odot\lay{w}{2}{^T}(\lay{a}{2}-y)\right)\\
+	&=\frac{\alpha}{N}R_{\vec{1}}\left(\lay{\hat{u}}{1}\odot \left(\lay{G}{1}{'}(\lay{z}{1})\odot\lay{w}{2}{^T}(\lay{a}{2}-y)\right) \right)\\
+	&=\frac{\alpha}{N}\sum_{j=1}^n\lay{\hat{u}}{1}{_j}\odot\lay{g}{1}{'}(\lay{z}{1}{_j})\odot\lay{w}{2}{^T}(\lay{a}{2}{_j}-y_j); 
+\end{align*}
+and finally,
+\begin{align*}
+	r_1\J_p(\alpha)&=\frac{\alpha}{N}r_1\lay{\phi}{1}_{(\lay{w}{1},x)}\circ r\lay{N}{1}_{\lay{u}{1}}\circ r\lay{\Gamma}{1}_{(\lay{\gamma}{1},\lay{\hat{u}}{1})}\left(\lay{G}{1}{'}(\lay{z}{1})\odot\lay{w}{2}{^T}(\lay{a}{2}-y)\right)\\
+	&=\frac{\alpha}{N}r_1\lay{\phi}{1}_{(\lay{w}{1},x)}\circ r\lay{N}{1}_{\lay{u}{1}}\left(\gamma\vec{1}^T\odot\lay{G}{1}{'}(\lay{z}{1})\odot\lay{w}{2}{^T}(\lay{a}{2}-y)\right)\\
+	&=\frac{\alpha}{N}R_{x^T}\circ r\lay{N}{1}_{\lay{u}{1}}\left(\gamma\vec{1}^T\odot\lay{G}{1}{'}(\lay{z}{1})\odot\lay{w}{2}{^T}(\lay{a}{2}-y)\right)\\
+	&=\frac{\alpha}{N}\sum_{j,l=1}^N\sum_{i=1}^{\lay{n}{1}}T_i{^{jk}}{_l}\gamma^i\lay{g}{1}{'}(\lay{z}{1}{^i{_j}})\lay{w}{2}{_i}(\lay{a}{2}{_j}-y_j)x^m_l,
+\end{align*}
+where $T$ is the rank $(2,2)$-tensor representation of $r\lay{N}{1}_{\lay{u}{1}}$.
+
+
+
+
+
+
+
+
+\subsection{Backward Propagation - OLD}
 
 We now show how batch normalization affects the backward propagation algorithm.  For illustrative purposes, we assume a $2$-layer neural network with arbitrary activation functions and generic loss function.  We recall the setup (without bias $\lay{b}{\ell}$) used in \cref{sec:backPropDerivation}
 \begin{align*}
@@ -497,311 +821,6 @@ Suppose we have a training set $\X$ with which we wish to train a binary classif
 
 
 
-\subsection{Better Backpropagation}
-
-We consider a neural network utilizing batch normalization of the form
-{\tiny
-\begin{equation*}
-	\begin{tikzcd}
-		{}
-		&\R^{\lay{n}{1}\times\lay{n}{0}}
-		\arrow[d]
-		&{}
-		&\R^{\lay{n}{1}}
-		\arrow[d]
-		&\R^{\lay{n}{1}}
-		\arrow[d]
-		&{}
-		\\
-		\R^{\lay{n}{0}\times N}
-		\arrow[r]
-		&\boxed{\lay{\phi}{1}}
-		\arrow[r]
-		&\boxed{\lay{N}{1}}
-		\arrow[r]
-		&\boxed{\lay{\Gamma}{1}}
-		\arrow[r]
-		&\boxed{\lay{\psi}{1}}
-		\arrow[r]
-		&\boxed{\lay{G}{1}}
-		\arrow[r]
-		&\cdots\\
-		{}
-		&\cdots
-		\arrow[r]
-		&\boxed{\lay{\phi}{2}}
-		\arrow[r]
-		&\boxed{\lay{\psi}{2}}
-		\arrow[r]
-		&\boxed{\lay{G}{2}}
-		\arrow[r]
-		&\boxed{\L}
-		\arrow[r]
-		&\R
-		\\
-		{}
-		&{}
-		&\R^{\lay{n}{2}\times\lay{n}{1}}
-		\arrow[u]
-		&\R^{\lay{n}{2}}
-		\arrow[u]
-		&{}
-		&\R^{\lay{n}{2}\times N}
-		\arrow[u]
-		&{}
-	\end{tikzcd}
-\end{equation*}
-}
-where we have the functions
-\begin{enumerate}
-	\item $$\L:\R^{\lay{n}{2}\times N}\times\R^{\lay{n}{2}\times N}\to\R$$
-	is the given loss function.  If we're working with a binary classification problem, then we have that
-	\begin{align*}
-		\L(y,\hat{y})&=-\frac{1}{N}\sum_{j=1}^n\left\{y_j\log{\hat{y}_j}+(1-y_j)\log(1-\hat{y}_j)\right\}\\
-		&=-\frac{1}{n}\left[\ip{y,\log{y}}_{\R^N}+\ip{1-y,\log(1-\hat{y})}_{\R^N}\right].
-	\end{align*}
-	
-	\item $$\lay{G}{\ell}:\R^{\lay{n}{\ell}\times N}\to\R^{\lay{n}{\ell}\times N}$$
-	is the broadcasting of the activation unit $\lay{g}{\ell}:\R\to\R$.
-	
-	\item $$\lay{\phi}{\ell}:\R^{\lay{n}{\ell}\times\lay{n}{\ell-1}}\times\R^{\lay{n}{\ell-1}\times N}\to\R^{\lay{n}{\ell}\times N}$$
-	is given by
-	$$\lay{\phi}{\ell}(W,x)=Wx.$$
-	
-	\item $$\lay{\psi}{\ell}:\R^{\lay{n}{\ell}}\times\R^{\lay{n}{\ell}\times N}\to\R^{\lay{n}{\ell}\times N}$$
-	is given by
-	$$\psi(b,x)=x+b\vec{1}^T,$$
-	where
-	$$\vec{1}^T=\begin{bmatrix}
-		1&1&\cdots&1
-	\end{bmatrix}\in\R^{\lay{n}{\ell}}.$$
-	
-	\item $$\lay{N}{1}:\R^{\lay{n}{1}\times N}\to\R^{\lay{n}{1}\times N}$$
-	is the normalization operator given by
-	$$\lay{N}{1}:x^i_j\mapsto \frac{x^i_j-\E[x^i]}{\sqrt{\V[x^i]+\epsilon}},$$
-	where $\E$ is the expectation operator, i.e.,
-	$$\E[x^i]=\frac{1}{N}\sum_{j=1}^Nx^i_j,$$
-	and $\V$ is the variance operator, i.e.,
-	$$\V[x^i]=\E[(x^i-\E[x^i])^2].$$
-	
-	\item $$\lay{\Gamma}{\ell}:\R^{\lay{n}{\ell}}\times\R^{\lay{n}{\ell}\times N}\to\R^{\lay{n}{\ell}\times N}$$
-	is given by
-	$$\Gamma(\gamma, x)=\gamma\vec{1}^T\odot x,$$
-	where
-	$$\vec{1}^T=\begin{bmatrix}
-		1&1&\cdots&1
-	\end{bmatrix}\in\R^{\lay{n}{\ell}}.$$
-\end{enumerate}
-
-We now consider back-propagating through the network via reverse differentiations as in the following diagram:
-
-
-{\tiny
-\begin{equation*}
-	\begin{tikzcd}
-		{}
-		&\R^{\lay{n}{1}\times\lay{n}{0}}
-		&{}
-		&\R^{\lay{n}{1}}
-		&\R^{\lay{n}{1}}
-		&{}
-		\\
-		\R^{\lay{n}{0}\times N}
-		&\boxed{\lay{\phi}{1}}
-		\arrow[l, swap, "r"]
-		\arrow[u, "r_1"]
-		&\boxed{\lay{N}{1}}
-		\arrow[l, swap, "r"]
-		&\boxed{\lay{\Gamma}{1}}
-		\arrow[l, swap, "r"]
-		\arrow[u, "\hat{r}_1"]
-		&\boxed{\lay{\psi}{1}}
-		\arrow[l, swap, "r"]
-		\arrow[u, "\tilde{r}_1"]
-		&\boxed{\lay{G}{1}}
-		\arrow[l, swap, "r"]
-		&\cdots
-		\arrow[l, swap, "r"]
-		\\
-		{}
-		&\cdots
-		&\boxed{\lay{\phi}{2}}
-		\arrow[l, swap, "r"]
-		\arrow[d, "r_2"]
-		&\boxed{\lay{\psi}{2}}
-		\arrow[l, swap, "r"]
-		\arrow[d, "\cl{r}_2"]
-		&\boxed{\lay{G}{2}}
-		\arrow[l, swap, "r"]
-		&\boxed{\L}
-		\arrow[l, swap, "r"]
-		&\R
-		\arrow[l]
-		\\
-		{}
-		&{}
-		&\R^{\lay{n}{2}\times\lay{n}{1}}
-		&\R^{\lay{n}{2}}
-		&{}
-		&\R^{\lay{n}{2}\times N}
-		\arrow[u]
-		&{}
-	\end{tikzcd}
-\end{equation*}
-}
-
-We consider our individual derivatives:
-\begin{enumerate}
-	\item Suppose $G:\R^{m\times n}\to\R^{m\times n}$ is the broadcasting of $g:\R\to\R$.  Then for any $(x,\xi)\in T\R^{m\times n}$ we have that
-	$$dG_x(\xi)=G'(x)\odot\xi.$$
-	Then for any $\zeta\in T_{G(x)}\R^{m\times n}$, we have the reverse derivative is given by
-	$$rG_x(\zeta)=G'(x)\odot\zeta.$$
-	
-	\item Suppose $\phi:\R^{m\times n}\times\R^{n\times N}\to\R^{m\times N}$ is given by
-	$$\phi(W,x)=Wx.$$
-	Then we have two differential paths to consider:
-	\begin{enumerate}
-		\item For any $(W,x)\in \R^{m\times n}\times \R^{n\times N}$ and any $\xi\in T_x\R^{n\times N}$, we have that
-		\begin{align*}
-			d\phi_{(W,x)}(\xi)&=W\cdot\xi\\
-			&=L_W(\xi),
-		\end{align*}
-		and for any $\zeta\in T_{\phi(W,x)}\R^{m\times N}$, we have the reverse differential
-		\begin{align*}
-			r\phi_{(W,x)}(\zeta)&=W^T\cdot\zeta\\
-			&=L_{W^T}(\zeta).
-		\end{align*}
-		
-		\item For any $(W,x)\in\R^{m\times n}\times \R^{n\times N}$ and any $Z\in T_W\R^{m\times n}$, we have that
-		\begin{align*}
-			d_1\phi_{(W,x)}(Z)&=Z\cdot x\\
-			R_x(Z),
-		\end{align*}
-		and for any $\zeta\in T_{\phi(W,x)}\R^{m\times N}$, we have the reverse differential
-		\begin{align*}
-			r_1\phi_{(W,x)}(\zeta)&=\zeta\cdot x^T\\
-			&=R_{x^T}(\zeta).
-		\end{align*}
-	\end{enumerate}
-	
-	\item Suppose $\psi:\R^n\times\R^{n\times N}\to\R^{n\times N}$ is given by
-	$$\psi(b,x)=x+b\vec{1}^T,$$
-	where
-	$$\vec{1}^T=\begin{bmatrix}
-		1&1&\cdots&1
-	\end{bmatrix}\in\R^N.$$
-	Then we look at the two differential paths and for any $(b,x)\in\R^n\times\R^{n\times N}$ any any $\xi\in T_x\R^{n\times N}$, $\eta\in T_b\R^n$ and $\zeta\in T_{\psi(b,x)}\R^{n\times N}$:
-	\begin{enumerate}
-		\item In the network direction, we have that
-		\begin{align*}
-			d\psi_{(b,x)}(\xi)=\xi,
-		\end{align*}
-		with reverse differential
-		$$r\psi_{(b,x)}(\zeta)=\zeta.$$
-		
-		\item In the parameter-space direction, we have that
-		\begin{align*}
-			\cl{d}\psi_{(b,x)}(\eta)&=\eta\cdot\vec{1}^T\\
-			&=R_{\vec{1}^T}(\eta),
-		\end{align*}
-		with reverse differential
-		\begin{align*}
-			\cl{r}\psi_{(b,x)}(\zeta)&=\zeta\cdot\vec{1}\\
-			&=R_{\vec{1}}(\zeta).
-		\end{align*}
-	\end{enumerate}
-	
-	\item Suppose $\Gamma:\R^n\times\R^{n\times N}\to\R^{n\times N}$ is given by
-	$$\Gamma(\gamma,x)=\gamma\vec{1}^T\odot x.$$
-	The considering the two paths of differentiation, we have that for any $((\gamma,x), (\eta,\xi))\in T(\R^n\times\R^{n\times N})$ and $\zeta\in T_{\Gamma(\gamma,x)}\R^{n\times N}$ that:
-	\begin{enumerate}
-		\item In the network direction, we have that
-		\begin{align*}
-			d\Gamma_{(\gamma,x)}(\xi)&=\gamma\vec{1}^T\odot\xi,
-		\end{align*}
-		with reverse differential
-		\begin{align*}
-			r\Gamma_{(\gamma,x)}(\zeta)&=\gamma\vec{1}^T\odot\zeta.
-		\end{align*}
-		
-		\item In the parameter-space direction, we have that
-		\begin{align*}
-			\hat{d}\Gamma_{(\gamma,x)}(\eta)&=\eta\vec{1}^T\odot x\\
-			&=\odot_x\circ R_{\vec{1}^T}(\eta),
-		\end{align*}
-		with reverse differential
-		\begin{align*}
-			\hat{r}\Gamma_{(\gamma,x)}(\zeta)&=(x\odot\zeta)\cdot\vec{1}\\
-			&=R_{\vec{1}}\circ\odot_x(\zeta).
-		\end{align*}
-	\end{enumerate}
-	
-	\item As the normalization operator is quite involved, we move its computation to the appendix, \cref{sec:normOp}.
-	
-	\item For the loss function $\L:\R^N\times\R^N\to\R$ given by
-	$$L(y,\hat{y})=-\frac{1}{N}[\ip{y,\log{\hat{y}}}+\ip{1-y,\log(1-\hat{y})}],$$
-	we fix $y,\hat{y}\in\R^N$ and for $\xi\in T_{\hat{y}}\R^N$, we see that
-	\begin{align*}
-		d\L_{(y,\hat{y})}(\xi)&=-\frac{1}{N}\sum_{j=1}^N\left[\frac{y_j}{\hat{y}_j}-\frac{1-y_j}{1-\hat{y}_j}\right]\xi_j\\
-		&=-\frac{1}{N}\ip{\frac{y}{\hat{y}}-\frac{1-y}{1-\hat{y}},\xi},
-	\end{align*}
-	and hence for $\zeta\in T_{L(y,\hat{y})}\R$, it follows that
-	$$r\L_{(y,\hat{y})}(\zeta)=-\frac{1}{N}\left[\frac{y}{\hat{y}}-\frac{1-y}{1-\hat{y}}\right]\zeta.$$
-	
-\end{enumerate}
-
-We're now ready to compute our various gradients of our cost function.  That is, if we let
-$$\J:\R^{\lay{n}{2}}\times \R^{\lay{n}{2}\times\lay{n}{1}}\times\R^{\lay{n}{1}}\times\R^{\lay{n}{1}}\times\R^{\lay{n}{1}\times\lay{n}{0}}\to\R$$
-is given by
-{\tiny
-\begin{align*}
-	\J(\lay{W}{2},\lay{\gamma}{1},\lay{\beta}{1},\lay{W}{2},\lay{b}{2})&=\L(y,\lay{G}{2}\circ\lay{\psi}{2}(\lay{b}{2},\lay{\phi}{2}(\lay{W}{2},\lay{G}{2}\circ\lay{\psi}{2}(\lay{\beta}{1},\lay{\Gamma}{1}(\lay{\gamma}{1},\lay{N}{1}\circ\lay{\phi}{1}(\lay{W}{1},x))))))
-\end{align*}
-}
-and we compute the reverse differentials for a learning rate $\alpha\in T_{\J}\R$ with the assumption that our second activator function is the sigmoid function.  Indeed,
-
-\begin{align*}
-	r(\L\circ\lay{G}{2})_{v}(\alpha)&=r\lay{G}{2}_v\circ r\L_a(\alpha)\\
-	&=-\frac{\alpha}{N}\lay{G}{2}{'}(v)\odot\left[\frac{y}{a}-\frac{1-y}{1-a}\right]\\
-	&=-\frac{\alpha}{N}a(1-a)\left[\frac{y}{a}-\frac{1-y}{1-a}\right]\\
-	&=-\frac{\alpha}{N}[y(1-a)-a(1-y)]\\
-	&=-\frac{\alpha}{N}[y-a]\\
-	&=\frac{a-y}{N}\alpha.
-\end{align*}
-
-This leads us to
-\begin{align*}
-	\cl{r}_2\J_{\lay{b}{2}}(\alpha)&=\cl{r}_2(\lay{\psi}{2})_{(\lay{b}{2},\lay{u}{2})}\circ r\lay{G}{2}_{\lay{v}{2}}\circ r\L_{(y,\lay{a}{2})}\\
-	&=\frac{\alpha}{N}R_{\vec{1}}(\lay{a}{2}-y)\\
-	&=\frac{\alpha}{N}\sum_{j=1}^N(\lay{a}{2}{_j}-y_j);
-\end{align*}
-
-\begin{align*}
-	r_2\J_{\lay{W}{2}}(\alpha)&=r_2\lay{\phi}{2}_{(\lay{W}{2},\lay{a}{1})}\circ r\lay{\psi}{2}_{(\lay{b}{2},\lay{u}{2})}\left(\frac{\alpha}{N}(\lay{a}{2}-y)\right)\\
-	&=r_2\lay{\phi}{2}_{(\lay{W}{2},\lay{a}{1})}\left(\frac{\alpha}{N}(\lay{a}{2}-y)\right)\\
-	&=\frac{\alpha}{N}(\lay{a}{2}-y)\lay{a}{1}{^T};
-\end{align*}
-
-\begin{align*}
-	\cl{r}_1\J_{\lay{\beta}{1}}(\alpha)&=\cl{r}_1\lay{\psi}{1}_{(\lay{\beta}{1},\lay{\hat{z}}{1})}\circ r\lay{G}{1}_{\lay{\tilde{z}}{1}}\circ r\lay{\phi}{2}_{(\lay{W}{2},\lay{a}{2})}\circ r\lay{\psi}{2}_{(\lay{b}{2},\lay{u}{2}}\circ r(\L\circ\lay{G}{2})_{\lay{v}{2}}(\alpha)\\
-	&=\frac{\alpha}{N}\cl{r}_1\lay{\psi}{1}_{(\lay{\beta}{1},\lay{\hat{z}}{1})}\circ r\lay{G}{1}_{\lay{\tilde{z}}{1}}\circ r\lay{\phi}{2}_{(\lay{W}{2},\lay{a}{2})}(\lay{a}{2}-y)\\
-	&=\frac{\alpha}{N}\cl{r}_1\lay{\psi}{1}_{(\lay{\beta}{1},\lay{\hat{z}}{1})}\circ r\lay{G}{1}_{\lay{\tilde{z}}{1}}\left(\lay{W}{2}{^T}(\lay{a}{2}-y)\right)\\
-	&=\frac{\alpha}{N}\cl{r}_1\lay{\psi}{1}_{(\lay{\beta}{1},\lay{\hat{z}}{1})}\left(\lay{G}{1}{'}(\lay{\tilde{z}}{1})\odot\lay{W}{2}{^T}(\lay{a}{2}-y)\right)\\
-	&=\frac{\alpha}{N}\sum_{j=1}^N\lay{g}{1}{'}(\lay{\tilde{z}}{1}{_j})\odot\lay{W}{2}{^T}(\lay{a}{2}{_j}-y_j);
-\end{align*}
-
-\begin{align*}
-	\hat{r}_1\J_{\lay{\gamma}{1}}(\alpha)&=\frac{\alpha}{N}\hat{r}_1\lay{\Gamma}{1}_{(\lay{\gamma}{1},\lay{z}{1})}\left(\lay{G}{1}{'}(\lay{\tilde{z}}{1})\odot\lay{W}{2}{^T}(\lay{a}{2}-y)\right)\\
-	&=\frac{\alpha}{N}R_{\vec{1}}\left(\lay{z}{1}\odot \left(\lay{G}{1}{'}(\lay{\tilde{z}}{1})\odot\lay{W}{2}{^T}(\lay{a}{2}-y)\right) \right)\\
-	&=\frac{\alpha}{N}\sum_{j=1}^n\lay{z}{1}{_j}\odot\lay{g}{1}{'}(\lay{\tilde{z}}{1}{_j})\odot\lay{W}{2}{^T}(\lay{a}{2}{_j}-y_j); 
-\end{align*}
-and finally,
-\begin{align*}
-	r_1\J_{\lay{W}{1}}(\alpha)&=\frac{\alpha}{N}r_1\lay{\phi}{1}_{(\lay{W}{1},x)}\circ r\lay{N}{1}_{\lay{u}{1}}\circ r\lay{\Gamma}{1}_{(\lay{\gamma}{1},\lay{z}{1})}\left(\lay{G}{1}{'}(\lay{\tilde{z}}{1})\odot\lay{W}{2}{^T}(\lay{a}{2}-y)\right)\\
-	&=\frac{\alpha}{N}r_1\lay{\phi}{1}_{(\lay{W}{1},x)}\circ r\lay{N}{1}_{\lay{u}{1}}\left(\gamma\vec{1}^T\odot\lay{G}{1}{'}(\lay{\tilde{z}}{1})\odot\lay{W}{2}{^T}(\lay{a}{2}-y)\right)\\
-	&=\frac{\alpha}{N}R_{x^T}\circ r\lay{N}{1}_{\lay{u}{1}}\left(\gamma\vec{1}^T\odot\lay{G}{1}{'}(\lay{\tilde{z}}{1})\odot\lay{W}{2}{^T}(\lay{a}{2}-y)\right)\\
-	&=\frac{\alpha}{N}\sum_{j,l=1}^N\sum_{i=1}^{\lay{n}{1}}T_i{^{jk}}{_l}\gamma^i\lay{g}{1}{'}(\lay{\tilde{z}}{1}{^i{_j}})\lay{W}{2}{_i}(\lay{a}{2}{_j}-y_j)x^m_l
-\end{align*}
 
 
 	
