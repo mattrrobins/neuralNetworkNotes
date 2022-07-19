@@ -5,61 +5,52 @@ import numpy as np
 from mlLib.utils import LinearParameters, ShuffleBatchData, Momentum, RMSProp
 from mlLib.utils import apply_activation
 
-class Adam():
-    def __init__(self, params, bias, beta1=0.9, beta2=0.999, eps=1e-8):
+
+class Adam:
+    def __init__(self, param, bias, beta1=0.9, beta2=0.999, eps=1e-8):
         """
         Parameters:
         -----------
-        params : Dict[LinearParameters]
-            params[l].w : array_like
-            params[l].b : array_like
-        bias : List[Boolean]
+        param : LinearParameters
+        bias : Bool
         beta1 : float
-            Default: 0.9
+            Default = 0.9
         beta2 : float
-            Default: 0.999
+            Default = 0.999
         eps : float
-            Default: 10^{-8}
+            Default = 10^{-8}
 
         Returns:
         None
         """
+        self.bias = bias
         self.beta1 = beta1
         self.beta2 = beta2
         self.eps = eps
-        self.bias = bias
 
-        self.mom = Momentum(params, self.bias, self.beta1)
-        self.rms_prop = RMSProp(params, self.bias, self.beta2, self.eps)
+        self.mom = Momentum(param, self.bias, self.beta1)
+        self.rmsprop = RMSProp(param, self.bias, self.beta2, self.eps)
 
-    def update(self, params, iter, learning_rate=0.01):
+    def update(self, param, learning_rate, iter):
         """
         Parameters:
         -----------
-        params : Dict[LinearParameters]
-            params[l].dw : array_like
-            params[l].db : array_like
-        iter : int
+        params : LinearParameters
         learning_rate : float
-            Default: 0.01
+        iter : int
 
         Returns:
         None
         """
-        self.mom.update(params, learning_rate, False)
-        self.rms_prop.update(params, learning_rate, False)
+        v = self.mom.update(param, learning_rate, iter, False)
+        s = self.rmsprop.update(param, learning_rate, iter, False)
 
-        # Utilize bias correction
-        for l, param in params.items():
-            vw = self.mom.w[l] / (1 - self.beta1 ** iter)
-            sw = self.rms_prop.w[l] / (1 - self.beta2 ** iter)
-            param.w = param.w - learning_rate * (vw / (np.sqrt(sw) + self.eps))
-            if self.bias[l]:
-                vb = self.mom.b[l] / (1 - self.beta1 ** iter)
-                sb = self.rms_prop.b[l] / (1 - self.beta2 ** iter)
-                param.b = param.b - learning_rate * (vb / (np.sqrt(sb) + self.eps))
+        param.w = param.w - learning_rate * v["w"] / (np.sqrt(s["w"]) + self.eps)
+        if self.bias:
+            param.b = param.b - learning_rate * v["b"] / (np.sqrt(s["b"]) + self.eps)
 
-class NeuralNetwork():
+
+class NeuralNetwork:
     def __init__(self, config):
         """
         Parameters:
@@ -77,13 +68,13 @@ class NeuralNetwork():
         None
         """
         self.config = config
-        self.lp_reg = config['lp_reg']
-        self.batch_size = config['batch_size']
-        self.nodes = config['nodes']
-        self.bias = config['bias']
-        self.activators = config['activators']
-        self.keep_probs = config['keep_probs']
-        self.L = len(config['nodes']) - 1
+        self.lp_reg = config["lp_reg"]
+        self.batch_size = config["batch_size"]
+        self.nodes = config["nodes"]
+        self.bias = config["bias"]
+        self.activators = config["activators"]
+        self.keep_probs = config["keep_probs"]
+        self.L = len(config["nodes"]) - 1
 
     def init_dropout(self, num_examples, seed=101011):
         """
@@ -103,8 +94,10 @@ class NeuralNetwork():
             D[l] = np.random.rand(self.nodes[l], num_examples)
             D[l] = (D[l] < self.keep_probs[l]).astype(int)
             D[l] = D[l] / self.keep_probs[l]
-            assert (D[l].shape == (self.nodes[l], num_examples)
-                    ), "Dropout matrices are the wrong shape"
+            assert D[l].shape == (
+                self.nodes[l],
+                num_examples,
+            ), "Dropout matrices are the wrong shape"
 
         return D
 
@@ -139,7 +132,7 @@ class NeuralNetwork():
             if dropout != None:
                 a[l] = dropout[l] * a[l]
 
-        cache = {'a': a, 'dg': dg}
+        cache = {"a": a, "dg": dg}
         return cache
 
     def cost_function(self, params, a, y, lambda_=0.01, eps=1e-8):
@@ -166,10 +159,10 @@ class NeuralNetwork():
         R = 0
         for param in params.values():
             R += np.sum(np.abs(param.w) ** self.lp_reg)
-        R *= (lambda_ / (2 * n))
+        R *= lambda_ / (2 * n)
 
         # Compute unregularized cost
-        a = np.clip(a, eps, 1 - eps)    # Bound a for stability
+        a = np.clip(a, eps, 1 - eps)  # Bound a for stability
         J = (-1 / n) * (np.sum(y * np.log(a) + (1 - y) * np.log(1 - a)))
 
         cost = float(np.squeeze(J + R))
@@ -188,43 +181,51 @@ class NeuralNetwork():
             cache['a'] : array_like
             cache['dg'] : array_like
         y : array_like
-        
+
         Returns:
         --------
         None
         """
 
         # Retrieve cache
-        a = cache['a']
-        dg = cache['dg']
+        a = cache["a"]
+        dg = cache["dg"]
 
         # Initialize differentials along the network
         delta = {}
         delta[self.L] = ((a[self.L] - y) / y.shape[1]) * dropout[self.L]
 
         for l in reversed(range(1, self.L + 1)):
-            delta[l - 1] = dg[l - 1] * \
-                params[l].backward(delta[l], a[l - 1]) * dropout[l - 1]
+            delta[l - 1] = (
+                dg[l - 1] * params[l].backward(delta[l], a[l - 1]) * dropout[l - 1]
+            )
 
-    def update_parameters(self, params, learning_rate=0.1):
+    def update_parameters(self, params, adams, learning_rate, iter):
         """
         Parameters:
         -----------
         params : Dict[LinearParameters]
             params[l].w = Weights
-            params[l].bias = Boolean
             params[l].b = Bias
+        adams : Dict[Adam]
         learning_rate : float
-            Default : 0.01
+        iter : int
 
         Returns:
         --------
         None
         """
-        for param in params.values():
-            param.update(learning_rate)
+        for l in params.keys():
+            adams[l].update(params[l], learning_rate, iter)
 
-    def fit(self, data, learning_rate=0.1, lambda_=0.01, num_iters=10000, print_cost_iter=1000):
+    def fit(
+        self,
+        data,
+        learning_rate=0.1,
+        lambda_=0.01,
+        num_epochs=10000,
+        print_cost_iter=1000,
+    ):
         """
         Parameters:
         -----------
@@ -234,8 +235,8 @@ class NeuralNetwork():
         learning_rate : float
             Default : 0.1
         lambda_ : float
-            Default : 0.0
-        num_iters : int
+            Default : 0.01
+        num_epochs : int
             Default : 10000
         print_cost_iter : int
             Default: 1000   # 0 Doesn't print costs
@@ -243,40 +244,44 @@ class NeuralNetwork():
         Returns:
         --------
         costs : List[floats]
-        params : class[LinearParameters]
+        params : Dict[LinearParameters]
         """
-        # Initialize parameters per layer
+        # Initialize parameters and optimzer per layer
         params = {}
+        adams = {}
         for l in range(1, self.L + 1):
             params[l] = LinearParameters(
-                (self.nodes[l], self.nodes[l - 1]), self.bias[l])
-
-        # Initialize Adam
-        adam = Adam(params, self.bias)
+                (self.nodes[l], self.nodes[l - 1]), self.bias[l]
+            )
+            adams[l] = Adam(params[l], self.bias[l])
 
         # Initialize batching
         batching = ShuffleBatchData(data, self.batch_size)
 
         costs = []
-        for i in range(num_iters):
+        for epoch in range(num_epochs):
             batches = batching.get_batches()
             B = len(batches)
-            for k in range(B):
-                t = i * B + k + 1
-                x = batches[k]['x']
-                y = batches[k]['y']
+            k = 1
+            cost = 0
+            for batch in batches:
+                iter = (epoch * B) + k
+                x = batch["x"]
+                y = batch["y"]
                 dropout = self.init_dropout(x.shape[1])
                 cache = self.forward_propagation(params, x, dropout)
-                cost = self.cost_function(
-                    params, cache['a'][self.L], y, lambda_)
-                costs.append(cost)
+                batch_cost = self.cost_function(params, cache["a"][self.L], y, lambda_)
+                cost += x.shape[1] * batch_cost
                 self.backward_propagation(params, cache, y, dropout)
-                adam.update(params, t, learning_rate)
+                self.update_parameters(params, adams, learning_rate, iter)
+                k += 1
+            cost /= data["x"].shape[1]
+            costs.append(cost)
 
-            if (print_cost_iter != 0) and (i % print_cost_iter == 0):
-                print(f'Cost after iteration {i}: {cost}')
+            if (print_cost_iter != 0) and (epoch % print_cost_iter == 0):
+                print(f"Cost after epoch {epoch}: {cost}")
 
-        return params
+        return params, costs
 
     def evaluate(self, params, x):
         """
@@ -290,7 +295,7 @@ class NeuralNetwork():
         y_hat : array_like
         """
         cache = self.forward_propagation(params, x)
-        a = cache['a'][self.L]
+        a = cache["a"][self.L]
         y_hat = (~(a < 0.5)).astype(int)
         return y_hat
 
@@ -307,44 +312,58 @@ class NeuralNetwork():
         --------
         accuracy : float
         """
-        x = data['x']
-        y = data['y']
+        x = data["x"]
+        y = data["y"]
 
         y_hat = self.evaluate(params, x)
         acc = np.sum(y_hat == y) / y.shape[1]
 
         return acc
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     from pathlib import Path
 
     import pandas as pd
 
     from mlLib.utils import ProcessData
 
-    csv = Path('neuralNetworks/src/python/data/housepricedata.csv')
+    csv = Path("neuralNetworks/src/python/data/housepricedata.csv")
+    # csv = Path("neuralNetworks/src/python/data/pima-indians-diabetes.csv")
     df = pd.read_csv(csv)
     dataset = df.values
-    x = dataset[:, :10]
-    y = dataset[:, 10].reshape(-1, 1)
-    data = ProcessData(x, y, 0.15, 0.15, seed=1, feat_as_col=False)
+    x = dataset[:, :-1]
+    y = dataset[:, -1].reshape(-1, 1)
+    data = ProcessData(x, y, 0.1, 0.1, seed=1, feat_as_col=False)
 
     config = {
-        'lp_reg': 2,
-        'batch_size': 2 ** 5,
-        'nodes': [10, 32, 8, 1],
-        'bias': [False, True, True, True],
-        'activators': ['linear', 'relu', 'relu', 'sigmoid'],
-        'keep_probs': [1, 1, 1, 1]
+        "lp_reg": 2,
+        "batch_size": 2**5,
+        "nodes": [data.train["x"].shape[0], 32, 16, data.train["y"].shape[0]],
+        "bias": [False, True, True, True],
+        "activators": ["linear", "relu", "relu", "sigmoid"],
+        "keep_probs": [1, 1, 1, 1],
     }
 
     model = NeuralNetwork(config)
-    params = model.fit(data.train, learning_rate=0.001,
-                       lambda_=0.1, num_iters=10000, print_cost_iter=1000)
+    params, costs = model.fit(
+        data.train,
+        learning_rate=0.0001,
+        lambda_=0.5,
+        num_epochs=150,
+        print_cost_iter=20,
+    )
 
     train_acc = model.accuracy(params, data.train)
-    print(f'Training Accuracy: {train_acc}')
+    print(f"Training Accuracy: {train_acc}")
     dev_acc = model.accuracy(params, data.dev)
-    print(f'Dev Accuracy: {dev_acc}')
+    print(f"Dev Accuracy: {dev_acc}")
     test_acc = model.accuracy(params, data.test)
-    print(f'Test Accuracy: {test_acc}')
+    print(f"Test Accuracy: {test_acc}")
+
+    import matplotlib.pyplot as plt
+
+    plt.plot(costs, "ro")
+    plt.ylabel("Cost")
+    plt.xlabel("Epochs")
+    plt.show()

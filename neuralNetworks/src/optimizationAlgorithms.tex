@@ -167,7 +167,7 @@ Using this formulation of gradient descent, we insert EMA applied to the sequenc
 \subsubsection{Python Implementation via \texttt{numpy}}
 Here we build on our previous mini-batch implementation by optimizing via gradient descent with momentum, implemented with the \texttt{numpy} package.
 
-\lstinputlisting[firstline=1,lastline=304]{src/python/gradientDescent/npGradientDescentWithMomentum.py}
+\lstinputlisting[firstline=1,lastline=329]{src/python/gradientDescent/npGradientDescentWithMomentum.py}
 
 
 
@@ -209,7 +209,7 @@ where where taking the Hadamard-root.  Note that this root is necessary for our 
 \subsubsection{Python Implementation via \texttt{numpy}}
 Here we implement the RMS Propagation algorithm using the \texttt{numpy} library.
 
-\lstinputlisting[firstline=1,lastline=307]{src/python/gradientDescent/npRootMeanSquaredPropagation.py}
+\lstinputlisting[firstline=1,lastline=333]{src/python/gradientDescent/npRootMeanSquaredPropagation.py}
 
 
 
@@ -261,7 +261,7 @@ $$\beta_1=0.9,\qquad\beta_2=0.999,\qquad\epsilon=10^{-8}.$$
 \subsubsection{Python Implementation via \texttt{numpy}}
 
 
-\lstinputlisting[firstline=1,lastline=316]{src/python/gradientDescent/npAdaptiveMomentEstimation.py}
+\lstinputlisting[firstline=1,lastline=321]{src/python/gradientDescent/npAdaptiveMomentEstimation.py}
 
 
 
@@ -277,8 +277,8 @@ One could also implement a ``manual decay'', but this should only be used under 
 
 
 
-\subsection{Python Implementation}
-\lstinputlisting[lastline=305]{src/py/gradDescent.py}
+\subsection{Python Implementation via \texttt{numpy}}
+\lstinputlisting[firstline=1, lastline=336]{src/python/gradientDescent/npLearningRateDecay.py}
 
 
 

@@ -2,58 +2,68 @@
 
 import numpy as np
 
-from mlLib.utils import LinearParameters, ShuffleBatchData, apply_activation
+from mlLib.utils import LinearParameters, ShuffleBatchData
+from mlLib.utils import apply_activation
 
 
-class Momentum:
-    def __init__(self, param, bias, beta1=0.9):
-        """
-        Parameters:
-        -----------
-        param : LinearParameters
-        bias : Bool
-        beta1 : float
-            Default = 0.9
+def learning_rate_decay_rational(epoch, eta=1.0, alpha=0.2):
+    """
+    Parameters:
+    -----------
+    epoch : int
+    eta : float
+        Default = 1.0
+    alpha : float
+        Default = 0.2
 
-        Returns:
-        --------
-        None
-        """
-        self.bias = bias
-        self.beta1 = beta1
-        self.w = np.zeros(param.w.shape)
-        if self.bias:
-            self.b = np.zeros(param.b.shape)
+    Returns:
+    learning_rate : float
+    """
+    learning_rate = alpha / (1 + eta * epoch)
+    assert (
+        0 <= learning_rate <= 1
+    ), f"learnining rate is outside [0,1] for epoch {epoch}"
+    return learning_rate
 
-    def update(self, param, learning_rate, iter, update_params=True):
-        """
-        Parameters:
-        -----------
-        param : LinearParameter
-        learning_rate : float
-        iter : int
-        update_params : Bool
-            Default = True  - Dictates return type
 
-        Returns:
-        --------
-        None OR v : Dict[array_like]
-        """
-        self.w = self.beta1 * self.w + (1 - self.beta1) * param.dw
-        vw_corrected = self.w / (1 - self.beta1**iter)
-        if update_params:
-            param.w = param.w - learning_rate * vw_corrected
-        if self.bias:
-            self.b = self.beta1 * self.b + (1 - self.beta1) * param.db
-            vb_corrected = self.b / (1 - self.beta1**iter)
-            if update_params:
-                param.b = param.b - learning_rate * vb_corrected
-        if not update_params:
-            v = {}
-            v["w"] = vw_corrected
-            if self.bias:
-                v["b"] = vb_corrected
-            return v
+def learning_rate_decay_exponential(epoch, eta=0.95, alpha=0.2):
+    """
+    Parameters:
+    -----------
+    epoch : int
+    eta : float
+        Default = 0.95
+    alpha : float
+        Default = 0.2
+
+    Returns:
+    learning_rate : float
+    """
+    learning_rate = alpha * (eta**epoch)
+    assert (
+        0 <= learning_rate <= 1
+    ), f"learnining rate is outside [0,1] for epoch {epoch}"
+    return learning_rate
+
+
+def learning_rate_decay_root(epoch, eta=1.0, alpha=0.2):
+    """
+    Parameters:
+    -----------
+    epoch : int
+    eta : float
+        Default = 1.0
+    alpha : float
+        Default = 0.2
+
+    Returns:
+    learning_rate : float
+    """
+    learning_rate = alpha * eta / np.sqrt(epoch + 1)
+    assert (
+        0 <= learning_rate <= 1
+    ), f"learnining rate is outside [0,1] for epoch {epoch}"
+    return learning_rate
 
 
 class NeuralNetwork:
@@ -206,28 +216,27 @@ class NeuralNetwork:
                 dg[l - 1] * params[l].backward(delta[l], a[l - 1]) * dropout[l - 1]
             )
 
-    def update_parameters(self, params, moms, learning_rate, iter):
+    def update_parameters(self, params, learning_rate):
         """
         Parameters:
         -----------
-        params : Dict[LinearParameters]
+        params : Dict[class[Parameters]]
             params[l].w = Weights
             params[l].b = Bias
-        moms : Dict[Momentum]
         learning_rate : float
-        iter : int
 
         Returns:
         --------
         None
         """
-        for l in params.keys():
-            moms[l].update(params[l], learning_rate, iter, True)
+        for param in params.values():
+            param.update(learning_rate)
 
     def fit(
         self,
         data,
-        learning_rate=0.1,
+        eta=1,
+        alpha=0.2,
         lambda_=0.01,
         num_epochs=10000,
         print_cost_iter=1000,
@@ -238,28 +247,28 @@ class NeuralNetwork:
         data : Dict[array_like]
             data['x'] : array_like
             data['y'] : array_like
-        learning_rate : float
-            Default : 0.1
+        eta : float
+            Default = 0.1
+        alpha : float
+            Default = 0.1
         lambda_ : float
-            Default : 0.0
-        num_iters : int
-            Default : 10000
+            Default = 0.01
+        num_epochs : int
+            Default = 10000
         print_cost_iter : int
-            Default: 1000   # 0 Doesn't print costs
+            Default = 1000   # 0 Doesn't print costs
 
         Returns:
         --------
         costs : List[floats]
-        params : class[LinearParameters]
+        params : Dict[LinearParameters]
         """
-        # Initialize parameters and optimizer per layer
+        # Initialize parameters per layer
         params = {}
-        moms = {}
         for l in range(1, self.L + 1):
             params[l] = LinearParameters(
                 (self.nodes[l], self.nodes[l - 1]), self.bias[l]
             )
-            moms[l] = Momentum(params[l], self.bias[l])
 
         # Initialize batching
         batching = ShuffleBatchData(data, self.batch_size)
@@ -267,11 +276,9 @@ class NeuralNetwork:
         costs = []
         for epoch in range(num_epochs):
             batches = batching.get_batches()
-            B = len(batches)
-            k = 1
             cost = 0
+            learning_rate = learning_rate_decay_rational(epoch, eta, alpha)
             for batch in batches:
-                iter = (epoch * B) + k
                 x = batch["x"]
                 y = batch["y"]
                 dropout = self.init_dropout(x.shape[1])
@@ -279,8 +286,7 @@ class NeuralNetwork:
                 batch_cost = self.cost_function(params, cache["a"][self.L], y, lambda_)
                 cost += x.shape[1] * batch_cost
                 self.backward_propagation(params, cache, y, dropout)
-                self.update_parameters(params, moms, learning_rate, iter)
-                k += 1
+                self.update_parameters(params, learning_rate)
             cost /= data["x"].shape[1]
             costs.append(cost)
 
@@ -334,18 +340,18 @@ if __name__ == "__main__":
 
     from mlLib.utils import ProcessData
 
-    # csv = Path("neuralNetworks/src/python/data/housepricedata.csv")
-    csv = Path("neuralNetworks/src/python/data/pima-indians-diabetes.csv")
+    csv = Path("neuralNetworks/src/python/data/housepricedata.csv")
+    # csv = Path("neuralNetworks/src/python/data/pima-indians-diabetes.csv")
     df = pd.read_csv(csv)
     dataset = df.values
     x = dataset[:, :-1]
     y = dataset[:, -1].reshape(-1, 1)
-    data = ProcessData(x, y, 0.05, 0.05, seed=1, feat_as_col=False)
+    data = ProcessData(x, y, 0.1, 0.1, seed=1, feat_as_col=False)
 
     config = {
         "lp_reg": 2,
         "batch_size": 2**5,
-        "nodes": [data.train["x"].shape[0], 32, 8, data.train["y"].shape[0]],
+        "nodes": [data.train["x"].shape[0], 32, 16, data.train["y"].shape[0]],
         "bias": [False, True, True, True],
         "activators": ["linear", "relu", "relu", "sigmoid"],
         "keep_probs": [1, 1, 1, 1],
@@ -353,7 +359,13 @@ if __name__ == "__main__":
 
     model = NeuralNetwork(config)
     params, costs = model.fit(
-        data.train, 0.03, 0.01, num_epochs=500, print_cost_iter=50
+        data.train,
+        # learning_rate=0.0001,
+        eta=1.0,
+        alpha=0.5,
+        lambda_=0.5,
+        num_epochs=500,
+        print_cost_iter=50,
     )
 
     train_acc = model.accuracy(params, data.train)

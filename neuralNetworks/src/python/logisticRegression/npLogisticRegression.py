@@ -4,7 +4,8 @@ import numpy as np
 
 from mlLib.utils import apply_activation
 
-class LinearParameters():
+
+class LinearParameters:
     def __init__(self, dims, bias=True, seed=1):
         """
         Parameters:
@@ -14,7 +15,7 @@ class LinearParameters():
             Default : True
         seed : int
             Default : 1
-        
+
         Returns:
         --------
         None
@@ -36,10 +37,10 @@ class LinearParameters():
         --------
         z : array_like
         """
-        z = np.einsum('ij,jk', self.w, x)
+        z = np.einsum("ij,jk", self.w, x)
         if self.bias:
             z += self.b
-        
+
         return z
 
     def backward(self, dz, x):
@@ -55,10 +56,10 @@ class LinearParameters():
         """
         if self.bias:
             self.db = np.sum(dz, axis=1, keepdims=True)
-            assert (self.db.shape == self.b.shape)
-        
-        self.dw = np.einsum('ij,kj', dz, x)
-        assert (self.dw.shape == self.w.shape)
+            assert self.db.shape == self.b.shape
+
+        self.dw = np.einsum("ij,kj", dz, x)
+        assert self.dw.shape == self.w.shape
 
     def update(self, learning_rate=0.01):
         """
@@ -66,7 +67,7 @@ class LinearParameters():
         -----------
         learning_rate : float
             Default : 0.01
-        
+
         Returns:
         --------
         None
@@ -78,7 +79,8 @@ class LinearParameters():
             b = self.b - learning_rate * self.db
             self.b = b
 
-class LogisticRegression():
+
+class LogisticRegression:
     def __init__(self, lp_reg):
         """
         Parameters:
@@ -106,7 +108,7 @@ class LogisticRegression():
         dg : array_like
         """
         z = params.forward(x)
-        a, dg = apply_activation(z, 'sigmoid')
+        a, dg = apply_activation(z, "sigmoid")
         return a, dg
 
     def cost_function(self, params, x, y, lambda_=0.01, eps=1e-8):
@@ -128,7 +130,7 @@ class LogisticRegression():
         n = y.shape[1]
 
         R = np.sum(np.abs(params.w) ** self.lp_reg)
-        R *= (lambda_ / (2 * n))
+        R *= lambda_ / (2 * n)
 
         a, _ = self.predict(params, x)
         a = np.clip(a, eps, 1 - eps)
@@ -174,7 +176,7 @@ class LogisticRegression():
             params.update(learning_rate)
 
             if i % 1000 == 0:
-                print(f'Cost after iteration {i}: {cost}')
+                print(f"Cost after iteration {i}: {cost}")
 
         return params
 
@@ -207,20 +209,20 @@ class LogisticRegression():
         accuracy : float
         """
         y_hat = self.evaluate(params, x)
-        
+
         accuracy = np.sum(y_hat == y) / y.shape[1]
 
         return accuracy
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from pathlib import Path
 
     import pandas as pd
 
     from mlLib.utils import ProcessData
 
-    csv = Path('neuralNetworks/src/python/data/housepricedata.csv')
+    csv = Path("neuralNetworks/src/python/data/housepricedata.csv")
     df = pd.read_csv(csv)
     dataset = df.values
     x = dataset[:, :10]
@@ -228,10 +230,10 @@ if __name__ == '__main__':
     data = ProcessData(x, y, 0.15, 0.15, seed=1, feat_as_col=False)
 
     model = LogisticRegression(2)
-    params = model.fit(data.train['x'], data.train['y'], 0.1, 0.01)
-    train_acc = model.accuracy(params, data.train['x'], data.train['y'])
-    print(f'Training Accuracy: {train_acc}')
-    dev_acc = model.accuracy(params, data.dev['x'][0], data.dev['y'][0])
-    print(f'Dev Accuracy: {dev_acc}')
-    test_acc = model.accuracy(params, data.test['x'], data.test['y'])
-    print(f'Test Accuracy: {test_acc}')
+    params = model.fit(data.train["x"], data.train["y"], 0.1, 0.01)
+    train_acc = model.accuracy(params, data.train["x"], data.train["y"])
+    print(f"Training Accuracy: {train_acc}")
+    dev_acc = model.accuracy(params, data.dev["x"], data.dev["y"])
+    print(f"Dev Accuracy: {dev_acc}")
+    test_acc = model.accuracy(params, data.test["x"], data.test["y"])
+    print(f"Test Accuracy: {test_acc}")

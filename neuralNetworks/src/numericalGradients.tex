@@ -28,20 +28,20 @@ $$F(x,\epsilon)=\frac{1}{2\epsilon}\begin{bmatrix}
 Then we may check that our gradient computation $\nabla f(x)$ is correct by checking that
 $$\frac{\norm{F(x,\epsilon)-\nabla f(x)}_2}{\norm{F(x,\epsilon)}_2+\norm{\nabla f(x)}_2}\approx 0.$$
 
-\subsection{Python Implementation}
+\subsection{Python Implementation via \texttt{numpy}}
 
 \TOX{
-Reformat this section for the reverse differential of varying sizes once the Reverse Differential section is completed.  There should be several cases included:
+This python function can check the reverse differential $rf_x$ for the following types of functions $f$:
 \begin{itemize}
 	\item $f:\R\to\R$
-	\item $f:\R^n\to\R$ and maybe $g:\R\to\R^n$
+	\item $f:\R^n\to\R$ and $f:\R\to\R^n$
 	\item $f:\R^n\to\R^m$
-	\item $f:\R^{m\times n}\to\R$ and maybe $g:\R\to\R^{m\times n}$
-	\item $f:\R^{m\times n}\to\R^k$ and maybe $g:\R^k\to\R^{m\times n}$
+	\item $f:\R^{m\times n}\to\R$ and $f:\R\to\R^{m\times n}$
+	\item $f:\R^{m\times n}\to\R^k$ and $f:\R^k\to\R^{m\times n}$
 	\item $f:\R^{m\times n}\to\R^{k\times l}$
 \end{itemize}
 }
 
-\lstinputlisting[firstline=55,lastline=97]{src/py/miscSnippets.py}
+\lstinputlisting[firstline=1,lastline=120]{src/python/mlLib/differentialChecking.py}
 
 

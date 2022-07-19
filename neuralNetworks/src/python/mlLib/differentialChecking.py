@@ -1,11 +1,9 @@
 #! python3
 
-## Reverse Differential Checking ##
-
 import numpy as np
 from numpy.linalg import norm
 
-
+## Checking the reverse differential of a function
 def differential_check(f, x, eps=1e-3):
     """
     Parameters:
@@ -25,17 +23,16 @@ def differential_check(f, x, eps=1e-3):
         x = x.reshape(1, 1)
     elif len(x.shape) == 1:
         x = x.reshape(-1, 1)
-        # if len(y.shape) == 0:
-        # y = y.reshape(1, 1)
-        # elif len(y.shape) == 1:
-        # y = y.reshape(-1, 1)
+    if len(y.shape) == 0:
+        y = y.reshape(1, 1)
+    elif len(y.shape) == 1:
+        y = y.reshape(-1, 1)
 
     # k, l = y.shape
     m, n = x.shape
     # F = np.zeros((m, n, k, l))
-    F = np.zeros((m, n, *y.shape))
-    print(F.shape)
-    # rf = rf.reshape(m, n, k, l)
+    F = np.zeros((*x.shape, *y.shape))
+    rf = rf.reshape(*x.shape, *y.shape)
 
     for i in range(m):
         for j in range(n):
@@ -45,8 +42,8 @@ def differential_check(f, x, eps=1e-3):
             x_minus = x - eps * e
             f_plus, _ = f(x_plus)
             f_minus, _ = f(x_minus)
-            # f_diff = f_plus.reshape(k, l) - f_minus.reshape(k, l)
             f_diff = f_plus - f_minus
+            f_diff = f_diff.reshape(*y.shape)
             F[i, j] = f_diff
 
     F = F / (2 * eps)
@@ -80,7 +77,7 @@ def foo(x):
     J[0, 1] = x[0]
     J[1, 2] = 2 * x[2]
 
-    R = J.T
+    R = np.einsum("ij->ji", J)
     return y, R
 
 
@@ -171,20 +168,47 @@ if __name__ == "__main__":
 
         return error
 
-    def fctn(x):
-        x = np.array(x)
-        f = np.exp(x)
-        assert f.shape == x.shape
-        return f, np.diagflat(f)
+    def foo_scalar(x):
+        f = x * x
+        df = 2 * x
+        R = df
 
-    m = 3
-    n = 4
+        return f, R
+
+    def foo_vector(x):
+        f = x * x
+        n = x.size
+        df = np.zeros((n, n))
+        for mu in range(n):
+            for i in range(n):
+                if mu == i:
+                    df[mu, i] = 2 * x[i]
+        R = np.einsum("ij->ji", df)
+
+        return f, R
+
+    def foo_matrix(x):
+        f = x * x
+        m, n = x.shape
+        df = np.zeros((m, n, m, n))
+        for mu in range(m):
+            for nu in range(n):
+                for i in range(m):
+                    for j in range(n):
+                        if (mu == i) and (nu == j):
+                            df[mu, nu, i, j] = 2 * x[i, j]
+        R = np.einsum("ijkl->klij", df)
+
+        return f, R
+
+    m = 5
+    n = 7
     np.random.seed(1)
     for _ in range(5):
-        x = np.random.rand(m) * 10
+        x = np.random.rand(m, n) * 10
         # x = np.random.randint(1, 100)
         print(x)
         # e = differential_check_euclidean(foo, x)
         # e = differential_check_matrix_to_euclidean(bar, x)
-        e = differential_check(sigmoid, x)
+        e = differential_check(baz, x)
         print(e)
