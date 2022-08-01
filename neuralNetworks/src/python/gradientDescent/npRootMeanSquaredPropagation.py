@@ -180,7 +180,7 @@ class NeuralNetwork:
 
         return cost
 
-    def backward_propagation(self, params, cache, y, dropout):
+    def backward_propagation(self, params, cache, y, dropout=None):
         """
         Parameters:
         -----------
@@ -204,12 +204,14 @@ class NeuralNetwork:
 
         # Initialize differentials along the network
         delta = {}
-        delta[self.L] = ((a[self.L] - y) / y.shape[1]) * dropout[self.L]
+        delta[self.L] = (a[self.L] - y) / y.shape[1]
+        if dropout != None:
+            delta[self.L] *= dropout[self.L]
 
         for l in reversed(range(1, self.L + 1)):
-            delta[l - 1] = (
-                dg[l - 1] * params[l].backward(delta[l], a[l - 1]) * dropout[l - 1]
-            )
+            delta[l - 1] = dg[l - 1] * params[l].backward(delta[l], a[l - 1])
+            if dropout != None:
+                delta[l - 1] *= dropout[l - 1]
 
     def update_parameters(self, params, rmsprops, learning_rate, iter):
         """

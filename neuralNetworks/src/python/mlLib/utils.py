@@ -1,11 +1,26 @@
 #! python3
 
+import time
+
 import numpy as np
 from sklearn.model_selection import train_test_split
 
 import mlLib.npActivators as npActivators
 
 ## Classes
+## Timing Epoch
+class EpochRuntime():
+    def __init__(self):
+        self.current = time.time()
+    
+    def elapsed_time(self):
+        elapsed = time.time() - self.current
+        mins, secs = elapsed // 60, elapsed % 60
+        txt = 'Elapsed time for the most recent epoch: {0} minutes and {1:0.3f}seconds'.format(mins, secs)
+        print(txt)
+        self.current = time.time()
+
+    
 
 ## Shuffle, split and normalize full dataset
 class ProcessData():
@@ -360,12 +375,11 @@ class LinearParameters():
 
         return dout
 
-    def update(self, learning_rate=0.01):
+    def update(self, learning_rate):
         """
         Parameters:
         -----------
         learning_rate : float
-            Default : 0.01
         
         Returns:
         --------

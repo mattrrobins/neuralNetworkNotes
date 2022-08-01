@@ -118,6 +118,32 @@ def baz(x):
     return f, R
 
 
+def normalization(x, eps=1e-8):
+    """ """
+    mu = np.mean(x, axis=1, keepdims=True)
+    sigma2 = np.var(x, axis=1, keepdims=True)
+    theta = 1 / np.sqrt(sigma2 + eps)
+    y = theta * (x - mu)
+
+    m, n = x.shape
+    dy = np.zeros((m, n, m, n))
+    I_m = np.eye(m)
+    I_n = np.eye(n)
+    for alpha in range(m):
+        for beta in range(n):
+            for i in range(m):
+                for j in range(n):
+                    dy[alpha, beta, i, j] = (
+                        I_m[alpha, i]
+                        * theta[alpha, 0]
+                        * (I_n[j, beta] - (1 + y[alpha, j] * y[alpha, beta]) / n)
+                    )
+
+    ry = np.einsum("ijkl->klij", dy)
+
+    return y, ry
+
+
 if __name__ == "__main__":
 
     def differential_check_01(f, x, eps=1e-3):
@@ -210,5 +236,5 @@ if __name__ == "__main__":
         print(x)
         # e = differential_check_euclidean(foo, x)
         # e = differential_check_matrix_to_euclidean(bar, x)
-        e = differential_check(baz, x)
+        e = differential_check(normalization, x)
         print(e)

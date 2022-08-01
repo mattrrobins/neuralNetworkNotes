@@ -326,7 +326,34 @@ We consider our individual derivatives:
 		\end{align*}
 	\end{enumerate}
 	
-	\item As the normalization operator is quite involved, we move its computation to the appendix, \cref{sec:normOp}.
+	\item For a coordinate-free derivation of the normalization operator, see \cref{sec:normOp}.  Otherwise, we let 
+	$$N:\R^{n\times N}\to\R^{n\times N}, \qquad y:=N(x),\qquad\qquad y^\alpha_\beta=\frac{x^\alpha_\beta-\mu^\alpha}{\sqrt{\sigma^{2\alpha}+\epsilon}},$$
+	and note that
+	\begin{align*}
+		\frac{\partial\mu^\alpha}{\partial x^i_j}&=\frac{1}{N}\delta^\alpha_i,
+	\end{align*}
+	and
+	\begin{align*}
+		\frac{\partial \sigma^{2\alpha}}{\partial x^i_j}&=\frac{2}{N}(x^\alpha_j-\mu^\alpha)\delta_i^\alpha.
+	\end{align*}
+	Hence,
+	\begin{align*}
+		\frac{\partial y^\alpha_\beta}{\partial x^i_j}&=-\frac{1}{2}(\sigma^{2\alpha}+\epsilon)^{-\frac{3}{2}}\left(\frac{\partial \sigma^{2\alpha}}{\partial x^i_j}\right)(x^\alpha_\beta-\mu^\alpha)+(\sigma^{2\alpha}+\epsilon)^{-\frac{1}{2}}\left(\frac{\partial x^\alpha_\beta}{\partial x^i_j}-\frac{\partial\mu^\alpha}{\partial x^i_j}\right)\\
+		&=-\frac{1}{N}(\sigma^{2\alpha}+\epsilon)^{-\frac{3}{2}}(x^\alpha_j-\mu^\alpha)\delta^\alpha_i(x^\alpha_\beta-\mu^\alpha)+(\sigma^{2\alpha}+\epsilon)^{-\frac{1}{2}}\left(\delta_i^\alpha\delta_\beta^j-\frac{1}{N}\delta_i^\alpha\right)\\
+		&=-\frac{1}{N}(\sigma^{2\alpha}+\epsilon)^{-\frac{1}{2}}y^\alpha_jy^\alpha_\beta\delta_i^\alpha+(\sigma^{2\alpha}+\epsilon)^{-\frac{1}{2}}\left(\delta^j_\beta-\frac{1}{N}\right)\delta_i^\alpha\\
+		&=\frac{\delta^\alpha_i}{\sqrt{\sigma^{2\alpha}+\epsilon}}\left(\delta^j_\beta-\frac{1}{N}-\frac{1}{N}y^\alpha_jy^\alpha_\beta\right)\\
+		&=\frac{\delta^\alpha_i}{\sqrt{\sigma^{2\alpha}+\epsilon}}\left(\delta^j_\beta-\frac{1}{N}(1+y^\alpha_jy^\alpha_\beta)\right).
+	\end{align*}
+	Thus for $(x,\xi^i_j)\in T\R^{n\times N}$, if we let $\mathcal{F}{{^\alpha}{_\beta}{_i}{^j}}$ denote the rank $(2,2)$-tensor representation for the forward differential, we have that
+	\begin{align*}
+		dN_x(\xi)&=\frac{\partial y^\alpha_\beta}{\partial x^i_j}\xi^i_j\\
+		&=\mathcal{F}{{^\alpha}{_\beta}{_i}{^j}}\xi^i_j,
+	\end{align*}
+	and for $\zeta^\alpha_\beta\in T_y\R^{n\times N}$, if we let $\mathcal{R}{{^i}{_j}{_\alpha}{^\beta}}$ denote the rank $(2,2)$-tensor representation for the reverse differential, we have that
+	\begin{align*}
+		rN_x(\zeta)&=\sum_{\alpha=1}^n\sum_{\beta=1}^N\frac{\partial y^\alpha_\beta}{\partial x^i_j}\zeta^\alpha_\beta\\
+		&=\mathcal{R}{{^i}{_j}{_\alpha}{^\beta}}\zeta^\alpha_\beta.
+	\end{align*}
 	
 	\item For the loss function $\L:\R^N\times\R^N\to\R$ given by
 	$$\L(y,\hat{y})=-\frac{1}{N}[\ip{y,\log{\hat{y}}}+\ip{1-y,\log(1-\hat{y})}],$$
@@ -391,9 +418,100 @@ and finally,
 	r_1\J_p(\alpha)&=\frac{\alpha}{N}r_1\lay{\phi}{1}_{(\lay{w}{1},x)}\circ r\lay{N}{1}_{\lay{u}{1}}\circ r\lay{\Gamma}{1}_{(\lay{\gamma}{1},\lay{\hat{u}}{1})}\left(\lay{G}{1}{'}(\lay{z}{1})\odot\lay{w}{2}{^T}(\lay{a}{2}-y)\right)\\
 	&=\frac{\alpha}{N}r_1\lay{\phi}{1}_{(\lay{w}{1},x)}\circ r\lay{N}{1}_{\lay{u}{1}}\left(\gamma\vec{1}^T\odot\lay{G}{1}{'}(\lay{z}{1})\odot\lay{w}{2}{^T}(\lay{a}{2}-y)\right)\\
 	&=\frac{\alpha}{N}R_{x^T}\circ r\lay{N}{1}_{\lay{u}{1}}\left(\gamma\vec{1}^T\odot\lay{G}{1}{'}(\lay{z}{1})\odot\lay{w}{2}{^T}(\lay{a}{2}-y)\right)\\
-	&=\frac{\alpha}{N}\sum_{j,l=1}^N\sum_{i=1}^{\lay{n}{1}}T_i{^{jk}}{_l}\gamma^i\lay{g}{1}{'}(\lay{z}{1}{^i{_j}})\lay{w}{2}{_i}(\lay{a}{2}{_j}-y_j)x^m_l,
+	&=\frac{\alpha}{N}\sum_{j,l=1}^N\sum_{i=1}^{\lay{n}{1}}\mathcal{R}{{^k}{_l}{_i}{^j}}\gamma^i\lay{g}{1}{'}(\lay{z}{1}{^i{_j}})\lay{w}{2}{_i}(\lay{a}{2}{_j}-y_j)x^m_l.
 \end{align*}
-where $T$ is the rank $(2,2)$-tensor representation of $r\lay{N}{1}_{\lay{u}{1}}$.
+
+In general, to simply the construction in python, we utilize the auxiliary $\delta$'s as before.  To this, suppose we have an arbitrary $L$-layer neural network utilizing batch normalization on all hidden layers as in the following diagram:
+{\tiny
+\begin{equation*}
+	\begin{tikzcd}
+		{}
+		&\R^{\lay{n}{1}\times\lay{n}{0}}
+		\arrow[d, swap, "\lay{w}{1}"]
+		&{}
+		&\R^{\lay{n}{1}}
+		\arrow[d, swap, "\lay{\gamma}{1}"]
+		&\R^{\lay{n}{1}}
+		\arrow[d, swap, "\lay{\beta}{1}"]
+		&{}
+		&\R^{\lay{n}{2}\times\lay{n}{1}}
+		\arrow[d, swap, "\lay{w}{2}"]
+		&{}
+		&{}
+		&{}
+		\\
+		\R^{\lay{n}{0}\times N}
+		\arrow[r, "\lay{a}{0}:=x"]
+		&\boxed{\lay{\phi}{1}}
+		\arrow[r, "\lay{u}{1}"]
+		&\boxed{\lay{N}{1}}
+		\arrow[r, "\lay{\hat{u}}{1}"]
+		&\boxed{\lay{\Gamma}{1}}
+		\arrow[r, "\lay{v}{1}"]
+		&\boxed{\lay{\psi}{1}}
+		\arrow[r, "\lay{z}{1}"]
+		&\boxed{\lay{G}{1}}
+		\arrow[r, "\lay{a}{1}"]
+		&\boxed{\lay{\phi}{2}}
+		\arrow[r, "\lay{u}{2}"]
+		&\boxed{\lay{N}{2}}
+		\arrow[r, "\lay{\hat{u}}{2}"]
+		&\cdots
+		\\
+		\cdots
+		\arrow[r, "\lay{\hat{u}}{L-1}"]
+		&\boxed{\lay{\Gamma}{L-1}}
+		\arrow[r, "\lay{v}{L-1}"]
+		&\boxed{\lay{\psi}{L-1}}
+		\arrow[r, "\lay{z}{L-1}"]
+		&\boxed{\lay{G}{L-1}}
+		\arrow[r, "\lay{a}{L-1}"]
+		&\boxed{\lay{\phi}{L}}
+		\arrow[r, "\lay{u}{L}"]
+		&\boxed{\lay{\psi}{L}}
+		\arrow[r, "\lay{z}{L}"]
+		&\boxed{\lay{G}{L}}
+		\arrow[r, "\lay{a}{L}"]
+		&\boxed{\L}
+		\arrow[r, "\text{cost}"]
+		&\R
+		\\
+		{}
+		&{}
+		&\R^{\lay{n}{L-1}}
+		\arrow[u, swap, "\lay{\gamma}{L-1}"]
+		&\R^{\lay{n}{L-1}}
+		\arrow[u, swap, "\lay{\beta}{L-1}"]
+		&{}
+		&\R^{\lay{n}{L}\times\lay{n}{L-1}}
+		\arrow[u, swap, "\lay{w}{L}"]
+		&\R^{\lay{n}{L}}
+		\arrow[u, swap, "\lay{b}{L}"]
+		&\R^{\lay{n}{L}\times N}
+		\arrow[u, swap, "y"]
+		&{}
+	\end{tikzcd}
+\end{equation*}
+}
+
+Then we build our $\delta$-differentials recursively starting at $\L$.  That is,
+\begin{align*}
+	\lay{\delta}{L}&:=r(\L\circ\lay{G}{L})_{\lay{z}{L}},\\
+	\lay{\delta}{L-1}&:=\lay{G}{L-1}{'}(\lay{z}{L-1})\odot\lay{w}{L}{^T}\lay{\delta}{L},\\
+	\lay{\delta}{L-2}&:=\lay{G}{L-2}{'}(\lay{z}{L-2})\odot\lay{w}{L-1}{^T}r\lay{N}{L-1}_{\lay{u}{L-1}}(\lay{\delta}{L-1}),\\
+	&\vdots\\
+	\lay{\delta}{\ell}&:=\lay{G}{\ell}{'}(\lay{z}{\ell})\odot\lay{w}{\ell+1}{^T}r\lay{N}{\ell+1}_{\lay{u}{\ell+1}}(\lay{\delta}{\ell+1}),\\
+	&\vdots\\
+	\lay{\delta}{1}&:=\lay{G}{1}{'}(\lay{z}{1})\odot\lay{w}{2}{^T}r\lay{N}{2}_{\lay{u}{2}}(\lay{\delta}{2});
+\end{align*}
+and compute our gradients via
+\begin{align*}
+	\frac{\partial\J}{\partial\lay{b}{L}}&=\sum_{j=1}^N\lay{\delta}{L}{_j},\\
+	\frac{\partial\J}{\partial\lay{w}{L}}&=\lay{\delta}{L}\lay{a}{L-1}{^T},\\
+	\frac{\partial\J}{\partial\lay{\beta}{\ell}}&=\sum_{j=1}^N\lay{\delta}{\ell},\qquad\ell\in\{1,...,L-1\},\\
+	\frac{\partial\J}{\partial\lay{\gamma}{\ell}}&=\sum_{j=1}^N\lay{\hat{u}}{\ell}{_j}\odot\lay{\delta}{\ell}{_j},\qquad\ell\in\{1,...,L-1\},\\
+	\frac{\partial\J}{\partial\lay{w}{\ell}}&=r\lay{N}{\ell}_{\lay{u}{\ell}}(\lay{\delta}{\ell})\lay{a}{\ell-1}{^T},\qquad\ell\in\{1,...,L-1\}.
+\end{align*}
 
 
 
@@ -401,6 +519,7 @@ where $T$ is the rank $(2,2)$-tensor representation of $r\lay{N}{1}_{\lay{u}{1}}
 
 
 
+\begin{comment}
 
 \subsection{Backward Propagation - OLD}
 
@@ -460,9 +579,6 @@ This leads to compute some auxiliary differentials before continuing further.
 
 
 
-
-
-\begin{comment}
 \begin{lem}
 Let $\X=\{x_1,...,x_N\}\subset\R^m$ which gives rise to the mean
 $$\mu=\E[x]=\frac{1}{N}\sum_{j=1}^Nx_j,$$
@@ -503,7 +619,7 @@ Thus for $x_{j_0}\in\X$,
 \end{align*}
 \end{proof}
 
-\end{comment}
+
 
 
 
@@ -549,9 +665,6 @@ Thus for $x_{j_0}\in\X$,
 \end{proof}
 
 
-
-\begin{comment}
-
 \begin{lem}
 	Let $\mathcal{N}:\R^N\to\R^N$ denote the normalization transformation with $\hat{x}=\mathcal{N}(x)$.  That is,
 	\begin{align*}
@@ -584,7 +697,7 @@ Thus for $x_{j_0}\in\X$,
 	\end{align*}
 \end{proof}
 
-\end{comment}
+
 
 \begin{cor}
 	For $\alpha=1,...,N$, let $\mathcal{N}_\alpha:\R^{m\times N}\to\R^m$ denote the $\alpha$-th component of the vector-valued, normalization transformation.  That is,
@@ -717,8 +830,6 @@ we've described our desired gradients after summation.
 
 
 
-
-\begin{comment}
 	
 
 
@@ -756,13 +867,28 @@ For backward propagation, we compute derivatives in coordinates
 
 
 
+	
 \end{comment}
 
 
 
-
 \subsection{Inferencing}
-We note that in our computation for forward propagation, that our normalization transforms change with out batches.  This leads to ambiguity when predicting a label for a new example.  One fix would be to average our means and variances over our batches.  That is, suppose during our iteration process, we have training-batches of the form $\{\X^k:1\leq k\leq K\}$, where each $\X^k$ has cardinality $|\X^k|=n$.  Then for each hidden-layer $\ell\in\{1,...,L-1\}$, we obtain the means
+We note that in our computation for forward propagation, that our normalization transforms change with our batches.  This leads to ambiguity when predicting a label for a new example.  To fix this ambiguity, we will use exponentially moving averages to accumulate the means and variances of a given layer.  That is, given a mini-batch partition $\{\X^k:1\leq k \leq B\}$ and epoch $i$, we let
+$$t:=iB + k,$$
+denote the iteration.  Fixing a layer $\ell$, we let
+$$\lay{\cl{\mu}}{\ell}{_0}=0,\qquad\lay{\cl{\sigma}^2}{\ell}{_0}=0,$$
+and for some momentum $\beta\in[0,1]$ we define
+$$\lay{\cl{\mu}}{\ell}{_t}=\beta\lay{\cl{\mu}}{\ell}{_{t-1}}+(1-\beta)\lay{\mu}{\ell}{_t},$$
+and
+$$\lay{\cl{\sigma}^2}{\ell}{_t}=\beta\lay{\cl{\sigma}^2}{\ell}{_{t-1}}+(1-\beta)\lay{\sigma^2}{\ell}{_t}.$$
+After convergence, we use $\lay{\cl{\mu}}{\ell}$ and $\lay{\cl{\sigma}^2}{\ell}$ in evaluation on our tests sets.
+
+
+
+
+\begin{comment}
+\subsection{Inferencing - OLD}
+We note that in our computation for forward propagation, that our normalization transforms change with our batches.  This leads to ambiguity when predicting a label for a new example.  One fix would be to average our means and variances over our batches.  That is, suppose during our iteration process, we have training-batches of the form $\{\X^k:1\leq k\leq K\}$, where each $\X^k$ has cardinality $|\X^k|=n$.  Then for each hidden-layer $\ell\in\{1,...,L-1\}$, we obtain the means
 $$\lay{\mu}{\ell}{_k}=\frac{1}{n}\sum_{x\in\X^k}\lay{z}{\ell},$$
 and the variances
 $$\lay{\sigma^2}{\ell}{_k}=\frac{1}{n}\sum_{x\in\X^k}(\lay{z}{\ell}-\lay{\mu}{\ell}{_k})^2.$$
@@ -775,46 +901,46 @@ $$\{\lay{\sigma^2}{\ell}{_k}:1\leq k\leq K\},$$
 from which we use the unbiased estimate
 $$\lay{\sigma^2}{\ell}:=\frac{n}{n-1}\frac{1}{K}\sum_{k=1}^K\lay{\sigma^2}{\ell}{_k}.$$
 These quantities are what we use when computing the batch-normalization transforms of the hidden units for new examples.
-
+\end{comment}
 
 
 
 
 \subsection{Algorithm Outline}
-Suppose we have a training set $\X$ with which we wish to train a binary classification via an $L$-layer neural network.  Let $N=|\X|$ and let $n=2^p$ be the batch size with $K=\lceil\frac{N}{n}\rceil$ batches per epoch.  Then our algorithm would be as follows:
+Suppose we have a training set $\X$ with which we wish to train a binary classification via an $L$-layer neural network.  Let $N=|\X|$ and let $n=2^p$ be the batch size with $B=\lceil\frac{N}{n}\rceil$ batches per epoch.  Then our algorithm would be as follows:
 \begin{enumerate}[1.]
-	\item Set hyper-parameters. Initialize parameters.
-	\item For $0\leq i\leq\texttt{num\_iters}$:
+	\item Set hyper-parameters. Initialize parameters and running statistics.
+	\item For $0\leq i\leq\texttt{num\_epochs}$:
 	\begin{enumerate}[a.]
-		\item Generate batches $\{\X^k:1\leq k\leq K\}$.
-		\item For $1\leq k\leq K$:
+		\item Generate batches $\{\X^k:1\leq k\leq B\}$.
+		\item For $1\leq k\leq B$:
 		\begin{enumerate}[i.]
+			\item $$t=iB + k.$$
 			\item Perform forward propagation on $\X^k$:
 			\begin{itemize}
-				\item $$\lay{z}{1}=\lay{W}{1}x$$
+				\item $$\lay{u}{1}=\lay{w}{1}x$$
 				\item For $\ell\in\{1,...,L-1\}$:
 				\begin{itemize}
-					\item $$\lay{z}{\ell}=\lay{W}{\ell}\lay{a}{\ell-1}$$
-					\item $$\lay{\mu}{\ell}{_k}=\frac{1}{n}\sum_{x\in\X^k}\lay{z}{\ell}$$
-					\item $$\lay{\sigma^2}{\ell}{_k}=\frac{1}{n}\sum_{x\in\X^k}(\lay{z}{\ell}-\lay{\mu}{\ell}{_k})^2$$
-					\item $$\lay{\hat{z}}{\ell}=(\lay{\sigma^2}{\ell}{_k}+\epsilon)^{-\frac{1}{2}}\odot(\lay{z}{\ell}-\lay{\mu}{\ell}{_k})$$
-					\item $$\lay{\tilde{z}}{\ell}=\lay{\gamma}{\ell}\odot\lay{\hat{z}}{\ell}+\lay{\beta}{\ell}$$
-					\item $$\lay{a}{\ell}=\lay{g}{\ell}(\lay{\tilde{z}}{\ell})$$
+					\item $$\lay{u}{\ell}=\lay{w}{\ell}\lay{a}{\ell-1}$$
+					\item $$\lay{\mu}{\ell}{_t}=\frac{1}{n}\sum_{x\in\X^k}\lay{u}{\ell}$$
+					\item $$\lay{\cl{\mu}}{\ell}{_t}=\beta\lay{\cl{\mu}}{\ell}{_{t-1}}+(1-\beta)\lay{\mu}{\ell}{_t}$$
+					\item $$\lay{\sigma^2}{\ell}{_t}=\frac{1}{n}\sum_{x\in\X^k}(\lay{u}{\ell}-\lay{\mu}{\ell}{_t})^2$$
+					\item $$\lay{\cl{\sigma}^2}{\ell}{_t}=\beta\lay{\cl{\sigma}^2}{\ell}{_{t-1}}+(1-\beta)\lay{\sigma^2}{\ell}{_t}$$
+					\item $$\lay{\hat{u}}{\ell}=(\lay{\sigma^2}{\ell}{_t}+\epsilon)^{-\frac{1}{2}}\odot(\lay{u}{\ell}-\lay{\mu}{\ell}{_t})$$
+					\item $$\lay{z}{\ell}=\lay{\gamma}{\ell}\odot\lay{\hat{u}}{\ell}+\lay{\beta}{\ell}$$
+					\item $$\lay{a}{\ell}=\lay{g}{\ell}(\lay{z}{\ell})$$
 				\end{itemize}
-				\item $$\lay{z}{L}=\lay{W}{L}\lay{a}{L-1}+b$$
+				\item $$\lay{z}{L}=\lay{w}{L}\lay{a}{L-1}+b$$
 				\item $$\lay{a}{L}=\lay{g}{L}(\lay{z}{L})$$
 			\end{itemize}
 			\item Compute cost $\J$ on $\X^k$.
 			\item Apply backwards propagation on $\X^k$ to obtain
-			$$\frac{\partial\J}{\partial\lay{W}{\ell}},\quad\frac{\partial\J}{\partial b},\quad\frac{\partial\J}{\partial\lay{\gamma}{\ell}},\quad\frac{\partial\J}{\partial\lay{\beta}{\ell}}.$$
+			$$\frac{\partial\J}{\partial\lay{w}{\ell}},\quad\frac{\partial\J}{\partial b},\quad\frac{\partial\J}{\partial\lay{\gamma}{\ell}},\quad\frac{\partial\J}{\partial\lay{\beta}{\ell}}.$$
 			\item Update parameters.
 		\end{enumerate}
 	\end{enumerate}
-	\item Compute
-	$$\lay{\mu}{\ell}=\E[\lay{\mu}{\ell}{_k}],$$
-	$$\lay{\sigma^2}{\ell}=\frac{n}{n-1}\E[\lay{\sigma^2}{\ell}{_k}]$$
 	\item Return
-	$$\lay{W}{\ell},\quad b,\quad\lay{\gamma}{\ell},\quad\lay{\beta}{\ell},\quad\lay{\mu}{\ell},\quad\lay{\sigma^2}{\ell}.$$
+	$$\lay{w}{\ell},\quad b,\quad\lay{\gamma}{\ell},\quad\lay{\beta}{\ell},\quad\lay{\cl{\mu}}{\ell},\quad\lay{\cl{\sigma}^2}{\ell}.$$
 \end{enumerate}
 
 
@@ -823,11 +949,14 @@ Suppose we have a training set $\X$ with which we wish to train a binary classif
 
 
 
-	
 
-\subsection{Python Implementation}
+\subsection{Python Implementation via \texttt{numpy}}
 
-\TOX{Work in Progress}
+Below we implement batch normalization with our usual mini-batch gradient descent optimization.  To adapt other optimization techniques an update to the optimization classes is required to account for the trainable parameters.  This is not difficult, but is not included in this implementation for brevity.
+\lstinputlisting[firstline=1, lastline=407]{src/python/batchNormalization/npBatchNormalization.py}
+
+
+
 
 
 

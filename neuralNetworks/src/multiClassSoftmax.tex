@@ -21,24 +21,32 @@ Thus far, we've mostly been dealing with binary classification problems, that is
 \end{table*}
 
 That is, we have a total of $6$ classes we wish to distinguish.  If we were to train a neural network for this classification problem, the only time this needs to be considered is on the output layer.  With this in mind, we shall only consider the simple regression problem
-$$\begin{bmatrix}
-x^1\\
-\vdots\\
-x^m	
-\end{bmatrix}
-\overbrace{\longrightarrow}^{Wx+b}
-\begin{bmatrix}
-	z^1\\
-	\vdots\\
-	z^C
-\end{bmatrix}
-\overbrace{\longrightarrow}^{g(z)}
-\begin{bmatrix}
-	a^1\\
-	\vdots\\
-	a^C
-\end{bmatrix}
-\longrightarrow\hat{y},$$
+
+\begin{equation*}
+	\begin{tikzcd}
+		{}
+		&\R^{1\times n}
+		\arrow[d, swap, "w"]
+		&\R
+		\arrow[d, swap, "b"]
+		&{}
+		&\{1,2,...,C\}
+		\arrow[d, swap, "y"]
+		&{}
+		\\
+		\R^n
+		\arrow[r, "x"]
+		&\boxed{\phi}
+		\arrow[r, "u"]
+		&\boxed{\psi}
+		\arrow[r, "z"]
+		&\boxed{g}
+		\arrow[r, "a"]
+		&\boxed{\L}
+		\arrow[r]
+		&\R
+	\end{tikzcd}
+\end{equation*}
 where $C$ is the number of labels in our classification.
 
 First, we need to \textit{one-hot encode} our labels.  That is, if our labels are given by
@@ -51,6 +59,32 @@ Thus, we've effectively mapped our true labels
 $$y\in\{0,1,...,C-1\}^N\mapsto y\in\R^{C\times N},$$
 where
 $$(y=i)\mapsto (y=e_{i+1}).$$
+We let $\Omega_C:=\{e_1,...,e_C\}\subset\R^C$ denote the \textit{set} of basis vectors.  This allows us to write an equivalent network for the form:
+\begin{equation*}
+	\begin{tikzcd}
+		{}
+		&\R^{C\times n}
+		\arrow[d, swap, "w"]
+		&\R^C
+		\arrow[d, swap, "b"]
+		&{}
+		&\Omega_C
+		\arrow[d, swap, "y"]
+		&{}
+		\\
+		\R^n
+		\arrow[r, "x"]
+		&\boxed{\phi}
+		\arrow[r, "u"]
+		&\boxed{\psi}
+		\arrow[r, "z"]
+		&\boxed{g}
+		\arrow[r, "a"]
+		&\boxed{\L}
+		\arrow[r]
+		&\R
+	\end{tikzcd}
+\end{equation*}
 
 Next, we need to decide which type of nonlinearity $g:\R^C\to\R^C$ to impose.  To this end, we would like $a^i$ to satisfy
 $$a^i=\P(y=i-1),$$
@@ -71,11 +105,11 @@ Finally, we need to define a cost function $\L:\R^C\times\R^C\to\R$ with which w
 $$\L(a_j,y_j)=-\sum_{i=1}^Cy^i_j\log{a^i_j}.$$
 We note that since $y_j=e_k$ for some $k\in\{1,...,C\}$, that this sum is actually a single element.  Moreover, when $C=2$, we recover our log-loss function for the sigmoid activation.  This finally yields a cost function
 \begin{align*}
-	\J(W,b)&=-\frac{1}{N}\sum_{j=1}^N\sum_{i=1}^Cy^i_j\log{a^i_j}\\
-	&=-\frac{1}{N}(y:\log{a}),
+	\J(w,b)&=-\frac{1}{N}\sum_{j=1}^N\sum_{i=1}^Cy^i_j\log{a^i_j}\\
+	&=-\frac{1}{N}\ip{y,\log{a}}_F,
 \end{align*}
 where
-$$A:B=\ip{A,B}_F=\tr(A^TB),$$
+$$\ip{\cdot,\cdot}_F,$$
 is the Frobenius norm on $\R^{C\times N}$.
 
 To minimize our cost, we first note
