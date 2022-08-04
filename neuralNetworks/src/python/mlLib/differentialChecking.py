@@ -144,6 +144,34 @@ def normalization(x, eps=1e-8):
     return y, ry
 
 
+def softmax(z):
+    """
+    Parameters:
+    -----------
+    z : array_like
+
+    Returns:
+    --------
+    y : array_like
+        y.shape == z.shape
+    dy : array_like
+    """
+    n = z.shape[0]
+    u = np.exp(z - np.max(z, axis=0))
+    u_sum = np.sum(u, axis=0, keepdims=True)
+    y = u / u_sum
+
+    dy = np.zeros((n, n))
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                dy[i, j] = y[i, 0] * (1 - y[j, 0])
+            else:
+                dy[i, j] = -y[i, 0] * y[j, 0]
+
+    return y, dy
+
+
 if __name__ == "__main__":
 
     def differential_check_01(f, x, eps=1e-3):
@@ -228,7 +256,7 @@ if __name__ == "__main__":
         return f, R
 
     m = 5
-    n = 7
+    n = 1
     np.random.seed(1)
     for _ in range(5):
         x = np.random.rand(m, n) * 10
@@ -236,5 +264,5 @@ if __name__ == "__main__":
         print(x)
         # e = differential_check_euclidean(foo, x)
         # e = differential_check_matrix_to_euclidean(bar, x)
-        e = differential_check(normalization, x)
+        e = differential_check(softmax, x)
         print(e)

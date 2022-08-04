@@ -19,12 +19,11 @@ class EpochRuntime():
         txt = 'Elapsed time for the most recent epoch: {0} minutes and {1:0.3f}seconds'.format(mins, secs)
         print(txt)
         self.current = time.time()
-
-    
+  
 
 ## Shuffle, split and normalize full dataset
 class ProcessData():
-    def __init__(self, x, y, test_percent, dev_percent=0.0, seed=101, shuffle=True, feat_as_col=True):
+    def __init__(self, x, y, test_percent, dev_percent=0.0, seed=101, shuffle=True, feat_as_col=True, norm=True):
         """
         Parameters:
         -----------
@@ -54,7 +53,8 @@ class ProcessData():
         self.feat_as_col = feat_as_col
 
         self.split()
-        self.normalize()
+        if norm:
+            self.normalize()
         
         print(f"x_train.shape: {self.train['x'].shape}")
         print(f"y_train.shape: {self.train['y'].shape}")
@@ -352,13 +352,12 @@ class LinearParameters():
         
         return z
 
-    def backward(self, din, a_prev):
+    def backward(self, din, a_prev,):
         """
         Parameters:
         -----------
         din : array_like
         a_prev : array_like
-
         Returns:
         --------
         dout : array_like
@@ -371,7 +370,6 @@ class LinearParameters():
         assert (self.dw.shape == self.w.shape)
 
         dout = np.einsum('ij,ik->jk', self.w, din)
-        assert (dout.shape == a_prev.shape)
 
         return dout
 
@@ -397,8 +395,50 @@ class LinearParameters():
 
 ## Functions
 
+## Map the labels {0,1,2,...,C-1} to basis vectors {e_1,...,e_C}
+def encode_labels(y, C):
+    """
+    Parameters:
+    ----------
+    y : array_like
+        y.shape == (N,)
+    C : int
+
+    Returns:
+    Y : array_like
+        Y.shape == (C, N)
+    """
+    N = y.size
+    Y = np.zeros((C, N))
+    for i in range(C):
+        for j in range(N):
+            if y[j] == i:
+                Y[i, j] = 1
+
+    return Y
+
+
+## Map the one-hot encoded vecors to labels {0,1,...,C-1}
+def decode_labels(Y):
+    """
+    Parameters:
+    Y : array_like
+        Y.shape == (C, N)
+
+    Returns:
+    --------
+    y : array_like
+        y.shape == (N,)
+        y[0,j]
+    """
+    N = Y.shape[1]
+    y = np.zeros(N)
+    labels, col_index = np.nonzero(Y)
+    y[col_index] = labels
+    return y
+
 ## Applying the activator function after an affine-linear transformation
-def apply_activation(z, activator):
+def apply_activation(z, activator, *hps):
     """
     Parameters:
     -----------
@@ -423,6 +463,52 @@ def apply_activation(z, activator):
     assert (dg.shape == z.shape)
     return a, dg
 
+
+
+## Loss functions
+
+# The log-loss function for binary classification
+def log_loss(a, y):
+    """
+    Parameters:
+    -----------
+    a : array_like
+    y : array_like
+        a.shape == y.shape
+
+    Returns:
+    --------
+    loss : array_like
+    rloss : array_like
+        rloss.shape == a.shape
+    """
+    loss = -1 * (y * np.log(a) + (1 - y) * np.log(1 - a))
+    rloss = -(y / a) + (1 - y) / (1 - a)
+    return loss, rloss
+
+## The cross-entropy loss function
+def cross_entropy(a, y, eps=1e-8):
+    """
+    Parameters:
+    -----------
+    a : array_like
+    y : array_like
+        a.shape == y.shape
+    eps : float
+        Default = 10^{-8} # For stability
+
+    Returns:
+    --------
+    loss : array_like
+    r_loss : array_like
+        rloss.shape == a.shape
+    """
+    assert a.shape == y.shape, "a and y have different shapes"
+
+    a = np.clip(a, eps, 1 - eps)
+    loss = -1 * np.sum(y * np.log(a), axis=0)
+    rloss = -1 * y / a
+    return loss, rloss
 
 
 if __name__ == '__main__':

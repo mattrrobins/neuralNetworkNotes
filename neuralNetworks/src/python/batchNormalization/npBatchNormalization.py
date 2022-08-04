@@ -346,7 +346,6 @@ class NeuralNetwork:
             k = 1
             cost = 0
             for batch in batches:
-                iter = epoch * B + k
                 x = batch["x"]
                 y = batch["y"]
                 dropout = self.init_dropout(x.shape[1])

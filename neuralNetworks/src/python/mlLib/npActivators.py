@@ -1,6 +1,6 @@
 import numpy as np
 
-ACTIVATORS = ['relu', 'sigmoid', 'tanh', 'linear', 'softmax']
+ACTIVATORS = ["relu", "sigmoid", "tanh", "linear", "softmax"]
 
 ## Activator functions
 # The (leaky-)ReLU function
@@ -26,6 +26,7 @@ def relu(z, beta=0.0):
     dr = ((~(z < 0)) * 1) + ((z < 0) * beta)
     return r, dr
 
+
 # The sigmoid function
 def sigmoid(z):
     """
@@ -41,10 +42,11 @@ def sigmoid(z):
         The (broadcasted) derivative of the sigmoid function evaluate at z
     """
     # Compute value of sigmoid
-    sigma = (1 / (1 + np.exp(-z)))
+    sigma = 1 / (1 + np.exp(-z))
     # Compute differential of sigmoid
     dsigma = sigma * (1 - sigma)
     return sigma, dsigma
+
 
 # The hyperbolic tangent function
 def tanh(z):
@@ -65,6 +67,7 @@ def tanh(z):
     dphi = 1 - (phi * phi)
     return phi, dphi
 
+
 # The linear activator function
 def linear(z):
     """
@@ -80,3 +83,32 @@ def linear(z):
     id = z
     d_id = np.ones(z.shape)
     return id, d_id
+
+
+## The softmax function
+def softmax(z):
+    """
+    Parameters:
+    -----------
+    z : array_like
+
+    Returns:
+    --------
+    y : array_like
+        y.shape == z.shape
+    dy : array_like
+    """
+    n = z.shape[0]
+    u = np.exp(z - np.max(z, axis=0))
+    u_sum = np.sum(u, axis=0, keepdims=True)
+    y = u / u_sum
+
+    dy = np.zeros((n, n))
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                dy[i, j] = y[i, 0] * (1 - y[j, 0])
+            else:
+                dy[i, j] = -y[i, 0] * y[j, 0]
+
+    return y, dy

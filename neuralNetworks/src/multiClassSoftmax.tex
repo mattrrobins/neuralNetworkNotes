@@ -114,42 +114,41 @@ is the Frobenius norm on $\R^{C\times N}$.
 
 To minimize our cost, we first note
 \begin{align*}
-	\frac{\partial\L_y\circ g}{\partial z^\mu}&=\sum_{i=1}^C\frac{\partial\L_y}{\partial a^i}\frac{\partial S^i}{\partial z^\mu}\\
+	\frac{\partial\L\circ g}{\partial z^\mu}&=\sum_{i=1}^C\frac{\partial\L}{\partial a^i}\frac{\partial S^i}{\partial z^\mu}\\
 	&=-\sum_{i=1}^C\frac{y^i}{a^i}a^i(\delta^i_\mu-a^\mu)\\
 	&=-\sum_{i=1}^Cy^i(\delta^i_\mu-a^\mu)\\
 	&=-y^\mu+a^\mu\underbrace{\sum_{i=1}^Cy^i}_{=1}\\
 	&=a^\mu-y^\mu,
 \end{align*}
-then we see that
+and hence
+$$r(\L\circ g)_z=a-y.$$
+
+Computing differentials along the different paths of our composition, we now see that for the bias parameter
 \begin{align*}
-	\frac{\partial z^\mu}{\partial W^\alpha_\beta}&=\frac{\partial}{\partial W^\alpha_\beta}(W^\mu_kx^k+b^\mu)\\
-	&=\sum_{k=1}^m\delta^\mu_\alpha\delta_k^\beta x^k\\
-	&=\delta^\mu_\alpha x^\beta,
+	r(\L\circ g\circ\psi)_b&=r\psi_b\circ r(\L\circ g)_z\\
+	&=a-y,
 \end{align*}
-and
+and hence by linearity
 \begin{align*}
-	\frac{\partial z^\mu}{\partial b^\alpha}=\delta^\mu_\alpha.
+	r\J_b&=\frac{1}{N}\sum_{j=1}^Na_j-y_j.
 \end{align*}
-Hence,
+For our weights, we compute
 \begin{align*}
-	\frac{\partial\L_y}{\partial W^\alpha_\beta}&=\sum_{\mu=1}^C(a^\mu-y^\mu)\delta_\alpha^\mu x^\beta\\
-	&=x(a-y)^T,
+	r(\L\circ g\circ\psi\circ\phi)_w&=r\phi_w\circ r\psi_u\circ r(\L\circ g)_z\\
+	&=R_{x^T}\circ r(L\circ g)_z\\
+	&=(a-y)x^T,
 \end{align*}
-yielding a gradient of
-$$\frac{\partial\L_y}{\partial W}=(a-y)x^T,$$
-and similarly
+and hence by linearity
 \begin{align*}
-	\frac{\partial\L_y}{\partial b^\alpha}&=\sum_{\mu=1}^C(a^\mu-y^\mu)\delta^\mu_\alpha\\
-	&=a^\alpha-y^\alpha,
+	r\J_w &=\frac{1}{N}\sum_{j=1}^N(a_j-y_j)x_j^T\\
+	&=\frac{1}{N}(a-y)x^T
 \end{align*}
-and so
-$$\frac{\partial\L_y}{\partial b}=a-y.$$
-Finally, we conclude that
-$$\frac{\partial\J}{\partial W}=\frac{1}{N}\sum_{j=1}^N(a_j-y_j)(x_j)^T=\frac{1}{N}(a-y)x^T,$$
-and
-$$\frac{\partial\J}{\partial b}=\frac{1}{N}\sum_{j=1}^N(a_j-y_j).$$
 
 We remark that for a deep neural network, the backwards propagation follows a similar path backwards through the network since we have the aforementioned differentials.
+
+
+
+\subsubsection{Python Implementation via \texttt{numpy}}
 
 
 
