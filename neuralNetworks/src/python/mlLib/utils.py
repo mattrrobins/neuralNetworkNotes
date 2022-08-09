@@ -391,6 +391,129 @@ class LinearParameters():
             self.b = b
 
 
+class BatchNormParameters:
+    def __init__(self, dim, eps=1e-8):
+        """
+        Parameters:
+        -----------
+        dim = int
+        eps : float
+            Default = 10^{-8}
+
+        Returns:
+        --------
+        None
+        """
+        self.dims = (dim, 1)
+        self.eps = eps
+        self.gamma = np.ones(self.dims)
+        self.beta = np.zeros(self.dims)
+
+        self.running_mean = np.zeros(self.dims)
+        self.running_var = np.zeros(self.dims)
+
+    def normalize(self, u, momentum=0.9):
+        """
+        Parameters:
+        -----------
+        u : array_like
+            u.shape == (n, N)
+        momentum : float
+            Default = 0.9   # Calculating running statistics
+
+        Returns:
+        uhat : array_like
+            uhat.hape == (n, N)
+        ruhat : array_like
+            ruhat.shape == (n, N, n, N)
+        """
+        # Compute normalization
+        mu = np.mean(u, axis=1, keepdims=True)
+        sigma2 = np.var(u, axis=1, keepdims=True)
+        theta = 1 / np.sqrt(sigma2 + self.eps)
+        uhat = theta * (u - mu)
+
+        # Update running mean and variance
+        self.running_mean = momentum * self.running_mean + (1 - momentum) * mu
+        self.running_var = momentum * self.running_var + (1 - momentum) * sigma2
+
+        # Compute reverse differential
+        m, n = u.shape
+        duhat = np.zeros((m, n, m, n))
+        I_m = np.eye(m)
+        I_n = np.eye(n)
+        for alpha in range(m):
+            for beta in range(n):
+                for i in range(m):
+                    for j in range(n):
+                        duhat[alpha, beta, i, j] = (
+                            I_m[alpha, i]
+                            * theta[alpha, 0]
+                            * (
+                                I_n[j, beta]
+                                - (1 + uhat[alpha, j] * uhat[alpha, beta]) / n
+                            )
+                        )
+
+        ruhat = np.einsum("ijkl->klij", duhat)
+
+        return uhat, ruhat
+
+    def forward(self, u):
+        """
+        Parameters:
+        -----------
+        u : array_like
+            u.shape == (n, N)
+
+        Returns:
+        z : array_like
+            z.shape == (n, N)
+        """
+        self.norm, self.dnorm = self.normalize(u)
+        z = self.gamma * self.norm + self.beta
+        return z
+
+    def backward(self, d_in):
+        """
+        Parameters:
+        -----------
+        d_in : array_like
+            d_in.shape == (n, N)
+        """
+        self.dbeta = np.sum(d_in, axis=1, keepdims=True)
+        self.dgamma = np.sum(self.norm * d_in, axis=1, keepdims=True)
+
+        return np.einsum("ijkl,kl", self.dnorm, d_in)
+
+    def update(self, learning_rate):
+        """
+        Parameters:
+        -----------
+        learning_rate : float
+
+        Returns:
+        --------
+        None
+        """
+        self.gamma = self.gamma - learning_rate * self.dgamma
+        self.beta = self.beta - learning_rate * self.dbeta
+
+    def evaluate(self, u):
+        """
+        Parameters:
+        -----------
+        u : array_like
+            u.shape == (n, N)
+
+        Returns:
+        z : array_like
+            z.shape == (n, N)
+        """
+        z = (u - self.running_mean) / np.sqrt(self.running_var + self.eps)
+        z = self.gamma * z + self.beta
+        return z
+
 ###################################################
 
 ## Functions
@@ -438,7 +561,7 @@ def decode_labels(Y):
     return y
 
 ## Applying the activator function after an affine-linear transformation
-def apply_activation(z, activator, *hps):
+def apply_activation(z, activator):
     """
     Parameters:
     -----------
@@ -466,6 +589,26 @@ def apply_activation(z, activator, *hps):
 
 
 ## Loss functions
+
+# The least-squared-error function
+def lse(a, y):
+    """
+    Parameters:
+    -----------
+    a : array_like
+    y : array_like
+        a.shape == y.shape
+
+    Returns:
+    --------
+    loss : array_like
+    rloss : array_like
+        rloss.shape == a.shape
+    """
+    loss = ((a - y)**2) / 2
+    rloss = a - y
+    return loss, rloss
+
 
 # The log-loss function for binary classification
 def log_loss(a, y):

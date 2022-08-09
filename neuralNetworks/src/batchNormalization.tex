@@ -498,11 +498,11 @@ Then we build our $\delta$-differentials recursively starting at $\L$.  That is,
 \begin{align*}
 	\lay{\delta}{L}&:=r(\L\circ\lay{G}{L})_{\lay{z}{L}},\\
 	\lay{\delta}{L-1}&:=\lay{G}{L-1}{'}(\lay{z}{L-1})\odot\lay{w}{L}{^T}\lay{\delta}{L},\\
-	\lay{\delta}{L-2}&:=\lay{G}{L-2}{'}(\lay{z}{L-2})\odot\lay{w}{L-1}{^T}r\lay{N}{L-1}_{\lay{u}{L-1}}(\lay{\delta}{L-1}),\\
+	\lay{\delta}{L-2}&:=\lay{G}{L-2}{'}(\lay{z}{L-2})\odot\lay{w}{L-1}{^T}r\lay{N}{L-1}_{\lay{u}{L-1}}(\lay{\gamma}{L-1}\vec{1}^T\odot\lay{\delta}{L-1}),\\
 	&\vdots\\
-	\lay{\delta}{\ell}&:=\lay{G}{\ell}{'}(\lay{z}{\ell})\odot\lay{w}{\ell+1}{^T}r\lay{N}{\ell+1}_{\lay{u}{\ell+1}}(\lay{\delta}{\ell+1}),\\
+	\lay{\delta}{\ell}&:=\lay{G}{\ell}{'}(\lay{z}{\ell})\odot\lay{w}{\ell+1}{^T}r\lay{N}{\ell+1}_{\lay{u}{\ell+1}}(\lay{\gamma}{\ell+1}\vec{1}^T\lay{\delta}{\ell+1}),\\
 	&\vdots\\
-	\lay{\delta}{1}&:=\lay{G}{1}{'}(\lay{z}{1})\odot\lay{w}{2}{^T}r\lay{N}{2}_{\lay{u}{2}}(\lay{\delta}{2});
+	\lay{\delta}{1}&:=\lay{G}{1}{'}(\lay{z}{1})\odot\lay{w}{2}{^T}r\lay{N}{2}_{\lay{u}{2}}(\lay{\gamma}{2}\vec{1}^T\lay{\delta}{2});
 \end{align*}
 and compute our gradients via
 \begin{align*}
@@ -510,7 +510,7 @@ and compute our gradients via
 	\frac{\partial\J}{\partial\lay{w}{L}}&=\lay{\delta}{L}\lay{a}{L-1}{^T},\\
 	\frac{\partial\J}{\partial\lay{\beta}{\ell}}&=\sum_{j=1}^N\lay{\delta}{\ell},\qquad\ell\in\{1,...,L-1\},\\
 	\frac{\partial\J}{\partial\lay{\gamma}{\ell}}&=\sum_{j=1}^N\lay{\hat{u}}{\ell}{_j}\odot\lay{\delta}{\ell}{_j},\qquad\ell\in\{1,...,L-1\},\\
-	\frac{\partial\J}{\partial\lay{w}{\ell}}&=r\lay{N}{\ell}_{\lay{u}{\ell}}(\lay{\delta}{\ell})\lay{a}{\ell-1}{^T},\qquad\ell\in\{1,...,L-1\}.
+	\frac{\partial\J}{\partial\lay{w}{\ell}}&=r\lay{N}{\ell}_{\lay{u}{\ell}}(\lay{\gamma}{\ell}\vec{1}^T\lay{\delta}{\ell})\lay{a}{\ell-1}{^T},\qquad\ell\in\{1,...,L-1\}.
 \end{align*}
 
 

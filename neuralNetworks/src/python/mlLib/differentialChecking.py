@@ -255,6 +255,38 @@ if __name__ == "__main__":
 
         return f, R
 
+    def normalize_vec(x, zeta, eps=1e-8):
+        """ """
+        mu = np.mean(x, axis=1, keepdims=True)
+        sigma2 = np.var(x, axis=1, keepdims=True)
+        theta = 1 / np.sqrt(sigma2 + eps)
+        y = theta * (x - mu)
+
+        m, n = x.shape
+        dy = np.zeros((m, n, m, n))
+        I_m = np.eye(m)
+        I_n = np.eye(n)
+        for alpha in range(m):
+            for beta in range(n):
+                for i in range(m):
+                    for j in range(n):
+                        dy[alpha, beta, i, j] = (
+                            I_m[alpha, i]
+                            * theta[alpha, 0]
+                            * (I_n[j, beta] - (1 + y[alpha, j] * y[alpha, beta]) / n)
+                        )
+
+        ry = np.einsum("ijkl->klij", dy)
+        index_d = np.einsum("ijkl, kl", ry, zeta)
+        vec_d = theta * zeta - (1 / n) * theta * (
+            np.sum(zeta, axis=1, keepdims=True)
+            + y * np.sum(y * zeta, axis=1, keepdims=True)
+        )
+
+        assert (index_d == vec_d).all()
+
+        return None
+
     m = 5
     n = 1
     np.random.seed(1)
@@ -264,5 +296,6 @@ if __name__ == "__main__":
         print(x)
         # e = differential_check_euclidean(foo, x)
         # e = differential_check_matrix_to_euclidean(bar, x)
-        e = differential_check(softmax, x)
-        print(e)
+        # e = differential_check(softmax, x)
+        normalize_vec(x, x)
+        # print(e)

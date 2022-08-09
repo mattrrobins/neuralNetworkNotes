@@ -286,5 +286,5 @@ and let $\{\epsilon_i\}$, $\{e_j\}$ denote the standard bases for $\R^m$ and $\R
 \end{align*}
 that is, if $\zeta^\alpha_\beta$ is a matrix, we yield the matrix
 $$[rN_x(\zeta)]^i_j=\sum_{\alpha=1}^m\sum_{\beta=1}^n
-	\theta^i[\delta_\alpha^i\delta_j^\beta+\frac{1}{n}\delta_\alpha^i(1+y_j^iy_\beta^i)]\zeta^\alpha_\beta,$$
+	\theta^i[\delta_\alpha^i\delta_j^\beta-\frac{1}{n}\delta_\alpha^i(1+y_j^iy_\beta^i)]\zeta^\alpha_\beta,$$
 which is easily implemented in python via \texttt{numpy}'s \texttt{einsum} function.

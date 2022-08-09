@@ -2,7 +2,6 @@
 
 import numpy as np
 
-LOSS_FUNCTIONS = {"lse": lse, "log_loss": log_loss, "cross_entropy": cross_entropy}
 
 ## Loss functions
 
@@ -27,7 +26,7 @@ def lse(a, y):
 
 
 # The log-loss function for binary classification
-def log_loss(a, y):
+def log_loss(a, y, eps=1e-8):
     """
     Parameters:
     -----------
@@ -41,6 +40,7 @@ def log_loss(a, y):
     rloss : array_like
         rloss.shape == a.shape
     """
+    a = np.clip(a, eps, 1 - eps)
     loss = -1 * (y * np.log(a) + (1 - y) * np.log(1 - a))
     rloss = -(y / a) + (1 - y) / (1 - a)
     return loss, rloss
@@ -69,3 +69,6 @@ def cross_entropy(a, y, eps=1e-8):
     loss = -1 * np.sum(y * np.log(a), axis=0)
     rloss = -1 * y / a
     return loss, rloss
+
+
+LOSS_FUNCTIONS = {"lse": lse, "log_loss": log_loss, "cross_entropy": cross_entropy}
