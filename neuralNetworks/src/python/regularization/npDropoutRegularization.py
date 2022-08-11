@@ -5,7 +5,7 @@ import numpy as np
 from mlLib.utils import LinearParameters, apply_activation
 
 
-class NeuralNetwork():
+class NeuralNetwork:
     def __init__(self, config):
         """
         Parameters:
@@ -22,12 +22,12 @@ class NeuralNetwork():
         None
         """
         self.config = config
-        self.lp_reg = config['lp_reg']
-        self.nodes = config['nodes']
-        self.bias = config['bias']
-        self.activators = config['activators']
-        self.keep_probs = config['keep_probs']
-        self.L = len(config['nodes']) - 1
+        self.lp_reg = config["lp_reg"]
+        self.nodes = config["nodes"]
+        self.bias = config["bias"]
+        self.activators = config["activators"]
+        self.keep_probs = config["keep_probs"]
+        self.L = len(config["nodes"]) - 1
 
     def init_dropout(self, num_examples, seed=1):
         """
@@ -47,8 +47,11 @@ class NeuralNetwork():
             D[l] = np.random.rand(self.nodes[l], num_examples)
             D[l] = (D[l] < self.keep_probs[l]).astype(int)
             D[l] = D[l] / self.keep_probs[l]
-            assert (D[l].shape == (self.nodes[l], num_examples)), "Dropout matrices are the wrong shape"
-        
+            assert D[l].shape == (
+                self.nodes[l],
+                num_examples,
+            ), "Dropout matrices are the wrong shape"
+
         return D
 
     def forward_propagation(self, params, x, dropout=None):
@@ -82,7 +85,7 @@ class NeuralNetwork():
             if dropout != None:
                 a[l] = dropout[l] * a[l]
 
-        cache = {'a': a, 'dg': dg}
+        cache = {"a": a, "dg": dg}
         return cache
 
     def cost_function(self, params, a, y, lambda_=0.01, eps=1e-8):
@@ -109,10 +112,10 @@ class NeuralNetwork():
         R = 0
         for param in params.values():
             R += np.sum(np.abs(param.w) ** self.lp_reg)
-        R *= (lambda_ / (2 * n))
+        R *= lambda_ / (2 * n)
 
         # Compute unregularized cost
-        a = np.clip(a, eps, 1 - eps)    # Bound a for stability
+        a = np.clip(a, eps, 1 - eps)  # Bound a for stability
         J = (-1 / n) * (np.sum(y * np.log(a) + (1 - y) * np.log(1 - a)))
 
         cost = float(np.squeeze(J + R))
@@ -131,24 +134,26 @@ class NeuralNetwork():
             cache['a'] : array_like
             cache['dg'] : array_like
         y : array_like
-        
+
         Returns:
         --------
         None
         """
 
         # Retrieve cache
-        a = cache['a']
-        dg = cache['dg']
+        a = cache["a"]
+        dg = cache["dg"]
 
         # Initialize differentials along the network
         delta = {}
         delta[self.L] = ((a[self.L] - y) / y.shape[1]) * dropout[self.L]
 
         for l in reversed(range(1, self.L + 1)):
-            delta[l - 1] = dg[l - 1] * params[l].backward(delta[l], a[l - 1]) * dropout[l - 1]
+            delta[l - 1] = (
+                dg[l - 1] * params[l].backward(delta[l], a[l - 1]) * dropout[l - 1]
+            )
 
-    def update_parameters(self, params, learning_rate=0.1):
+    def update_parameters(self, params, learning_rate, lambda_n):
         """
         Parameters:
         -----------
@@ -164,7 +169,7 @@ class NeuralNetwork():
         None
         """
         for param in params.values():
-            param.update(learning_rate)
+            param.update(learning_rate, lambda_n)
 
     def fit(self, x, y, learning_rate=0.1, lambda_=0.01, num_iters=10000):
         """
@@ -188,19 +193,20 @@ class NeuralNetwork():
         params = {}
         for l in range(1, self.L + 1):
             params[l] = LinearParameters(
-                (self.nodes[l], self.nodes[l - 1]), self.bias[l])
+                (self.nodes[l], self.nodes[l - 1]), self.bias[l]
+            )
 
         costs = []
         for i in range(num_iters):
             dropout = self.init_dropout(x.shape[1])
             cache = self.forward_propagation(params, x, dropout)
-            cost = self.cost_function(params, cache['a'][self.L], y, lambda_)
+            cost = self.cost_function(params, cache["a"][self.L], y, lambda_)
             costs.append(cost)
             self.backward_propagation(params, cache, y, dropout)
-            self.update_parameters(params, learning_rate)
+            self.update_parameters(params, learning_rate, lambda_ / x.shape[1])
 
             if i % 1000 == 0:
-                print(f'Cost after iteration {i}: {cost}')
+                print(f"Cost after iteration {i}: {cost}")
 
         return params
 
@@ -216,7 +222,7 @@ class NeuralNetwork():
         y_hat : array_like
         """
         cache = self.forward_propagation(params, x)
-        a = cache['a'][self.L]
+        a = cache["a"][self.L]
         y_hat = (~(a < 0.5)).astype(int)
         return y_hat
 
@@ -237,35 +243,35 @@ class NeuralNetwork():
 
         return acc
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     from pathlib import Path
 
     import pandas as pd
 
     from mlLib.utils import ProcessData
 
-    csv = Path('neuralNetworks/src/python/data/housepricedata.csv')
+    csv = Path("neuralNetworks/src/python/data/housepricedata.csv")
     df = pd.read_csv(csv)
     dataset = df.values
     x = dataset[:, :10]
     y = dataset[:, 10].reshape(-1, 1)
     data = ProcessData(x, y, 0.15, 0.15, seed=1, feat_as_col=False)
-    
 
     config = {
-        'lp_reg': 0,
-        'nodes': [10, 32, 8, 1],
-        'bias': [False, True, True, True],
-        'activators': ['linear', 'relu', 'relu','sigmoid'],
-        'keep_probs' : [0.9, 0.8, 0.85, 1]
+        "lp_reg": 0,
+        "nodes": [10, 32, 8, 1],
+        "bias": [False, True, True, True],
+        "activators": ["linear", "relu", "relu", "sigmoid"],
+        "keep_probs": [0.9, 0.8, 0.85, 1],
     }
 
     model = NeuralNetwork(config)
-    params = model.fit(data.train['x'], data.train['y'], 0.1, 2.0)
+    params = model.fit(data.train["x"], data.train["y"], 0.1, 2.0)
 
-    train_acc = model.accuracy(params, data.train['x'], data.train['y'])
-    print(f'Training Accuracy: {train_acc}')
-    dev_acc = model.accuracy(params, data.dev['x'][0], data.dev['y'][0])
-    print(f'Dev Accuracy: {dev_acc}')
-    test_acc = model.accuracy(params, data.test['x'], data.test['y'])
-    print(f'Test Accuracy: {test_acc}')
+    train_acc = model.accuracy(params, data.train["x"], data.train["y"])
+    print(f"Training Accuracy: {train_acc}")
+    dev_acc = model.accuracy(params, data.dev["x"][0], data.dev["y"][0])
+    print(f"Dev Accuracy: {dev_acc}")
+    test_acc = model.accuracy(params, data.test["x"], data.test["y"])
+    print(f"Test Accuracy: {test_acc}")

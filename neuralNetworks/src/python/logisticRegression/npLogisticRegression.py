@@ -61,7 +61,7 @@ class LinearParameters:
         self.dw = np.einsum("ij,kj", dz, x)
         assert self.dw.shape == self.w.shape
 
-    def update(self, learning_rate=0.01):
+    def update(self, learning_rate, lambda_n):
         """
         Parameters:
         -----------
@@ -72,7 +72,8 @@ class LinearParameters:
         --------
         None
         """
-        w = self.w - learning_rate * self.dw
+        dw = self.dw + lambda_n * self.w
+        w = self.w - learning_rate * dw
         self.w = w
 
         if self.bias:
@@ -173,7 +174,7 @@ class LogisticRegression:
             costs.append(cost)
             dz = (a - y) / n
             params.backward(dz, x)
-            params.update(learning_rate)
+            params.update(learning_rate, lambda_ / n)
 
             if i % 1000 == 0:
                 print(f"Cost after iteration {i}: {cost}")

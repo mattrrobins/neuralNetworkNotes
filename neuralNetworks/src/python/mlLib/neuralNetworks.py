@@ -1,9 +1,8 @@
 #! python3
 
-from tkinter import N
 import numpy as np
 
-from mlLib.npLossFunctions import LOSS_FUNCTIONS, log_loss
+from mlLib.npLossFunctions import LOSS_FUNCTIONS, cross_entropy, log_loss, lse
 from mlLib.utils import ShuffleBatchData
 from mlLib.utils import apply_activation
 
@@ -311,7 +310,7 @@ class NeuralNetwork:
         cache = {"a": a, "dg": dg}
         return cache
 
-    def cost_function(self, a, y, lambda_=0.0):
+    def cost_function(self, a, y, lambda_):
         """
         Parameters:
         -----------
@@ -392,6 +391,11 @@ class NeuralNetwork:
                 *self.optimizer_hps,
             )
 
+        if self.loss == cross_entropy:
+            from mlLib.utils import encode_labels
+
+            data["y"] = encode_labels(data["y"], self.nodes[self.L])
+
         ## Initialize batching
         batching = ShuffleBatchData(data, self.batch_size)
         N = data["x"].shape[1]
@@ -433,10 +437,15 @@ class NeuralNetwork:
         cache = self.forward_propagation(x, False)
         a = cache["a"][self.L]
 
-        y_hat = (~(a < 0.5)).astype(int)
+        if self.loss == log_loss:
+            y_hat = (~(a < 0.5)).astype(int)
+        elif self.loss == cross_entropy:
+            y_hat = np.argmax(a, axis=0).reshape(1, -1)
+        elif self.loss == lse:
+            y_hat = a
         return y_hat
 
-    def accuracy(self, data):
+    def accuracy_classification(self, data):
         """
         Parameters:
         -----------
@@ -446,7 +455,7 @@ class NeuralNetwork:
 
         Returns:
         --------
-        accuracy : float
+        acc : float
         """
         x = data["x"]
         y = data["y"]
@@ -454,6 +463,26 @@ class NeuralNetwork:
         y_hat = self.evaluate(x)
         acc = np.sum(y_hat == y) / y.shape[1]
 
+        return acc
+
+    def accuracy_r2(self, data):
+        """
+        Parameters:
+        -----------
+        data : Dict[array_like]
+            data['x'] : array_like
+            data['y'] : array_like
+
+        Returns:
+        --------
+        acc : float
+        """
+        x = data["x"]
+        y = data["y"]
+        a = self.evaluate(x)
+        rs = np.mean(lse(a, y))
+        var = np.var(y, axis=1, keepdims=True)
+        acc = float(np.squeeze(1 - (rs / var)))
         return acc
 
 
@@ -464,29 +493,47 @@ if __name__ == "__main__":
 
     from mlLib.utils import ProcessData
 
-    csv = Path("neuralNetworks/src/python/data/housepricedata.csv")
-    # csv = Path("neuralNetworks/src/python/data/pima-indians-diabetes.csv")
-    df = pd.read_csv(csv)
-    dataset = df.values
-    x = dataset[:, :-1]
-    y = dataset[:, -1].reshape(-1, 1)
-    data = ProcessData(x, y, 0.1, 0.1, seed=1, feat_as_col=False)
+    # csv = Path("neuralNetworks/src/python/data/housepricedata.csv")
+    # csv = Path("neuralNetworks/src/python/data/pima-indians-diabetes.csv"
+    # df = pd.read_csv(csv)
+    # dataset = df.values
+    # x = dataset[:, :-1]
+    # y = dataset[:, -1].reshape(-1, 1)
+
+    from mlxtend.data import iris_data
+
+    x, y = iris_data()
+    y = y.reshape(-1, 1)
+    data = ProcessData(x, y, 0.05, 0.05, seed=1, feat_as_col=False)
+
+    df = pd.read_csv("neuralNetworks/src/python/data/heart.data.csv")
+    data = df.values
+    x = data[:, :-1]
+    y = data[:, -1].reshape(-1, 1)
+    data = ProcessData(x, y, 0.05, 0.05, feat_as_col=False)
 
     config = {
-        "batch_size": 2**7,
-        "nodes": [data.train["x"].shape[0], 32, 16, data.train["y"].shape[0]],
-        "bias": [False, False, False, True],
-        "batch_norm": [False, True, True, False],
-        "activators": ["linear", "relu", "relu", "sigmoid"],
-        "keep_probs": [1, 1, 1, 1],
-        "loss": "log_loss",
+        "batch_size": 2**5,
+        "nodes": [data.train["x"].shape[0], data.train["y"].shape[0]],
+        "bias": [False, True],
+        "batch_norm": [False, False],
+        "activators": ["linear", "linear"],
+        "keep_probs": [1, 1],
+        "loss": "lse",
         "optimizer": ("adam", [0.9, 0.999, 1e-8]),
     }
 
     model = NeuralNetwork(config)
     costs = model.fit(
-        data.train, learning_rate=0.1, lambda_=0.1, epochs=500, print_cost_epoch=50
+        data.train, learning_rate=0.01, lambda_=0.1, epochs=500, print_cost_epoch=50
     )
+
+    train_acc = model.accuracy_r2(data.train)
+    print(f"Training Accuracy: {train_acc}")
+    dev_acc = model.accuracy_r2(data.dev)
+    print(f"Dev Accuracy: {dev_acc}")
+    test_acc = model.accuracy_r2(data.test)
+    print(f"Test Accuracy: {test_acc}")
 
     import matplotlib.pyplot as plt
 

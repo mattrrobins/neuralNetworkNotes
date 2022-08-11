@@ -120,7 +120,7 @@ class NeuralNetwork:
         for l in reversed(range(1, self.L + 1)):
             delta[l - 1] = dg[l - 1] * params[l].backward(delta[l], a[l - 1])
 
-    def update_parameters(self, params, learning_rate):
+    def update_parameters(self, params, learning_rate, lambda_n):
         """
         Parameters:
         -----------
@@ -134,7 +134,7 @@ class NeuralNetwork:
         None
         """
         for param in params.values():
-            param.update(learning_rate)
+            param.update(learning_rate, lambda_n)
 
     def fit(self, x, y, learning_rate=0.1, lambda_=0.01, num_iters=10000):
         """
@@ -167,7 +167,7 @@ class NeuralNetwork:
             cost = self.cost_function(params, cache["a"][self.L], y, lambda_)
             costs.append(cost)
             self.backward_propagation(params, cache, y)
-            self.update_parameters(params, learning_rate)
+            self.update_parameters(params, learning_rate, lambda_ / x.shape[1])
 
             if i % 1000 == 0:
                 print(f"Cost after iteration {i}: {cost}")

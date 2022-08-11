@@ -373,7 +373,7 @@ class LinearParameters():
 
         return dout
 
-    def update(self, learning_rate):
+    def update(self, learning_rate, lambda_n):
         """
         Parameters:
         -----------
@@ -383,7 +383,7 @@ class LinearParameters():
         --------
         None
         """
-        w = self.w - learning_rate * self.dw
+        w = self.w - learning_rate * (self.dw + lambda_n * self.w)
         self.w = w
 
         if self.bias:
@@ -524,19 +524,21 @@ def encode_labels(y, C):
     Parameters:
     ----------
     y : array_like
-        y.shape == (N,)
+        y.shape == (1,N)
     C : int
 
     Returns:
     Y : array_like
         Y.shape == (C, N)
     """
-    N = y.size
+    N = y.shape[1]
     Y = np.zeros((C, N))
     for i in range(C):
         for j in range(N):
-            if y[j] == i:
+            if y[0,j] == i:
                 Y[i, j] = 1
+
+    assert (np.argmax(Y, axis=0).reshape(1, -1) == y).all()
 
     return Y
 
@@ -581,9 +583,10 @@ def apply_activation(z, activator):
         a, dg = npActivators.tanh(z)
     elif activator == 'linear':
         a, dg = npActivators.linear(z)
+    elif activator == 'softmax':
+        a, dg = npActivators.softmax(z)
 
     assert (a.shape == z.shape)
-    assert (dg.shape == z.shape)
     return a, dg
 
 
